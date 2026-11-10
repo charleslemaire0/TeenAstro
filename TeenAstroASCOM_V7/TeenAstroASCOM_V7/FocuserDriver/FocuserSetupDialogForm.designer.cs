@@ -17,6 +17,7 @@ namespace ASCOM.TeenAstro.Focuser
     {
       this.GroupBox1 = new System.Windows.Forms.GroupBox();
       this.btnOptions = new System.Windows.Forms.Button();
+      this.CheckUpdateButton = new System.Windows.Forms.Button();
       this.chkTrace = new System.Windows.Forms.CheckBox();
       this.TextBoxPort = new System.Windows.Forms.TextBox();
       this.Label1 = new System.Windows.Forms.Label();
@@ -135,7 +136,7 @@ namespace ASCOM.TeenAstro.Focuser
       this.TableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
       this.TableLayoutPanel1.Controls.Add(this.OK_Button, 0, 0);
       this.TableLayoutPanel1.Controls.Add(this.Cancel_Button, 1, 0);
-      this.TableLayoutPanel1.Location = new System.Drawing.Point(113, 165);
+      this.TableLayoutPanel1.Location = new System.Drawing.Point(113, 190);
       this.TableLayoutPanel1.Name = "TableLayoutPanel1";
       this.TableLayoutPanel1.RowCount = 1;
       this.TableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
@@ -161,13 +162,24 @@ namespace ASCOM.TeenAstro.Focuser
       this.Cancel_Button.Text = "Cancel";
       this.Cancel_Button.Click += new System.EventHandler(this.Cancel_Button_Click);
       //
+      // CheckUpdateButton
+      //
+      this.CheckUpdateButton.Location = new System.Drawing.Point(28, 158);
+      this.CheckUpdateButton.Name = "CheckUpdateButton";
+      this.CheckUpdateButton.Size = new System.Drawing.Size(216, 23);
+      this.CheckUpdateButton.TabIndex = 18;
+      this.CheckUpdateButton.Text = "Check update";
+      this.CheckUpdateButton.UseVisualStyleBackColor = true;
+      this.CheckUpdateButton.Click += new System.EventHandler(this.CheckUpdate_Click);
+      //
       // FocuserSetupDialogForm
       //
       this.AcceptButton = this.OK_Button;
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.CancelButton = this.Cancel_Button;
-      this.ClientSize = new System.Drawing.Size(258, 206);
+      this.ClientSize = new System.Drawing.Size(258, 232);
+      this.Controls.Add(this.CheckUpdateButton);
       this.Controls.Add(this.TableLayoutPanel1);
       this.Controls.Add(this.GroupBox1);
       this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -196,5 +208,6 @@ namespace ASCOM.TeenAstro.Focuser
     internal System.Windows.Forms.Button OK_Button;
     internal System.Windows.Forms.Button Cancel_Button;
     internal System.Windows.Forms.Button btnOptions;
+    internal System.Windows.Forms.Button CheckUpdateButton;
   }
 }

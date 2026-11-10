@@ -102,6 +102,7 @@
       <DependentUpon>SetupDialogForm.cs</DependentUpon>
     </Compile>
     <Compile Include="SharedResources.cs" />
+    <Compile Include="UpdateCheck.cs" />
     <Compile Include="FocuserDriver\Focuser.cs" />
     <Compile Include="FocuserDriver\FocuserHardware.cs" />
     <Compile Include="FocuserDriver\FocuserSetupDialogForm.cs">

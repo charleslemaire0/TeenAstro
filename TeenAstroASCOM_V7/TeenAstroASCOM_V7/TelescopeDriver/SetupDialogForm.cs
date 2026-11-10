@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using ASCOM.TeenAstro;
 
 namespace ASCOM.TeenAstro.Telescope
 {
@@ -161,6 +162,34 @@ namespace ASCOM.TeenAstro.Telescope
     private void Cancel_Button_Click(object sender, EventArgs e)
     {
       this.Close();
+    }
+
+    private void CheckUpdate_Click(object sender, EventArgs e)
+    {
+      ShowUpdateReport(CheckUpdateButton);
+    }
+
+    internal static void ShowUpdateReport(Button button)
+    {
+      Form form = button.FindForm();
+      Cursor previous = form == null ? Cursors.Default : form.Cursor;
+      button.Enabled = false;
+      if (form != null)
+        form.Cursor = Cursors.WaitCursor;
+      try
+      {
+        string local = FileVersionInfo.GetVersionInfo(
+          System.Reflection.Assembly.GetExecutingAssembly().Location).FileVersion;
+        string text = UpdateCheck.Query(local, UpdateCheck.TryReadMountFirmware());
+        MessageBox.Show(form, text, "TeenAstro",
+          MessageBoxButtons.OK, MessageBoxIcon.Information);
+      }
+      finally
+      {
+        button.Enabled = true;
+        if (form != null)
+          form.Cursor = previous;
+      }
     }
 
     private void Button1_Click(object sender, EventArgs e)

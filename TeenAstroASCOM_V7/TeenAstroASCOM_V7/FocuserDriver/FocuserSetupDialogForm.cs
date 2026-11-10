@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using ASCOM.TeenAstro.Telescope;
 
 namespace ASCOM.TeenAstro.Focuser
 {
@@ -101,6 +102,11 @@ namespace ASCOM.TeenAstro.Focuser
     {
       if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
         e.Handled = true;
+    }
+
+    private void CheckUpdate_Click(object sender, EventArgs e)
+    {
+      SetupDialogForm.ShowUpdateReport(CheckUpdateButton);
     }
 
     private void btnOptions_Click(object sender, EventArgs e)
