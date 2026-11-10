@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-from . import config_focuser, config_mount, detect, download, eeprom_dialog, flash
+from . import config_focuser, config_mount, detect, download, eeprom_dialog, flash, update_check
 from .firmware import shc_ota_filename
 from .paths import (
     APP_NAME,
@@ -49,6 +49,7 @@ class UploaderApp(tk.Tk):
 
         self._build()
         self.protocol("WM_DELETE_WINDOW", self.destroy)
+        self._check_for_updates()
 
     def _set_icon(self) -> None:
         icon = app_icon_path()
@@ -64,6 +65,38 @@ class UploaderApp(tk.Tk):
 
     def _use_latest(self) -> bool:
         return self._channel.get() == "latest"
+
+    def _check_for_updates(self) -> None:
+        """Ask GitHub once, then tell the user when a newer uploader or firmware exists."""
+        result: dict[str, str | None] = {"text": None, "done": None}
+
+        def work() -> None:
+            text = None
+            try:
+                text = update_check.startup_notice(__version__, FIRMWARE_VERSIONS)
+            except Exception:
+                text = None
+            result["text"] = text
+            result["done"] = "1"
+
+        threading.Thread(target=work, name="update-check", daemon=True).start()
+
+        def poll() -> None:
+            if result["done"] is None:
+                self.after(300, poll)
+                return
+            if result["text"]:
+                self._show_update_notice(result["text"])
+
+        self.after(300, poll)
+
+    def _show_update_notice(self, text: str) -> None:
+        try:
+            if not self.winfo_exists():
+                return
+        except tk.TclError:
+            return
+        messagebox.showinfo(APP_NAME, text, parent=self)
 
     def _refuse_old_firmware(self, fw: str, action: str) -> bool:
         """Return True if action must stop (firmware < 1.5 or unknown)."""

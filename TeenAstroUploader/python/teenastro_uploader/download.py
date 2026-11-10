@@ -67,6 +67,26 @@ def _subprocess_kwargs() -> dict:
     return kwargs
 
 
+def http_get_text(url: str, timeout_s: int = 8) -> str | None:
+    """GET a URL with curl. None when curl is missing or the request fails."""
+    try:
+        curl = _curl_path()
+    except FileNotFoundError:
+        return None
+    proc = subprocess.run(
+        [
+            curl, "-L", "-sS", "-f", "--max-time", str(timeout_s),
+            "-H", "Accept: application/vnd.github+json",
+            "-H", "User-Agent: TeenAstroUploader",
+            url,
+        ],
+        **_subprocess_kwargs(),
+    )
+    if proc.returncode != 0:
+        return None
+    return proc.stdout or ""
+
+
 def download_file(url: str, dest: Path) -> bool:
     """Download url to dest. Returns False on HTTP 404; raises on other failures."""
     dest.parent.mkdir(parents=True, exist_ok=True)
