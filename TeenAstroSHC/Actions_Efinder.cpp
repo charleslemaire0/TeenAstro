@@ -38,6 +38,7 @@ void SmartHandController::menuEfinder()
       T_EFINDER_ALIGN "\n"
       T_EFINDER_GOTOPP "\n"
       T_EFINDER_CALIBRATE "\n"
+      T_EFINDER_AIM "\n"
       T_EFINDER_EXPOSURE "\n"
       T_EFINDER_INFO;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_EFINDER, s_sel, list);
@@ -111,6 +112,28 @@ void SmartHandController::menuEfinder()
       break;
     case 6:
     {
+      DisplayLongMessage(T_EFINDER_AIM, T_EFINDER_AIM_1, T_EFINDER_AIM_2, NULL, -1);
+      if (DisplayMessageLX200(m_client->efinderAimCal()))
+      {
+        if (waitEfinderResult(out, sizeof(out)))
+        {
+          double east = 0, north = 0;
+          if (out[0] == 'F')
+            DisplayMessage(T_EFINDER_AIM, T_FAILED, 1500);
+          else if (sscanf(out, "O%lf,%lf", &east, &north) == 2)
+          {
+            char line[40];
+            snprintf(line, sizeof(line), "E %+.2f' N %+.2f'", east, north);
+            DisplayMessage(T_EFINDER_AIM, line, 2500);
+          }
+          else
+            DisplayMessage(T_EFINDER_AIM, out, 1500);
+        }
+      }
+      break;
+    }
+    case 7:
+    {
       if (m_client->efinderParam("Exposure", out, sizeof(out)) != LX200_VALUEGET)
       {
         DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
@@ -135,7 +158,7 @@ void SmartHandController::menuEfinder()
       }
       break;
     }
-    case 7:
+    case 8:
       if (m_client->efinderStatus(out, sizeof(out)) == LX200_VALUEGET)
         DisplayMessage(T_EFINDER_INFO, out, 2000);
       else

@@ -98,7 +98,7 @@ inline CMDREPLY getReplyType(const char* command)
   case Cmd::EFINDER:
     if (strchr("?RVX", command[2]))                return CMDR_LONG;
     if (command[2] == 'P' && (command[3] == '#' || command[3] == 0)) return CMDR_LONG;
-    if (strchr("SYOoABT", command[2]))             return CMDR_SHORT_BOOL;
+    if (strchr("SYOoABTK", command[2]))            return CMDR_SHORT_BOOL;
     return CMDR_INVALID;
 
   // ---- F  Focuser -----------------------------------------------------

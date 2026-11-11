@@ -1055,6 +1055,7 @@ LX200RETURN LX200Client::efinderSolveSync() { return set(":eY#"); }
 LX200RETURN LX200Client::efinderResult(char* out, int len) { return get(":eR#", out, len); }
 LX200RETURN LX200Client::efinderOffset() { return set(":eO#"); }
 LX200RETURN LX200Client::efinderResetOffset() { return set(":eo#"); }
+LX200RETURN LX200Client::efinderAimCal() { return set(":eK#"); }
 LX200RETURN LX200Client::efinderAlign() { return set(":eA#"); }
 LX200RETURN LX200Client::efinderAbort() { return set(":eB#"); }
 LX200RETURN LX200Client::efinderGotoPPSettings(char* out, int len) { return get(":eP#", out, len); }

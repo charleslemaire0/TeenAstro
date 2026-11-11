@@ -349,6 +349,7 @@ public:
   LX200RETURN efinderResult(char* out, int len);     // :eR#
   LX200RETURN efinderOffset();                       // :eO#
   LX200RETURN efinderResetOffset();                  // :eo#
+  LX200RETURN efinderAimCal();                       // :eK#
   LX200RETURN efinderAlign();                        // :eA#
   LX200RETURN efinderAbort();                        // :eB#
   LX200RETURN efinderGotoPPSettings(char* out, int len); // :eP#

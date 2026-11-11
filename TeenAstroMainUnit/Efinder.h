@@ -12,8 +12,10 @@
  *   :eL<lat>,<lonEast>,<elev>#   -> 1#        set site (decimal degrees)
  *   :eC<raHours>,<decDeg>#       -> 1#        current mount pointing (JNow)
  *   :eS#                         -> 1# / 0#   start capture and solve
- *   :eO#                         -> 1# / 0#   start offset calibration on a bright star
- *   :eo#                         -> 1#        reset offset
+ *   :eO#                         -> 1# / 0#   start pixel-offset calibration on a bright star
+ *   :eo#                         -> 1#        reset pixel offset
+ * Host (not forwarded): :eK# plate-solves and stores the two rotations from the
+ * telescope axis to the efinder axis. Later solves are reported as the telescope axis.
  *   :eR#                         -> B# busy, N# nothing, F<code># failed,
  *                                   S<raHours>,<decDeg>,<stars>,<ms># solved (JNow),
  *                                   O<dxArcmin>,<dyArcmin>,<name># offset measured
@@ -29,9 +31,10 @@ enum EfinderJob : uint8_t {
   EF_JOB_IDLE = 0,
   EF_JOB_SOLVE,        // solve only, report result
   EF_JOB_SOLVE_SYNC,   // solve then sync the mount
-  EF_JOB_OFFSET,       // calibrate finder offset
+  EF_JOB_OFFSET,       // calibrate finder pixel offset
   EF_JOB_GOTOPP,       // GoTo++ refinement after a goto
-  EF_JOB_ALIGN         // automatic alignment
+  EF_JOB_ALIGN,        // automatic alignment
+  EF_JOB_AIM           // measure telescope-axis vs efinder-axis rotations
 };
 
 enum EfinderResult : uint8_t {
@@ -57,6 +60,7 @@ public:
 
   bool startSolve(bool sync);
   bool startOffset();
+  bool startAimCal();
   bool startAlign();
   void abort();
   bool resetOffset();
@@ -100,6 +104,11 @@ private:
   void saveSettings();
   bool applySync(double raH, double decD);
   bool gotoAlignPoint();
+  void telescopePointing(double& raH, double& decD) const;
+  /// Subtract the stored aim rotations so ra/dec is the telescope axis.
+  void finderToTelescope(double& raH, double& decD) const;
+  /// Store efinder-minus-telescope rotations from a synced star and a raw solve.
+  void measureAim(double scopeRaH, double scopeDecD, double finderRaH, double finderDecD);
 
   EfinderPort m_port = EF_PORT_NONE;
   char m_version[24] = "";
@@ -137,6 +146,14 @@ private:
   bool m_gotoPP = false;
   uint8_t m_thresholdArcmin = 2;
   bool m_nmea = false;
+
+  // Tangent-plane rotations, radians: efinder axis relative to the telescope axis.
+  float m_aimEast = 0;
+  float m_aimNorth = 0;
+  // Telescope pointing last pushed to the efinder. Aim calibration compares
+  // the plate solve to this, not to where tracking has moved since.
+  double m_pushedRaH = 0;
+  double m_pushedDecD = 0;
 };
 
 extern EfinderManager efinder;

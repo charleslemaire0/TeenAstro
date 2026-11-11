@@ -19,6 +19,15 @@ constexpr unsigned long REPLY_TIMEOUT_MS = 800;
 constexpr unsigned long SOLVE_TIMEOUT_MS = 20000;
 constexpr unsigned long SITE_PUSH_PERIOD_MS = 60000;
 constexpr uint8_t MAX_FAILURES = 3;
+// Reject a stored rotation bigger than this (NaN and erased EEPROM fail too).
+constexpr float AIM_MAX_RAD = 0.5f;
+// cos(80 deg): closer to the pole the east/west rotation is not separable.
+constexpr double AIM_MIN_COS = 0.17364817766693033;
+
+bool aimSane(float r)
+{
+  return r == r && r > -AIM_MAX_RAD && r < AIM_MAX_RAD;
+}
 
 Stream* focuserStream()
 {
@@ -55,6 +64,10 @@ void EfinderManager::loadSettings()
   uint8_t thr = XEEPROM.read(EE_efinderThresh);
   if (thr == 0 || thr > 60) thr = 2;
   m_thresholdArcmin = thr;
+  float east = XEEPROM.readFloat(EE_efinderAimEast);
+  float north = XEEPROM.readFloat(EE_efinderAimNorth);
+  m_aimEast = aimSane(east) ? east : 0.f;
+  m_aimNorth = aimSane(north) ? north : 0.f;
 }
 
 void EfinderManager::saveSettings()
@@ -62,6 +75,8 @@ void EfinderManager::saveSettings()
   uint8_t flags = m_gotoPP ? 0x01 : 0x00;
   XEEPROM.write(EE_efinderFlags, flags);
   XEEPROM.write(EE_efinderThresh, m_thresholdArcmin);
+  XEEPROM.writeFloat(EE_efinderAimEast, m_aimEast);
+  XEEPROM.writeFloat(EE_efinderAimNorth, m_aimNorth);
 }
 
 void EfinderManager::setGotoPlusPlus(bool on)
@@ -259,12 +274,10 @@ bool EfinderManager::transact(const char* cmd, char* reply, int len, unsigned lo
 
 void EfinderManager::pushPointing()
 {
-  Coord_EQ EQ = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
-  double raH = EQ.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
-  double decD = EQ.Dec() * RAD_TO_DEG;
+  telescopePointing(m_pushedRaH, m_pushedDecD);
   char cmd[48];
   char reply[16];
-  snprintf(cmd, sizeof(cmd), ":eC%.6f,%.5f#", raH, decD);
+  snprintf(cmd, sizeof(cmd), ":eC%.6f,%.5f#", m_pushedRaH, m_pushedDecD);
   transact(cmd, reply, sizeof(reply), REPLY_TIMEOUT_MS);
 }
 
@@ -311,6 +324,18 @@ bool EfinderManager::startOffset()
   return true;
 }
 
+bool EfinderManager::startAimCal()
+{
+  if (!present() || m_job != EF_JOB_IDLE) return false;
+  m_job = EF_JOB_AIM;
+  m_step = STEP_START;
+  m_stepTime = millis();
+  m_failures = 0;
+  m_lastResult = EF_RES_NONE;
+  m_failCode = 0;
+  return true;
+}
+
 bool EfinderManager::startAlign()
 {
   if (!present() || m_job != EF_JOB_IDLE) return false;
@@ -335,6 +360,9 @@ void EfinderManager::abort()
 bool EfinderManager::resetOffset()
 {
   if (!present()) return false;
+  m_aimEast = 0;
+  m_aimNorth = 0;
+  saveSettings();
   char reply[16];
   return transact(":eo#", reply, sizeof(reply), REPLY_TIMEOUT_MS);
 }
@@ -357,7 +385,8 @@ void EfinderManager::onFailed(char code)
 {
   m_failCode = code;
   m_failures++;
-  if (m_failures >= MAX_FAILURES || m_job == EF_JOB_SOLVE || m_job == EF_JOB_OFFSET)
+  if (m_failures >= MAX_FAILURES || m_job == EF_JOB_SOLVE || m_job == EF_JOB_OFFSET ||
+      m_job == EF_JOB_AIM)
   {
     finishJob(EF_RES_FAILED);
     return;
@@ -375,8 +404,57 @@ bool EfinderManager::applySync(double raH, double decD)
   return true;
 }
 
+void EfinderManager::telescopePointing(double& raH, double& decD) const
+{
+  Coord_EQ EQ = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
+  raH = EQ.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+  decD = EQ.Dec() * RAD_TO_DEG;
+}
+
+void EfinderManager::finderToTelescope(double& raH, double& decD) const
+{
+  if (m_aimEast == 0.f && m_aimNorth == 0.f)
+    return;
+  double c = cos(decD * DEG_TO_RAD);
+  if (c > -AIM_MIN_COS && c < AIM_MIN_COS)
+    c = (c < 0.0) ? -AIM_MIN_COS : AIM_MIN_COS;
+  raH -= ((double)m_aimEast / c) * RAD_TO_DEG / 15.0;
+  if (raH < 0.0) raH += 24.0;
+  else if (raH >= 24.0) raH -= 24.0;
+  decD -= (double)m_aimNorth * RAD_TO_DEG;
+}
+
+void EfinderManager::measureAim(double scopeRaH, double scopeDecD,
+                                 double finderRaH, double finderDecD)
+{
+  double dRaH = finderRaH - scopeRaH;
+  if (dRaH > 12.0) dRaH -= 24.0;
+  else if (dRaH < -12.0) dRaH += 24.0;
+  double c = cos(scopeDecD * DEG_TO_RAD);
+  m_aimEast = (float)(dRaH * 15.0 * DEG_TO_RAD * c);
+  m_aimNorth = (float)((finderDecD - scopeDecD) * DEG_TO_RAD);
+  saveSettings();
+}
+
 void EfinderManager::onSolved(double raH, double decD)
 {
+  if (m_job == EF_JOB_AIM)
+  {
+    if (fabs(cos(m_pushedDecD * DEG_TO_RAD)) < AIM_MIN_COS)
+    {
+      onFailed('P');
+      return;
+    }
+    measureAim(m_pushedRaH, m_pushedDecD, raH, decD);
+    double eastArcmin = (double)m_aimEast * RAD_TO_DEG * 60.0;
+    double northArcmin = (double)m_aimNorth * RAD_TO_DEG * 60.0;
+    snprintf(m_offsetInfo, sizeof(m_offsetInfo), "%.2f,%.2f,aim", eastArcmin, northArcmin);
+    finishJob(EF_RES_OFFSET);
+    return;
+  }
+
+  // Plate solve is the efinder axis. Sync, align and GoTo++ follow the telescope.
+  finderToTelescope(raH, decD);
   m_solvedRaH = raH;
   m_solvedDecD = decD;
 

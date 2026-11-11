@@ -99,9 +99,10 @@ TeenAstroEfinder on the Focuser or GNSS port. Hosts talk only to the main unit; 
 | `:eC…` | (Pi link only) Main unit pushes current pointing as `:eC<raHours>,<decDeg>#` before each solve so a SimCamera can render that field. Not a host command. | `1#` | TeenAstro extension |
 | `:eS#` | Start capture and plate-solve (no sync). | `1` / `0` | TeenAstro extension |
 | `:eY#` | Solve and sync (or add an alignment reference when `:AA#` / `:eA#` is active). | `1` / `0` | TeenAstro extension |
-| `:eR#` | Poll result: busy, none, fail, solved. | `B#` / `N#` / `Fcode#` / `Sra,dec,stars,ms#` | TeenAstro extension |
-| `:eO#` | Start finder-to-scope offset calibration (bright star). | `1` / `0` | TeenAstro extension |
-| `:eo#` | Reset finder offset. | `1` / `0` | TeenAstro extension |
+| `:eR#` | Poll result: busy, none, fail, solved, or offset. After `:eK#` the offset is `O<eastArcmin>,<northArcmin>,aim#`. | `B#` / `N#` / `Fcode#` / `Sra,dec,stars,ms#` / `O…#` | TeenAstro extension |
+| `:eO#` | Start camera-center offset calibration (brightest star vs chip center). | `1` / `0` | TeenAstro extension |
+| `:eo#` | Reset the camera-center offset and the stored axis rotations. | `1` / `0` | TeenAstro extension |
+| `:eK#` | Measure the two rotations between the telescope axis and the efinder. Sync the telescope on a bright star first, away from the pole. Later solves are reported as the telescope axis. | `1` / `0` | TeenAstro extension |
 | `:eA#` | Start eFinder alignment (enables alignment-by-sync and solves). | `1` / `0` | TeenAstro extension |
 | `:eB#` | Abort the current eFinder job. | `1` | TeenAstro extension |
 | `:eP#` | GoTo++ settings. | `on,thresholdArcmin#` | TeenAstro extension |

@@ -58,8 +58,15 @@ void Command_e()
     break;
 
   case 'o':
-    // :eo#  reset offset
+    // :eo#  reset pixel offset and the stored axis rotations
     replyValueSetShort(efinder.resetOffset());
+    break;
+
+  case 'K':
+    // :eK#  plate-solve and store the two rotations between the telescope
+    // axis and the efinder. The telescope must already be synced on a star
+    // well away from the pole. Result via :eR# is O<eastArcmin>,<northArcmin>,aim#
+    replyValueSetShort(efinder.startAimCal());
     break;
 
   case 'A':

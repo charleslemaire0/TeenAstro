@@ -916,6 +916,8 @@ static int runAutomatedTests(LX200Client& lx200)
                    "efinderStatus (:e?#)", "no response");
         printf("         status: %s\n", st);
         TEST_CHECK(st[0] == '1', "eFinder present", st);
+        TEST_CHECK(lx200.efinderResetOffset() == LX200_VALUESET,
+                   "reset offsets (:eo#)", "rejected");
 
         ta_MountStatus.updateAllState(true);
         TEST_CHECK(ta_MountStatus.hasEfinder(), "GXAS hasEfinder", "bit clear");
@@ -1006,6 +1008,39 @@ static int runAutomatedTests(LX200Client& lx200)
         const float ra2 = emuWrap24(lst + 2.5f), dec2 = 12.0f;
         TEST_CHECK(emuGoto(lx200, ra1, dec1), "goto first efinder field", "slew failed");
         char res[80];
+        TEST_CHECK(lx200.efinderAimCal() == LX200_VALUESET, "aim cal (:eK#)", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
+                   "aim cal result", "timed out");
+        printf("         aim: %s\n", res);
+        double east = 0, north = 0;
+        TEST_CHECK(res[0] == 'O' && strstr(res, "aim") != NULL &&
+                   sscanf(res, "O%lf,%lf", &east, &north) == 2,
+                   "aim reply is two rotations", res);
+        const double expectEast = 0.0002 * 15.0 * 60.0 * cos((double)dec1 * DEG_TO_RAD);
+        const double expectNorth = 0.001 * 60.0;
+        printf("         aim E %.3f' N %.3f' (stub E %.3f' N %.3f')\n",
+               east, north, expectEast, expectNorth);
+        TEST_CHECK(fabs(east - expectEast) < 0.03 && fabs(north - expectNorth) < 0.03,
+                   "aim matches stub vs telescope", res);
+
+        ta_MountStatus.updateAllState(true);
+        double axisRa = ta_MountStatus.getRaHoursCached();
+        double axisDec = ta_MountStatus.getDecDegCached();
+        TEST_CHECK(lx200.efinderSolve() == LX200_VALUESET, "solve after aim cal", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
+                   "corrected solve result", "timed out");
+        double cra = 0, cdec = 0;
+        int cstars = -1, cms = -1;
+        TEST_CHECK(emuParseSolved(res, &cra, &cdec, &cstars, &cms),
+                   "corrected solve reply", res);
+        double dra = cra - axisRa;
+        if (dra > 12.0) dra -= 24.0;
+        else if (dra < -12.0) dra += 24.0;
+        printf("         corrected %.6fh %+.5fd vs axis %.6fh %+.5fd\n",
+               cra, cdec, axisRa, axisDec);
+        TEST_CHECK(fabs(dra) < 0.001 && fabs(cdec - axisDec) < 0.0005,
+                   "corrected solve is the telescope axis", res);
+
         TEST_CHECK(lx200.efinderSolveSync() == LX200_VALUESET,
                    "first :eY#", "rejected");
         TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
