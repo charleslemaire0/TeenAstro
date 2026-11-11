@@ -25,8 +25,20 @@ Update later with `sudo ./update.sh`.
 
 Config: `~/TeenAstroEfinder/efinder.config` (or `EFINDER_CONFIG`).
 
-- `Camera:SIM` or `Test_mode:1` — synthetic star-field camera (no hardware). Stars are projected from `data/bright_stars.csv` around the mount pointing pushed by the main unit (`:eC…`).
-- Upstream eFinder Lite Test_mode used static PNG files; TeenAstroEfinder replaces that with a live synthetic field tied to RA/Dec.
+- `Camera:SIM` or `Test_mode:1` — synthetic star-field camera (no hardware).
+- Configure the guider like the real kit: ASI model, focal length, aperture. Default FOV is **1°** across the long sensor axis; limiting magnitude is estimated from aperture / exposure / QE (AAVSO CCD form).
+- Catalog: Hipparcos mag≤9 in `data/bright_stars.csv` (rebuild with `tools/generate_sim_catalog.py`). Fainter stars to the limiting magnitude are filled with a mean-sky density model so a 1° field still has a realistic count.
+
+Example sim keys in `efinder.config`:
+
+```
+Camera:SIM
+Sim_ASI:ASI120MM Mini
+Sim_aperture_mm:50
+Sim_fov_deg:1.0
+# Sim_focal_mm:275
+Exposure:1.0
+```
 
 Wiring details: [docs/TeenAstroEfinder.md](../docs/TeenAstroEfinder.md).
 
@@ -38,7 +50,8 @@ Wiring details: [docs/TeenAstroEfinder.md](../docs/TeenAstroEfinder.md).
 
 ```bash
 py -3 efinder_sim.py --port COM5 --baud 9600
-py -3 efinder_sim.py --port COM5 --baud 56000 --save-images
+py -3 efinder_sim.py --port COM5 --asi "ASI220MM Mini" --aperture 50 --fov 1.0
+py -3 efinder_sim.py --port COM5 --asi ASI120MM --focal 275 --aperture 40 --save-images
 ```
 
 ## Link protocol (main unit → Pi)

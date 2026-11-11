@@ -2,12 +2,14 @@
 """
 Standalone TeenAstroEfinder UART simulator with synthetic star fields.
 
-Uses SimCamera + bright_stars.csv. The main unit pushes pointing with :eC…;
-each :eS# renders a field around that RA/Dec and returns a solve.
+Optics default to a ~1° FOV guide setup: choose an ASI camera, guider focal
+length and aperture; limiting magnitude is estimated from those (AAVSO CCD
+form). Catalog stars to mag 9 plus a density fill to the limiting magnitude.
 
 Examples:
   py -3 efinder_sim.py --port COM5 --baud 9600
-  py -3 efinder_sim.py --port COM5 --baud 56000 --save-images
+  py -3 efinder_sim.py --port COM5 --asi ASI220MM Mini --focal 250 --aperture 50
+  py -3 efinder_sim.py --port COM5 --fov 1.0 --save-images
 """
 from __future__ import annotations
 
@@ -20,6 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+from solver.optics import ASI_CAMERAS, describe_optics, optics_from_param  # noqa: E402
 from solver.plate_solve import PlateSolver  # noqa: E402
 from solver.sim_camera import SimCamera  # noqa: E402
 from solver.teenastro_link import SolveOutcome, TeenAstroLink  # noqa: E402
@@ -32,6 +35,14 @@ def main() -> int:
     ap.add_argument("--port", required=True, help="Serial port (e.g. COM5 or /dev/ttyUSB0)")
     ap.add_argument("--baud", type=int, default=9600, choices=(9600, 56000),
                     help="9600 = GNSS port, 56000 = Focuser port")
+    ap.add_argument("--asi", default="ASI120MM Mini",
+                    help=f"ASI camera model ({', '.join(ASI_CAMERAS)})")
+    ap.add_argument("--focal", type=float, default=None,
+                    help="Guider focal length in mm (default: set for --fov on the long axis)")
+    ap.add_argument("--aperture", type=float, default=50.0, help="Guider aperture in mm")
+    ap.add_argument("--fov", type=float, default=1.0,
+                    help="Target FOV across the long sensor axis in degrees (used when --focal omitted)")
+    ap.add_argument("--exposure", type=float, default=1.0, help="Exposure seconds (affects limiting mag)")
     ap.add_argument("--ra", type=float, default=None, help="Initial pointing RA hours (until :eC arrives)")
     ap.add_argument("--dec", type=float, default=None, help="Initial pointing Dec degrees")
     ap.add_argument("--save-images", action="store_true", help="Write capture.png under ./sim_images/")
@@ -46,13 +57,21 @@ def main() -> int:
     param = {
         "Camera": "SIM",
         "Test_mode": "1",
-        "Lens_focal_length": "25",
-        "Exposure": "1.0",
+        "Sim_ASI": args.asi,
+        "Sim_aperture_mm": str(args.aperture),
+        "Sim_fov_deg": str(args.fov),
+        "Exposure": str(args.exposure),
         "Gain": "50",
         "Ramdisk": "false",
         "d_x": "0",
         "d_y": "0",
     }
+    if args.focal is not None:
+        param["Sim_focal_mm"] = str(args.focal)
+
+    optics = optics_from_param(param)
+    LOG.info("%s", describe_optics(optics))
+
     data_dir = ROOT / "data"
     camera = SimCamera.from_param(param, data_dir)
     if args.ra is not None and args.dec is not None:
@@ -93,11 +112,12 @@ def main() -> int:
                 )
             link.set_solved(outcome)
             LOG.info(
-                "solve -> ok=%s RA=%.4fh Dec=%.3f stars=%d",
+                "solve -> ok=%s RA=%.4fh Dec=%.3f stars=%d LM=%.1f",
                 outcome.ok,
                 outcome.ra_hours,
                 outcome.dec_deg,
                 outcome.stars,
+                camera.mag_limit,
             )
         except Exception as exc:  # noqa: BLE001
             LOG.exception("solve failed: %s", exc)
@@ -133,10 +153,11 @@ def main() -> int:
     link._baud_locked = True
     link_holder["link"] = link
     LOG.info(
-        "eFinder star-field simulator on %s @ %s baud (%d catalog stars)",
+        "eFinder star-field simulator on %s @ %s baud (%d catalog + faint fill to mag %.1f)",
         args.port,
         args.baud,
         len(camera.stars),
+        camera.mag_limit,
     )
     try:
         link.run_forever()

@@ -135,9 +135,9 @@ class EfinderStub : public Stream {
         if (pointingRaH_ < 0) pointingRaH_ += 24.0;
         pointingDec_ = dec;
         pointingValid_ = true;
-        // Star density proxy: more stars near galactic plane / mid declination
-        double dens = 35.0 + 40.0 * cos(pointingDec_ * 0.017453292519943295);
-        if (dens < 12.0) dens = 12.0;
+        // ~1° FOV guide field to mag ~11: a few dozen stars (density proxy)
+        double dens = 18.0 + 12.0 * cos(pointingDec_ * 0.017453292519943295);
+        if (dens < 10.0) dens = 10.0;
         stars_ = (int)dens;
         txPut("1#");
       } else {

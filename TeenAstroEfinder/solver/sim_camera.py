@@ -1,20 +1,25 @@
 """
 Synthetic star-field camera for TeenAstroEfinder.
 
-Projects a bright-star catalog around the mount pointing (RA/Dec from the
-main unit via :eC…) into a greyscale PNG that plate_solve can feed to tetra3,
-or that Test/SIM mode can use to report a star count without a real sensor.
+Geometry and limiting magnitude come from the chosen ASI guide camera,
+guider focal length and aperture (see optics.py). Real catalog stars
+(data/bright_stars.csv, Hipparcos mag≤9) are projected into the FOV;
+fainter stars up to the computed limiting magnitude are filled with a
+deterministic density model so a ~1° field still has a realistic count.
 """
 from __future__ import annotations
 
 import csv
+import hashlib
 import logging
 import math
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 from .camera_interface import CameraInterface
+from .optics import GuideOptics, describe_optics, optics_from_param
 
 LOG = logging.getLogger("sim_camera")
 
@@ -58,7 +63,6 @@ def _project(
     width: int,
     height: int,
 ) -> Optional[Tuple[float, float]]:
-    """Gnomonic projection; returns pixel (x, y) or None if behind the tangent plane."""
     a0 = center_ra_h * 15.0 * DEG
     d0 = center_dec_d * DEG
     a = ra_h * 15.0 * DEG
@@ -66,7 +70,6 @@ def _project(
     cos_c = math.sin(d0) * math.sin(d) + math.cos(d0) * math.cos(d) * math.cos(a - a0)
     if cos_c <= 0.05:
         return None
-    # Standard coordinates (radians) → degrees
     xi = math.cos(d) * math.sin(a - a0) / cos_c * RAD
     eta = (math.cos(d0) * math.sin(d) - math.sin(d0) * math.cos(d) * math.cos(a - a0)) / cos_c * RAD
     x = width / 2.0 + xi * 3600.0 / scale_arcsec
@@ -74,7 +77,17 @@ def _project(
     return x, y
 
 
-def load_catalog(path: Path, mag_limit: float = 7.5) -> List[Star]:
+def cumulative_stars_per_sqdeg(mag: float) -> float:
+    """
+    Mean cumulative star density N(<m) / deg² (all-sky average).
+
+    Anchored to the Hipparcos mag≤9 catalog density (~2.0 / deg²) and
+    extrapolated with ~0.45 dex per magnitude (Allen / common AAVSO tables).
+    """
+    return 2.0 * (10.0 ** (0.45 * (mag - 9.0)))
+
+
+def load_catalog(path: Path, mag_limit: float = 9.0) -> List[Star]:
     stars: List[Star] = []
     if not path.exists():
         LOG.warning("star catalog missing: %s", path)
@@ -101,39 +114,37 @@ def load_catalog(path: Path, mag_limit: float = 7.5) -> List[Star]:
 
 
 class SimCamera(CameraInterface):
+    CATALOG_DEPTH = 9.0  # real Hipparcos file depth
+
     def __init__(
         self,
         catalog_path: Path,
-        width: int = 960,
-        height: int = 760,
-        scale_arcsec: float = 50.8,
-        mag_limit: float = 7.5,
+        optics: GuideOptics,
         noise_arcsec: float = 5.0,
     ) -> None:
-        self.geom = CamGeom(width, height, scale_arcsec, width * scale_arcsec / 3600.0)
-        self.stars = load_catalog(catalog_path, mag_limit)
-        self.mag_limit = mag_limit
+        self.optics = optics
+        self.geom = CamGeom(
+            optics.width_px,
+            optics.height_px,
+            optics.scale_arcsec,
+            optics.fov_w_deg,
+        )
+        self.mag_limit = optics.limiting_mag
+        self.stars = load_catalog(catalog_path, min(self.CATALOG_DEPTH, self.mag_limit))
         self.noise_arcsec = noise_arcsec
         self.ra_h = 5.5
         self.dec_d = 22.0
         self.last_count = 0
         self.last_brightest: Optional[Star] = None
         self._pointing_set = False
+        LOG.info("SimCamera %s", describe_optics(optics))
 
     @classmethod
     def from_param(cls, param: dict, data_dir: Path) -> "SimCamera":
-        # Match plate_solve.test_mode / 25 mm RPI FOV defaults
-        lens = param.get("Lens_focal_length", "25")
-        if lens == "50":
-            w, h, scale = 960, 760, 25.4
-        else:
-            w, h, scale = 960, 760, 50.8
+        optics = optics_from_param(param)
         return cls(
             catalog_path=data_dir / "bright_stars.csv",
-            width=w,
-            height=h,
-            scale_arcsec=scale,
-            mag_limit=float(param.get("Sim_mag_limit", "7.5")),
+            optics=optics,
             noise_arcsec=float(param.get("Sim_noise_arcsec", "5")),
         )
 
@@ -148,17 +159,58 @@ class SimCamera(CameraInterface):
     def get_cam_type(self) -> str:
         return "SIM"
 
+    def _fov_area_sqdeg(self) -> float:
+        return self.geom.width * self.geom.scale_arcsec / 3600.0 * (
+            self.geom.height * self.geom.scale_arcsec / 3600.0
+        )
+
+    def _synthetic_faint_stars(self, ra_h: float, dec_d: float) -> List[Star]:
+        """Deterministic faint-star fill from catalog depth → limiting magnitude."""
+        if self.mag_limit <= self.CATALOG_DEPTH + 0.05:
+            return []
+        area = self._fov_area_sqdeg()
+        n_deep = cumulative_stars_per_sqdeg(self.mag_limit) * area
+        n_cat = cumulative_stars_per_sqdeg(self.CATALOG_DEPTH) * area
+        n_extra = max(0, int(round(n_deep - n_cat)))
+        if n_extra <= 0:
+            return []
+
+        seed_src = f"{ra_h:.4f}:{dec_d:.4f}:{self.mag_limit:.2f}:{self.geom.width}x{self.geom.height}"
+        seed = int(hashlib.sha1(seed_src.encode("ascii")).hexdigest()[:8], 16)
+        rng = random.Random(seed)
+
+        half_w = self.geom.width * self.geom.scale_arcsec / 3600.0 / 2.0
+        half_h = self.geom.height * self.geom.scale_arcsec / 3600.0 / 2.0
+        out: List[Star] = []
+        for i in range(n_extra):
+            # Uniform in FOV tangent plane (degrees)
+            dx = (rng.random() * 2.0 - 1.0) * half_w
+            dy = (rng.random() * 2.0 - 1.0) * half_h
+            # Inverse gnomonic (small-angle)
+            d0 = dec_d * DEG
+            ra = (ra_h + (dx / math.cos(max(0.05, abs(math.cos(d0)))) / 15.0)) % 24.0
+            dec = max(-90.0, min(90.0, dec_d + dy))
+            # Magnitude drawn from differential density ∝ 10^(0.45 m)
+            u = rng.random()
+            # CDF between m0 and m1 for N∝10^(0.45m)
+            m0, m1 = self.CATALOG_DEPTH, self.mag_limit
+            a = 0.45 * math.log(10.0)
+            mag = m0 + math.log1p(u * (math.exp(a * (m1 - m0)) - 1.0)) / a
+            out.append(Star(hip=f"SIM{i}", ra_h=ra, dec_d=dec, mag=mag, name=""))
+        return out
+
     def stars_in_fov(self, ra_h: Optional[float] = None, dec_d: Optional[float] = None) -> List[Tuple[Star, float, float]]:
         ra = self.ra_h if ra_h is None else ra_h
         dec = self.dec_d if dec_d is None else dec_d
-        # Search radius = FOV diagonal (poles need a wider sky cone than mid-latitude)
         half_w = self.geom.width * self.geom.scale_arcsec / 3600.0 / 2.0
         half_h = self.geom.height * self.geom.scale_arcsec / 3600.0 / 2.0
         half = (half_w * half_w + half_h * half_h) ** 0.5 * 1.35
+
+        candidates = [s for s in self.stars if _angular_sep_deg(ra, dec, s.ra_h, s.dec_d) <= half]
+        candidates.extend(self._synthetic_faint_stars(ra, dec))
+
         out: List[Tuple[Star, float, float]] = []
-        for s in self.stars:
-            if _angular_sep_deg(ra, dec, s.ra_h, s.dec_d) > half:
-                continue
+        for s in candidates:
             pix = _project(s.ra_h, s.dec_d, ra, dec, self.geom.scale_arcsec, self.geom.width, self.geom.height)
             if pix is None:
                 continue
@@ -175,10 +227,11 @@ class SimCamera(CameraInterface):
 
         img = Image.new("L", (self.geom.width, self.geom.height), color=8)
         draw = ImageDraw.Draw(img)
+        # Scale brightness to limiting magnitude so faint guide stars remain visible
         for s, x, y in field:
-            # Brighter = larger / whiter
-            brightness = max(20, min(255, int(255 * 10 ** (-0.4 * (s.mag - 1.0)))))
-            r = 1 if s.mag > 5.5 else 2 if s.mag > 3.5 else 3 if s.mag > 1.5 else 4
+            dm = self.mag_limit - s.mag
+            brightness = max(18, min(255, int(30 + 40 * dm)))
+            r = 1 if s.mag > self.mag_limit - 2 else 2 if s.mag > self.mag_limit - 4 else 3
             draw.ellipse((x - r, y - r, x + r, y + r), fill=brightness)
         path.parent.mkdir(parents=True, exist_ok=True)
         img.save(path)
@@ -191,13 +244,11 @@ class SimCamera(CameraInterface):
         polaris: bool,
         dest_path: str,
     ) -> None:
-        # Legacy Test_mode flags still select fixed regions when pointing was never set
         if polaris and not self._pointing_set:
-            self.set_pointing(2.5303, 89.2641)  # Polaris approx J2000
+            self.set_pointing(2.5303, 89.2641)
         elif m13 and not self._pointing_set:
-            self.set_pointing(16.694, -1.867)  # near M14 / Ophiuchus (legacy test field)
+            self.set_pointing(16.694, -1.867)
 
-        # Tiny pointing jitter so successive captures are not bit-identical
         jitter_deg = (self.noise_arcsec / 3600.0) * 0.2
         ra = (self.ra_h + jitter_deg / 15.0) % 24.0
         dec = self.dec_d
@@ -205,22 +256,19 @@ class SimCamera(CameraInterface):
         field = self.stars_in_fov(ra, dec)
         self.last_count = len(field)
         self.last_brightest = min((s for s, _, _ in field), key=lambda s: s.mag, default=None)
-        # plate_solve.dest_path() already ends with /
         out = Path(dest_path + "capture.png")
         self._render_png(out, field)
         LOG.info(
-            "sim capture RA=%.4fh Dec=%.3f° → %d stars (exp=%s gain=%s) → %s",
+            "sim capture RA=%.4fh Dec=%.3f° FOV=%.2f° LM=%.1f → %d stars → %s",
             self.ra_h,
             self.dec_d,
+            self.geom.fov_deg,
+            self.mag_limit,
             self.last_count,
-            exposure_time,
-            gain,
             out,
         )
 
     def solved_from_pointing(self) -> Tuple[float, float, int]:
-        """Return (ra_h, dec_d, stars) for SIM mode without tetra3."""
-        # Apply small noise so GoTo++ still has something to refine against
         noise_h = (self.noise_arcsec / 3600.0) / 15.0
         noise_d = self.noise_arcsec / 3600.0
         return (self.ra_h + noise_h) % 24.0, self.dec_d + noise_d, self.last_count
