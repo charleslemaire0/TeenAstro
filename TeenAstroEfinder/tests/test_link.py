@@ -54,6 +54,15 @@ def test_site_and_time():
     assert abs(link.state.site.lat - 48.1) < 1e-6
 
 
+def test_pointing():
+    link = FakeLink()
+    link.feed(b":eC12.345678,-5.43210#")
+    assert link.replies[-1] == "1#"
+    assert abs(link.state.site.ra_hours - 12.345678) < 1e-6
+    assert abs(link.state.site.dec_deg - (-5.43210)) < 1e-6
+    assert link.state.site.pointing_valid is True
+
+
 def test_solve_poll():
     link = FakeLink()
     link.feed(b":eS#")

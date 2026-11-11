@@ -25,3 +25,12 @@ Operate from the SHC: **Telescope settings → eFinder** (Solve & Sync, Align, G
 ## Pi software
 
 See [TeenAstroEfinder/README.md](../TeenAstroEfinder/README.md) and run `install.sh` on the Pi.
+
+## Simulation
+
+There is no real-camera path in the PC emulator. Instead:
+
+- The main unit pushes current RA/Dec to the eFinder link as `:eC<raHours>,<decDeg>#` before each solve.
+- `Camera:SIM` / `Test_mode:1` uses `solver/sim_camera.py` to project `data/bright_stars.csv` into a greyscale PNG around that pointing.
+- `efinder_sim.py` speaks the same UART protocol for bench-testing a physical main unit.
+- The in-process `EfinderStub` in the emulator uses the same `:eC` pointing (no PNG; returns pointing + a density-based star count).

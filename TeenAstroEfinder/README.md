@@ -23,9 +23,23 @@ sudo systemctl start teenastro-efinder
 
 Update later with `sudo ./update.sh`.
 
-Config: `~/TeenAstroEfinder/efinder.config` (or `EFINDER_CONFIG`). Set `Test_mode:1` to exercise the link without a camera.
+Config: `~/TeenAstroEfinder/efinder.config` (or `EFINDER_CONFIG`).
+
+- `Camera:SIM` or `Test_mode:1` — synthetic star-field camera (no hardware). Stars are projected from `data/bright_stars.csv` around the mount pointing pushed by the main unit (`:eC…`).
+- Upstream eFinder Lite Test_mode used static PNG files; TeenAstroEfinder replaces that with a live synthetic field tied to RA/Dec.
 
 Wiring details: [docs/TeenAstroEfinder.md](../docs/TeenAstroEfinder.md).
+
+## Simulators
+
+**In the PC emulator** an eFinder stub on Serial3 (GNSS) accepts `:eC` pointing and returns solves around that RA/Dec with a synthetic star count.
+
+**Standalone UART sim** (bench-test a real board; renders catalog star fields):
+
+```bash
+py -3 efinder_sim.py --port COM5 --baud 9600
+py -3 efinder_sim.py --port COM5 --baud 56000 --save-images
+```
 
 ## Link protocol (main unit → Pi)
 
@@ -34,6 +48,7 @@ Wiring details: [docs/TeenAstroEfinder.md](../docs/TeenAstroEfinder.md).
 | `:e?#` | `TeenAstroEfinder,<version>#` |
 | `:eTyyyymmddhhmmss#` | `1#` set UTC |
 | `:eL<lat>,<lonEast>,<elev>#` | `1#` set site |
+| `:eC<raHours>,<decDeg>#` | `1#` current mount pointing (JNow) |
 | `:eS#` | `1#`/`0#` start solve |
 | `:eO#` | `1#`/`0#` start offset cal |
 | `:eo#` | `1#` reset offset |

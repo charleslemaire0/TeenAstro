@@ -97,6 +97,12 @@ class PlateSolver:
         p.mkdir(parents=True, exist_ok=True)
         return str(p) + "/"
 
+    def set_pointing(self, ra_hours: float, dec_deg: float) -> None:
+        """Feed mount pointing into a SimCamera before capture."""
+        setter = getattr(self.camera, "set_pointing", None)
+        if callable(setter):
+            setter(ra_hours, dec_deg)
+
     def capture(self, polaris: bool = False) -> None:
         exp_s = float(self.param.get("Exposure", "1.0"))
         gain = float(self.param.get("Gain", "50"))
@@ -111,6 +117,16 @@ class PlateSolver:
 
     def solve(self, lat: float, lon_east: float, utc=None) -> SolveOutcome:
         t0 = time.time()
+        # SIM camera without tetra3: report pointing + stars counted in the synthetic field
+        if getattr(self.camera, "get_cam_type", lambda: "")() == "SIM" and (
+            self.t3 is None or self.cedar is None
+        ):
+            ra_h, dec_d, stars = self.camera.solved_from_pointing()
+            if stars < 5:
+                return SolveOutcome(ok=False, fail_code="S", stars=stars, ms=int((time.time() - t0) * 1000))
+            return SolveOutcome(
+                ok=True, ra_hours=ra_h, dec_deg=dec_d, stars=stars, ms=int((time.time() - t0) * 1000)
+            )
         if self.t3 is None or self.cedar is None:
             if self.test_mode:
                 return SolveOutcome(

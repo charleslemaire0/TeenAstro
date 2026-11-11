@@ -10,6 +10,7 @@
  *   :e?#                         -> TeenAstroEfinder,<version>#
  *   :eTyyyymmddhhmmss#           -> 1#        set UTC
  *   :eL<lat>,<lonEast>,<elev>#   -> 1#        set site (decimal degrees)
+ *   :eC<raHours>,<decDeg>#       -> 1#        current mount pointing (JNow)
  *   :eS#                         -> 1# / 0#   start capture and solve
  *   :eO#                         -> 1# / 0#   start offset calibration on a bright star
  *   :eo#                         -> 1#        reset offset
@@ -89,6 +90,7 @@ private:
   bool sendRequest(const char* cmd);
   bool transact(const char* cmd, char* reply, int len, unsigned long timeoutMs);
   void pushSiteAndTime();
+  void pushPointing();
   void runJob();
   void onSolved(double raH, double decD);
   void onFailed(char code);

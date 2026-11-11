@@ -96,6 +96,7 @@ TeenAstroEfinder on the Focuser or GNSS port. Hosts talk only to the main unit; 
 |--------|-------------|---------|----------|
 | `:e?#` | Status: present, port (`F`/`G`), version, job, last result, GoTo++, threshold. | `0#` or `1,F,ver,job,res,pp,thr#` | TeenAstro extension |
 | `:eV#` | Firmware/app version of the eFinder. | `text#` / `0#` | TeenAstro extension |
+| `:eC…` | (Pi link only) Main unit pushes current pointing as `:eC<raHours>,<decDeg>#` before each solve so a SimCamera can render that field. Not a host command. | `1#` | TeenAstro extension |
 | `:eS#` | Start capture and plate-solve (no sync). | `1` / `0` | TeenAstro extension |
 | `:eY#` | Solve and sync (or add an alignment reference when `:AA#` / `:eA#` is active). | `1` / `0` | TeenAstro extension |
 | `:eR#` | Poll result: busy, none, fail, solved. | `B#` / `N#` / `Fcode#` / `Sra,dec,stars,ms#` | TeenAstro extension |

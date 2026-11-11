@@ -264,6 +264,17 @@ bool EfinderManager::transact(const char* cmd, char* reply, int len, unsigned lo
   return false;
 }
 
+void EfinderManager::pushPointing()
+{
+  Coord_EQ EQ = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
+  double raH = EQ.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+  double decD = EQ.Dec() * RAD_TO_DEG;
+  char cmd[48];
+  char reply[16];
+  snprintf(cmd, sizeof(cmd), ":eC%.6f,%.5f#", raH, decD);
+  transact(cmd, reply, sizeof(reply), REPLY_TIMEOUT_MS);
+}
+
 void EfinderManager::pushSiteAndTime()
 {
   char cmd[48];
@@ -277,6 +288,8 @@ void EfinderManager::pushSiteAndTime()
   int elev = *localSite.elevation();
   snprintf(cmd, sizeof(cmd), ":eL%.5f,%.5f,%d#", lat, lon, elev);
   transact(cmd, reply, sizeof(reply), REPLY_TIMEOUT_MS);
+
+  pushPointing();
 
   if (m_nmea)
     transact(":eN1#", reply, sizeof(reply), REPLY_TIMEOUT_MS);
@@ -508,6 +521,8 @@ void EfinderManager::runJob()
 
   if (m_step == STEP_START)
   {
+    // Refresh pointing so a SimCamera / plate-solve hint matches the mount
+    pushPointing();
     const char* cmd = (m_job == EF_JOB_OFFSET) ? ":eO#" : ":eS#";
     sendRequest(cmd);
     return;

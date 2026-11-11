@@ -26,6 +26,10 @@ class SiteTime:
     lon_east: float = 0.0
     elev: float = 0.0
     utc: Optional[datetime] = None
+    # Current mount pointing (JNow), pushed by the main unit via :eC…
+    ra_hours: float = 0.0
+    dec_deg: float = 0.0
+    pointing_valid: bool = False
 
 
 @dataclass
@@ -157,6 +161,17 @@ class TeenAstroLink:
                 self.state.site.lat = float(parts[0])
                 self.state.site.lon_east = float(parts[1])
                 self.state.site.elev = float(parts[2]) if len(parts) > 2 else 0.0
+                self.write_reply("1#")
+            except (ValueError, IndexError):
+                self.write_reply("0#")
+            return
+        if cmd.startswith("C"):
+            # :eC<raHours>,<decDeg># — current mount pointing (JNow)
+            try:
+                parts = cmd[1:].split(",")
+                self.state.site.ra_hours = float(parts[0]) % 24.0
+                self.state.site.dec_deg = float(parts[1])
+                self.state.site.pointing_valid = True
                 self.write_reply("1#")
             except (ValueError, IndexError):
                 self.write_reply("0#")

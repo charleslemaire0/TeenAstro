@@ -42,8 +42,13 @@ def save_config(path: Path, param: dict) -> None:
     path.write_text("".join(lines), encoding="utf-8")
 
 
-def make_camera(param: dict):
+def make_camera(param: dict, data_dir: Path):
     kind = param.get("Camera", "RPI").upper()
+    test_mode = param.get("Test_mode", "0") in ("1", "True", "true")
+    if kind == "SIM" or test_mode:
+        from solver.sim_camera import SimCamera
+
+        return SimCamera.from_param(param, data_dir)
     if kind == "ASI":
         from solver.asi_camera import ASICamera
 
@@ -59,34 +64,52 @@ def main() -> int:
     param = load_config(cfg_path)
     port = param.get("Port", "/dev/serial0")
     test_mode = param.get("Test_mode", "0") in ("1", "True", "true")
+    data_dir = ROOT / "data"
 
     coordinates = Coordinates()
     camera = None
     solver = None
     try:
-        camera = make_camera(param)
+        camera = make_camera(param, data_dir)
         if camera.get_cam_type() == "not found" and not test_mode:
-            LOG.warning("camera not found — solves will fail until Test_mode=1 or a camera is attached")
-        solver = PlateSolver(param, coordinates, camera, ROOT / "data")
+            LOG.warning("camera not found — solves will fail until Camera=SIM / Test_mode=1 or a camera is attached")
+        solver = PlateSolver(param, coordinates, camera, data_dir)
     except Exception as exc:  # noqa: BLE001
         LOG.warning("solver init deferred: %s", exc)
 
     link_holder: dict = {}
 
+    def apply_pointing() -> None:
+        site = link_holder["link"].state.site
+        if solver and site.pointing_valid:
+            solver.set_pointing(site.ra_hours, site.dec_deg)
+
     def do_solve() -> None:
         link = link_holder["link"]
         site = link.state.site
-        LOG.info("solve requested (test_mode=%s)", test_mode)
+        LOG.info(
+            "solve requested (test_mode=%s pointing=%s)",
+            test_mode,
+            f"{site.ra_hours:.4f}h,{site.dec_deg:.3f}d" if site.pointing_valid else "none",
+        )
         try:
             if solver is None:
                 from solver.teenastro_link import SolveOutcome
 
-                link.set_solved(
-                    SolveOutcome(ok=True, ra_hours=5.5, dec_deg=22.0, stars=42, ms=1)
-                    if test_mode
-                    else SolveOutcome(ok=False, fail_code="C")
-                )
+                if test_mode or site.pointing_valid:
+                    link.set_solved(
+                        SolveOutcome(
+                            ok=True,
+                            ra_hours=site.ra_hours if site.pointing_valid else 5.5,
+                            dec_deg=site.dec_deg if site.pointing_valid else 22.0,
+                            stars=42,
+                            ms=1,
+                        )
+                    )
+                else:
+                    link.set_solved(SolveOutcome(ok=False, fail_code="C"))
                 return
+            apply_pointing()
             solver.capture()
             outcome = solver.solve(site.lat, site.lon_east, site.utc)
             link.set_solved(outcome)
@@ -108,6 +131,7 @@ def main() -> int:
                     SolveOutcome(ok=True, is_offset=True, offset_dx=0.0, offset_dy=0.0, offset_name="test")
                 )
                 return
+            apply_pointing()
             outcome = solver.measure_offset(site.lat, site.lon_east, site.utc)
             save_config(cfg_path, param)
             link.set_solved(outcome)
