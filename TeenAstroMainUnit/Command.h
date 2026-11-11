@@ -73,6 +73,10 @@ void Command_A();       // A  Alignment
 /// Two-star close-out shared by :A2# and alignment-by-sync (:AA# then :CM#/:CS#).
 /// Holds a non-zero stored cone or perpendicularity; otherwise the classic Taki fudge.
 void closeTwoStarAlignment(double latDeg);
+/// Record one plate-solved star. \p raDeg and \p decDeg are the telescope axis
+/// (JNow degrees). \p starIdx is 1..9, the same index as :A1#..:A9#.
+/// Returns false when that index is not valid for the open session.
+bool alignmentAcceptSolved(uint8_t starIdx, double raDeg, double decDeg);
 void Command_B();       // B  Reticule
 void Command_C();       // C  Sync
 /// Sync (or add an alignment reference in :AA# mode) on targetCurrent.newTargetRA/Dec.

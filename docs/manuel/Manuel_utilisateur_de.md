@@ -961,7 +961,7 @@ Der Sucher blickt nicht entlang des Teleskops. Der Unterschied sind zwei Drehung
 
 **GoTo++.** Nach einem Goto löst der eFinder, synchronisiert, und wenn das Teleskop noch weiter vom Ziel entfernt ist als die Schwelle, schwenkt er einmal zu diesem Ziel zurück und löst erneut. Die Zeile **GoTo++** schaltet das ein oder aus und setzt die Schwelle in Bogenminuten.
 
-**Ausrichten** startet eine Ausrichtung aus Plattenlösungen. **Ausrichten** nimmt den ersten Stern. In einen anderen Himmelsteil schwenken und **Solve & Sync** verwenden. Der zweite angenommene Stern schließt das Modell, wie in Kapitel 15, ohne jeden Stern von Hand zu zentrieren. **Ausrichten** löscht kein schon gespeichertes Modell. Dieses Modell zuerst löschen, wenn ein neues gewünscht ist.
+**Ausrichten** bietet **2 Sterne** und **4 Sterne** auf jeder Montierung, und **3+3 Sterne** auf einer deutschen Montierung. Das Rohr steht für jede davon schon in der Grundstellung. Der eFinder schwenkt dann und löst das Bild; nichts wird von Hand zentriert. **2 Sterne** nimmt zwei Stellen auf der Seite der Grundstellung. **4 Sterne** nimmt vier Stellen auf dieser Seite, oder, auf einer Alt-Azimut-Montierung, vier Stellen über den Himmel verteilt. **3+3 Sterne** nimmt drei Stellen auf der Seite der Grundstellung, schlägt um, dann drei auf der anderen Seite. Gespeichert wird die gelöste Position, auch dort, wo sie vom Schwenk abweicht. Das Modell wird gespeichert, wenn die Lösungen angenommen sind. Eine Taste während **Ausrichten** bricht ab und legt das vorige Modell zurück. **Ausrichten** startet nicht, solange die Montierung geparkt ist.
 
 **Belichtung** und **Gain** stellen die Kamera ein. **Info** zeigt die eFinder-Version.
 

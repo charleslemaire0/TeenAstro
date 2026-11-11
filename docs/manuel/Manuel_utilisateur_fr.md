@@ -959,7 +959,7 @@ Le chercheur ne regarde pas dans l'axe du télescope. L'écart est deux rotation
 
 **GoTo++.** Après un goto, l'eFinder résout, synchronise, et si le télescope est encore plus loin de la cible que le seuil, revient une fois sur cette cible et résout à nouveau. La ligne **GoTo++** active ou coupe ce comportement et règle le seuil en minutes d'arc.
 
-**Alignement** démarre un alignement par résolutions. **Alignement** prend la première étoile. Aller vers une autre région du ciel et utiliser **Solve & Sync**. La deuxième étoile acceptée ferme le modèle, comme au chapitre 15, sans centrer chaque étoile à la main. **Alignement** n'efface pas un modèle déjà enregistré. Effacer ce modèle d'abord si vous en voulez un nouveau.
+**Alignement** propose **2 étoiles** et **4 étoiles** sur toute monture, et **3+3 étoiles** sur une monture allemande. Le tube est déjà à la maison pour chacune. L'eFinder pointe ensuite et fait une résolution ; rien n'est centré à la main. **2 étoiles** prend deux endroits du côté de la maison. **4 étoiles** en prend quatre sur ce côté, ou, sur une monture alt-azimutale, quatre endroits répartis dans le ciel. **3+3 étoiles** prend trois endroits du côté de la maison, fait un retournement, puis trois sur l'autre côté. La position résolue est celle qui est enregistrée, y compris là où elle diffère du pointage. Le modèle est enregistré quand les résolutions sont acceptées. Une touche pendant **Alignement** l'arrête et remet le modèle précédent. **Alignement** ne part pas tant que la monture est parquée.
 
 **Exposition** et **Gain** règlent la caméra. **Info** affiche la version de l'eFinder.
 

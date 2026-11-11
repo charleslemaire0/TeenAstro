@@ -44,7 +44,11 @@ void Command_e()
     // :eR#  last result / busy
     if (efinder.busy())
     {
-      strcpy(commandState.reply, "B#");
+      if (efinder.job() == EF_JOB_ALIGN)
+        snprintf(commandState.reply, REPLY_BUFFER_LEN, "B%u,%u#",
+                 (unsigned)efinder.alignIndex(), (unsigned)efinder.alignCount());
+      else
+        strcpy(commandState.reply, "B#");
     }
     else
     {
@@ -70,9 +74,27 @@ void Command_e()
     break;
 
   case 'A':
-    // :eA#  start eFinder alignment session (alignment-by-sync + first solve)
-    replyValueSetShort(efinder.startAlign());
+  {
+    // :eA#   six places from home (3+3 when the mount flips)
+    // :eA2#  two stars from home, any mount
+    // :eA4#  four stars from home, any mount
+    // :eA6#  same as :eA#
+    uint8_t stars = 6;
+    const char n = commandState.command[2];
+    if (n == '2' && commandState.command[3] == '\0')
+      stars = 2;
+    else if (n == '4' && commandState.command[3] == '\0')
+      stars = 4;
+    else if (n == '6' && commandState.command[3] == '\0')
+      stars = 6;
+    else if (n != '\0')
+    {
+      replyNothing();
+      break;
+    }
+    replyValueSetShort(efinder.startAlign(stars));
     break;
+  }
 
   case 'B':
     // :eB#  abort current job

@@ -125,6 +125,86 @@ void alignmentFinalize(Coord_HO &HO_T, double Lat)
 
 } // namespace
 
+bool alignmentAcceptSolved(uint8_t starIdx, double raDeg, double decDeg)
+{
+  if (starIdx < 1 || starIdx > 9)
+    return false;
+  mount.targetCurrent.newTargetRA = raDeg;
+  mount.targetCurrent.newTargetDec = decDeg;
+  double newTargetHA = haRange(rtk.LST() * 15.0 - raDeg);
+  double Lat = *localSite.latitude();
+  Coord_EQ EQ_T(0, decDeg * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+  // The retained star is the geometric place. Refraction is applied when the
+  // fit runs, from the temperature and pressure current then. The sync and
+  // the two-star seed stay in the apparent frame, which is the frame gotos use.
+  LA3::RefrOpt geometric = mount.refrOptForGoto();
+  geometric.use = false;
+  Coord_HO HO_raw = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, geometric);
+  Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, mount.refrOptForGoto());
+
+  const bool rigidSession = mount.alignment.isRigidSession();
+
+  // :A3# does not finalize the polar pass (that is :AP#), and :A3# outside any
+  // session would corrupt conv. A rigid session is the one case where :A3# is
+  // legitimate: stars three and up are what the six parameter fit needs.
+  if (starIdx == 3 && !rigidSession)
+    return false;
+
+  // Only the very first star of a session may sync the encoders; after that
+  // the axes must be read where they actually are, which is what makes the
+  // residuals meaningful. getRefs() alone is not enough to spot the first
+  // star: it drops back to 0 once the two star pass has built T.
+  if (mount.alignment.conv.getRefs() == 0 && mount.alignment.conv.getStars() == 0)
+    mount.syncAzAlt(&HO_T, mount.getPoleSide());
+  Coord_IN IN_T = mount.getInstr();
+
+  // Every star is recorded for the rigid fit, but only the first two seed T
+  // through the two star pass. Feeding it more would restart it and leave T
+  // rebuilt from an arbitrary pair.
+  const bool seedTaki = !rigidSession || mount.alignment.conv.getStars() < 2;
+  mount.alignment.conv.addStar(HO_raw.direct_Az_S(), HO_raw.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+  if (seedTaki)
+    mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+  if (rigidSession && starIdx < mount.alignment.alignRigidStars) {
+    // Still collecting. The first two stars seed T. Each later star is folded
+    // in before the next goto, so a mount that starts a long way off is not
+    // left on that first guess until the last star. Cone still waits for
+    // three stars on each pier side.
+    MountAlignment &al = mount.alignment;
+    if (al.conv.getStars() >= 3) {
+      double rms = 0.0;
+      if (al.conv.fitProgressive(&rms, 0, mount.refrOptForGoto())) {
+        al.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
+        al.hasRigid = al.conv.hasHead();
+        // Progressive T/head improve the next goto. Do not sync or shift
+        // stored stars: :GXAo stays in the encoder frame of each accept,
+        // and :AE# / close-out refits that frozen raw set with
+        // fitRigidModel. Syncing mid-session would move the motor origin
+        // and force every past star to be rewritten.
+      }
+    }
+    al.alignPhase   = ALIGN_SELECT;
+    al.alignStarNum = starIdx + 1;
+    al.hasValid = al.conv.isReady();
+  } else if (mount.alignment.conv.isReady()) {
+    const bool deferThird = !rigidSession && !mount.isAltAZ() && mount.alignment.alignNumStarsSession >= 3 && starIdx == 2;
+    if (deferThird) {
+      mount.syncAzAlt(&HO_T, mount.getPoleSide());
+      mount.alignment.alignPolarThirdPending = true;
+      mount.alignment.alignPhase   = ALIGN_RECENTER;
+      mount.alignment.alignStarNum = 3;
+      mount.alignment.hasValid = false;
+    } else {
+      alignmentFinalize(HO_T, Lat);
+    }
+  } else {
+    mount.alignment.alignPhase   = ALIGN_SELECT;
+    mount.alignment.alignStarNum = starIdx + 1;
+  }
+  mount.config.peripherals.PushtoStatus = PT_OFF;
+  return true;
+}
+
 // -----------------------------------------------------------------------------
 //   A - Alignment  :A0# :A0,2# :A0,m# :A*# :A*,m# :A1# .. :A9# :AP# :AB# :AC# :AA# :AE# :AW#
 // -----------------------------------------------------------------------------
@@ -235,79 +315,10 @@ void Command_A() {
   case '8':
   case '9': {
     uint8_t starIdx = commandState.command[1] - '0';
-    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
-    double Lat = *localSite.latitude();
-    Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-    // The retained star is the geometric place. Refraction is applied when the
-    // fit runs, from the temperature and pressure current then. The sync and
-    // the two-star seed stay in the apparent frame, which is the frame gotos use.
-    LA3::RefrOpt geometric = mount.refrOptForGoto();
-    geometric.use = false;
-    Coord_HO HO_raw = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, geometric);
-    Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, mount.refrOptForGoto());
-
-    const bool rigidSession = mount.alignment.isRigidSession();
-
-    // :A3# does not finalize the polar pass (that is :AP#), and :A3# outside any
-    // session would corrupt conv. A rigid session is the one case where :A3# is
-    // legitimate: stars three and up are what the six parameter fit needs.
-    if (starIdx == 3 && !rigidSession) {
+    if (!alignmentAcceptSolved(starIdx, mount.targetCurrent.newTargetRA, mount.targetCurrent.newTargetDec)) {
       replyNothing();
       break;
     }
-
-    // Only the very first star of a session may sync the encoders; after that
-    // the axes must be read where they actually are, which is what makes the
-    // residuals meaningful. getRefs() alone is not enough to spot the first
-    // star: it drops back to 0 once the two star pass has built T.
-    if (mount.alignment.conv.getRefs() == 0 && mount.alignment.conv.getStars() == 0)
-      mount.syncAzAlt(&HO_T, mount.getPoleSide());
-    Coord_IN IN_T = mount.getInstr();
-
-    // Every star is recorded for the rigid fit, but only the first two seed T
-    // through the two star pass. Feeding it more would restart it and leave T
-    // rebuilt from an arbitrary pair.
-    const bool seedTaki = !rigidSession || mount.alignment.conv.getStars() < 2;
-    mount.alignment.conv.addStar(HO_raw.direct_Az_S(), HO_raw.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
-    if (seedTaki)
-      mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
-    if (rigidSession && starIdx < mount.alignment.alignRigidStars) {
-      // Still collecting. The first two stars seed T. Each later star is folded
-      // in before the next goto, so a mount that starts a long way off is not
-      // left on that first guess until the last star. Cone still waits for
-      // three stars on each pier side.
-      MountAlignment &al = mount.alignment;
-      if (al.conv.getStars() >= 3) {
-        double rms = 0.0;
-        if (al.conv.fitProgressive(&rms, 0, mount.refrOptForGoto())) {
-          al.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
-          al.hasRigid = al.conv.hasHead();
-          // Progressive T/head improve the next goto. Do not sync or shift
-          // stored stars: :GXAo stays in the encoder frame of each accept,
-          // and :AE# / close-out refits that frozen raw set with
-          // fitRigidModel. Syncing mid-session would move the motor origin
-          // and force every past star to be rewritten.
-        }
-      }
-      al.alignPhase   = ALIGN_SELECT;
-      al.alignStarNum = starIdx + 1;
-      al.hasValid = al.conv.isReady();
-    } else if (mount.alignment.conv.isReady()) {
-      const bool deferThird = !rigidSession && !mount.isAltAZ() && mount.alignment.alignNumStarsSession >= 3 && starIdx == 2;
-      if (deferThird) {
-        mount.syncAzAlt(&HO_T, mount.getPoleSide());
-        mount.alignment.alignPolarThirdPending = true;
-        mount.alignment.alignPhase   = ALIGN_RECENTER;
-        mount.alignment.alignStarNum = 3;
-        mount.alignment.hasValid = false;
-      } else {
-        alignmentFinalize(HO_T, Lat);
-      }
-    } else {
-      mount.alignment.alignPhase   = ALIGN_SELECT;
-      mount.alignment.alignStarNum = starIdx + 1;
-    }
-    mount.config.peripherals.PushtoStatus = PT_OFF;
     replyShortTrue();
     break;
   }
@@ -352,6 +363,7 @@ void Command_A() {
     mount.alignment.alignPolarThirdPending = false;
     mount.alignment.alignStarName[0] = '\0';
     mount.alignment.autoAlignmentBySync = false;
+    mount.alignment.plateSolveSession = false;
     replyShortTrue();
     break;
   case 'W':

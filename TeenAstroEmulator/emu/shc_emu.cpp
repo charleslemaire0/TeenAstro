@@ -1183,6 +1183,99 @@ static int runAutomatedTests(LX200Client& lx200)
         lx200.efinderSetGotoPP(false);
     }
 
+    printf("\n[TEST] eFinder automatic six-star alignment\n");
+    {
+        TEST_CHECK(lx200.efinderSetGotoPP(false) == LX200_VALUESET,
+                   "GoTo++ off during align", "rejected");
+        TEST_CHECK(lx200.set(":eA#") != LX200_VALUESET,
+                   ":eA# refused away from home", "accepted");
+        TEST_CHECK(lx200.homeReset() == LX200_VALUESET, ":hF# before 3+3", "rejected");
+        TEST_CHECK(lx200.efinderAlign() == LX200_VALUESET,
+                   ":eA# from home", "rejected");
+        char res[80];
+        res[0] = 0;
+        bool done = false;
+        for (int i = 0; i < 900; i++)
+        {
+            if (lx200.efinderResult(res, sizeof(res)) != LX200_VALUEGET)
+                break;
+            if (res[0] != 'B')
+            {
+                done = true;
+                break;
+            }
+            SDL_Delay(200);
+        }
+        printf("         align result: %s\n", res);
+        TEST_CHECK(done && res[0] == 'S', "automatic align finished", res);
+        ta_MountStatus.updateAllState(true);
+        uint8_t stars = 0;
+        lx200.getAlignStarCount(stars);
+        printf("         aligned=%d stars=%u\n",
+               (int)ta_MountStatus.isAligned(), (unsigned)stars);
+        TEST_CHECK(ta_MountStatus.isAligned(),
+                   "model valid after automatic align", "hasValid clear");
+        TEST_CHECK(stars >= 4, "redundant star set", "too few stars");
+    }
+
+    printf("\n[TEST] eFinder 2-star and 4-star from home\n");
+    {
+        TEST_CHECK(lx200.set(":eA2#") != LX200_VALUESET,
+                   ":eA2# refused away from home", "accepted");
+        TEST_CHECK(lx200.set(":eA4#") != LX200_VALUESET,
+                   ":eA4# refused away from home", "accepted");
+        TEST_CHECK(lx200.homeReset() == LX200_VALUESET, ":hF# at home", "rejected");
+        TEST_CHECK(lx200.efinderAlignFromHome(2) == LX200_VALUESET,
+                   ":eA2# from home", "rejected");
+        char res[80];
+        res[0] = 0;
+        bool done = false;
+        for (int i = 0; i < 600; i++)
+        {
+            if (lx200.efinderResult(res, sizeof(res)) != LX200_VALUEGET)
+                break;
+            if (res[0] != 'B')
+            {
+                done = true;
+                break;
+            }
+            SDL_Delay(200);
+        }
+        printf("         2-star result: %s\n", res);
+        TEST_CHECK(done && res[0] == 'S', "2-star align finished", res);
+        ta_MountStatus.updateAllState(true);
+        printf("         2-star aligned=%d\n", (int)ta_MountStatus.isAligned());
+        TEST_CHECK(ta_MountStatus.isAligned(),
+                   "model valid after 2 stars", "hasValid clear");
+
+        TEST_CHECK(lx200.homeReset() == LX200_VALUESET, ":hF# before 4 stars", "rejected");
+        TEST_CHECK(lx200.efinderAlignFromHome(4) == LX200_VALUESET,
+                   ":eA4# from home", "rejected");
+        res[0] = 0;
+        done = false;
+        for (int i = 0; i < 800; i++)
+        {
+            if (lx200.efinderResult(res, sizeof(res)) != LX200_VALUEGET)
+                break;
+            if (res[0] != 'B')
+            {
+                done = true;
+                break;
+            }
+            SDL_Delay(200);
+        }
+        printf("         4-star result: %s\n", res);
+        TEST_CHECK(done && res[0] == 'S', "4-star align finished", res);
+        ta_MountStatus.updateAllState(true);
+        uint8_t four = 0;
+        lx200.getAlignStarCount(four);
+        printf("         4-star aligned=%d stars=%u\n",
+               (int)ta_MountStatus.isAligned(), (unsigned)four);
+        TEST_CHECK(ta_MountStatus.isAligned(),
+                   "model valid after 4 stars", "hasValid clear");
+        TEST_CHECK(four >= 4, "four stars recorded", "too few stars");
+    }
+
     printf("\n========================================\n");
     printf("  Results: %d passed, %d failed\n", g_testPass, g_testFail);
     printf("========================================\n\n");

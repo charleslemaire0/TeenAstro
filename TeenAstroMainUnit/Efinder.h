@@ -63,8 +63,12 @@ public:
   bool startSolve(bool sync);
   bool startOffset();
   bool startAimCal();
-  bool startAlign();
+  /// \p stars is 2, 4, or 6. Every session starts from home. Six stars is 3+3 when the mount flips.
+  bool startAlign(uint8_t stars = 6);
   void abort();
+  /// 1-based star the automatic alignment is working on, and how many it will take.
+  uint8_t alignIndex() const { return (uint8_t)(m_alignGot + 1); }
+  uint8_t alignCount() const { return m_alignStars; }
   bool resetOffset();
 
   bool gotoPlusPlus() const { return m_gotoPP; }
@@ -105,7 +109,16 @@ private:
   void loadSettings();
   void saveSettings();
   bool applySync(double raH, double decD);
-  bool gotoAlignPoint();
+  bool buildAlignPlan();
+  bool skyReaches(double raDeg, double decDeg, PoleSide side) const;
+  bool fillAlignSide(PoleSide side, uint8_t slot0, uint8_t count, double preferSign);
+  bool fillAlignSpread(uint8_t count);
+  bool slewToPlan(uint8_t index);
+  bool beginAlignFlip();
+  void snapshotAlignModel();
+  void restoreAlignModel();
+  void failAlign(char code);
+  void closeAlignSession();
   void telescopePointing(double& raH, double& decD) const;
   bool mountIsAltAz() const;
   /// Subtract the stored cones so ra/dec is the telescope axis.
@@ -161,6 +174,26 @@ private:
   // the plate solve to this, not to where tracking has moved since.
   double m_pushedRaH = 0;
   double m_pushedDecD = 0;
+
+  // Automatic alignment: six solved places. A mount that can change pier side
+  // takes three, flips, then three more. The previous model is restored if
+  // the run stops before the fit is saved.
+  struct AlignStop {
+    double raDeg = 0;
+    double decDeg = 0;
+    PoleSide side = POLE_UNDER;
+  };
+  AlignStop m_plan[6];
+  uint8_t m_alignStars = 0;
+  uint8_t m_alignGot = 0;
+  bool m_alignFlip = false;
+  bool m_alignFlipped = false;
+  bool m_pendingFlip = false;
+  bool m_alignActive = false;
+  bool m_hadModel = false;
+  bool m_hadHead = false;
+  float m_savedT[9] = {};
+  float m_savedHead[3] = {};
 };
 
 extern EfinderManager efinder;

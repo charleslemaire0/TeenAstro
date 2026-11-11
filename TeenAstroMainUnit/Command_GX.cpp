@@ -240,7 +240,9 @@ static void Command_GX_AllState()
       phase = ALIGN_SLEW;
       mount.alignment.alignPhase = ALIGN_SLEW;
     }
-    if (phase == ALIGN_SLEW && !mount.isMovingTo()) {
+    // A plate-solve alignment measures the solved position. Ending the slew
+    // must not switch the hand controller into the recenter step.
+    if (phase == ALIGN_SLEW && !mount.isMovingTo() && !mount.alignment.plateSolveSession) {
       phase = ALIGN_RECENTER;
       mount.alignment.alignPhase = ALIGN_RECENTER;
     }

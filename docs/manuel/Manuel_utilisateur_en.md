@@ -961,7 +961,7 @@ The finder does not look along the telescope. The difference is two rotations in
 
 **GoTo++.** After a goto, the eFinder solves, syncs, and if the telescope is still farther from the target than the threshold, slews back to that target once and solves again. The **GoTo++** line turns this on or off and sets the threshold in arcminutes.
 
-**Align** starts an alignment from plate solves. **Align** takes the first star. Slew to a second part of the sky and use **Solve & Sync**. The second accepted star closes the model, as in chapter 15, without centering each star by hand. **Align** does not erase a model that is already stored. Clear that model first if you want a new one.
+**Align** offers **2 Stars** and **4 Stars** on every mount, and **3+3 Stars** on a German equatorial mount. The tube is already at home for every one of them. The eFinder then slews and plate-solves; nothing is centered by hand. **2 Stars** takes two places on the home pier. **4 Stars** takes four places on that pier, or, on an alt-azimuth mount, four places spread around the sky. **3+3 Stars** takes three places on the home pier, flips, then takes three on the other pier. The solved position is what is recorded, including where it differs from the slew. The model is saved when the solves are accepted. A key press during **Align** stops it and puts the previous model back. **Align** does not run while the mount is parked.
 
 **Exposure** and **Gain** set the camera. **Info** shows the eFinder version.
 

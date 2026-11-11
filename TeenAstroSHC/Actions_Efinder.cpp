@@ -3,6 +3,42 @@
  */
 #include "SmartController.h"
 #include "SHC_text.h"
+#include <stdio.h>
+
+void SmartHandController::waitPlateAlign()
+{
+  char out[64];
+  const unsigned long deadline = millis() + 20UL * 60UL * 1000UL;
+  const unsigned long arm = millis() + 400UL;
+  bool stopped = false;
+  while ((long)(deadline - millis()) > 0)
+  {
+    tickButtons();
+    if ((long)(millis() - arm) >= 0 && buttonPressed())
+    {
+      m_client->efinderAbort();
+      DisplayMessage(T_EFINDER_ALIGN, T_ABORTED, 1000);
+      stopped = true;
+      break;
+    }
+    if (m_client->efinderResult(out, sizeof(out)) != LX200_VALUEGET)
+      break;
+    if (out[0] != 'B')
+    {
+      if (out[0] == 'S') DisplayMessage(T_EFINDER_ALIGN, T_SUCESS, 1500);
+      else if (out[0] == 'F') DisplayMessage(T_EFINDER_ALIGN, T_FAILED, 1500);
+      else DisplayMessage(T_EFINDER_ALIGN, out, 1500);
+      break;
+    }
+    unsigned n = 0, tot = 0;
+    char line[12] = "";
+    if (sscanf(out, "B%u,%u", &n, &tot) == 2)
+      snprintf(line, sizeof(line), "%u/%u", n, tot);
+    DisplayMessage(T_EFINDER_ALIGN, line[0] ? line : T_EFINDER_SOLVING, 200);
+  }
+  if (!stopped && (long)(deadline - millis()) <= 0)
+    DisplayMessage(T_EFINDER_ALIGN, T_FAILED, 1500);
+}
 
 bool SmartHandController::waitEfinderResult(char* out, int len)
 {
@@ -67,12 +103,26 @@ void SmartHandController::menuEfinder()
       }
       break;
     case 3:
-      if (DisplayMessageLX200(m_client->efinderAlign()))
-      {
-        if (waitEfinderResult(out, sizeof(out)))
-          DisplayMessage(T_EFINDER_ALIGN, out, 1500);
-      }
+    {
+      const TeenAstroMountStatus::Mount mt = ta_MountStatus.getMount();
+      const bool showSix = (mt == TeenAstroMountStatus::MOUNT_TYPE_GEM
+                            || mt == TeenAstroMountStatus::MOUNT_UNDEFINED);
+      char menu[48];
+      strcpy(menu, "2 " T_STARS "\n" T_ALIGN_PERP);
+      if (showSix)
+        strcat(menu, "\n" T_ALIGN_CONE);
+      const uint8_t c = display->UserInterfaceSelectionList(&buttonPad, T_EFINDER_ALIGN, 1, menu);
+      if (c == 0)
+        break;
+      const uint8_t stars = (c == 1) ? 2 : (c == 2) ? 4 : 6;
+      DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+      const LX200RETURN started = (stars == 6)
+          ? m_client->efinderAlign()
+          : m_client->efinderAlignFromHome(stars);
+      if (DisplayMessageLX200(started))
+        waitPlateAlign();
       break;
+    }
     case 4:
     {
       if (m_client->efinderGotoPPSettings(out, sizeof(out)) != LX200_VALUEGET)

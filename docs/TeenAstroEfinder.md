@@ -26,7 +26,7 @@ The **eFinder** line appears in **Telescope settings** only after the main unit 
 |------|----------------|
 | Solve & Sync | Plate-solve and sync the telescope axis |
 | Solve | Plate-solve, no sync |
-| Align | Start a two-star alignment from plate solves. The next star is Solve & Sync |
+| Align | **2 Stars**, **4 Stars**, and **3+3 Stars** all start from home. The eFinder slews and plate-solves; nothing is centered by hand. **3+3 Stars**, on a German equatorial mount, is three places on the home pier, a flip, then three more. The model is saved. A key press stops it and restores the previous model |
 | GoTo++ | After each goto, solve, sync, and slew back to the target once if the error is over the threshold |
 | Calibrate | Brightest star against the camera center. This is not the axis calibration |
 | Aim | Measure the Hz cone and the Ve cone. Center a bright star in the telescope and sync first |

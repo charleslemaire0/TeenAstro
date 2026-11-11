@@ -3,6 +3,7 @@
  */
 #include "Efinder.h"
 #include "Command.h"
+#include "MainUnitDecl.h"
 #include "XEEPROM.hpp"
 #include "EEPROM_address.h"
 #include <TimeLib.h>
@@ -338,22 +339,300 @@ bool EfinderManager::startAimCal()
   return true;
 }
 
-bool EfinderManager::startAlign()
+bool EfinderManager::skyReaches(double raDeg, double decDeg, PoleSide side) const
+{
+  double ha = haRange(rtk.LST() * 15.0 - raDeg);
+  double lat = *localSite.latitude() * DEG_TO_RAD;
+  Coord_EQ eq(0, decDeg * DEG_TO_RAD, ha * DEG_TO_RAD);
+  Coord_HO ho = eq.To_Coord_HO(lat, mount.refrOptForGoto());
+  const double altDeg = ho.Alt() * RAD_TO_DEG;
+  if (altDeg < (double)mount.limits.minAlt + 12.0) return false;
+  if (altDeg > (double)mount.limits.maxAlt - 8.0) return false;
+  if (altDeg > 78.0) return false;
+  long a1 = 0, a2 = 0;
+  PoleSide out = POLE_NOTVALID;
+  if (!mount.predictTargetHO(ho, side, a1, a2, out, false, false))
+    return false;
+  return out == side;
+}
+
+bool EfinderManager::fillAlignSide(PoleSide side, uint8_t slot0, uint8_t count, double preferSign)
+{
+  if (count < 2 || count > 4 || slot0 + count > 6) return false;
+  const double lstDeg = rtk.LST() * 15.0;
+  double dec0 = *localSite.latitude();
+  if (dec0 > 50.0) dec0 = 50.0;
+  if (dec0 < -50.0) dec0 = -50.0;
+  double hours[4];
+  double decOff[4];
+  if (count == 2)
+  {
+    hours[0] = 2.2; hours[1] = 5.0;
+    decOff[0] = -12.0; decOff[1] = 8.0;
+  }
+  else if (count == 4)
+  {
+    hours[0] = 1.6; hours[1] = 3.0; hours[2] = 4.4; hours[3] = 5.8;
+    decOff[0] = -18.0; decOff[1] = -4.0; decOff[2] = 8.0; decOff[3] = 14.0;
+  }
+  else
+  {
+    hours[0] = 2.0; hours[1] = 3.6; hours[2] = 5.2;
+    decOff[0] = -18.0; decOff[1] = 0.0; decOff[2] = 12.0;
+  }
+  const double signs[2] = { preferSign, -preferSign };
+  for (int s = 0; s < 2; s++)
+  {
+    bool ok = true;
+    AlignStop trial[4];
+    for (uint8_t i = 0; i < count; i++)
+    {
+      const double haDeg = signs[s] * hours[i] * 15.0;
+      double ra = lstDeg - haDeg;
+      while (ra < 0.0) ra += 360.0;
+      while (ra >= 360.0) ra -= 360.0;
+      trial[i].raDeg = ra;
+      trial[i].decDeg = dec0 + decOff[i];
+      trial[i].side = side;
+      if (!skyReaches(trial[i].raDeg, trial[i].decDeg, side))
+      {
+        ok = false;
+        break;
+      }
+    }
+    if (!ok) continue;
+    for (uint8_t i = 0; i < count; i++)
+      m_plan[slot0 + i] = trial[i];
+    return true;
+  }
+  return false;
+}
+
+bool EfinderManager::fillAlignSpread(uint8_t count)
+{
+  if (count != 2 && count != 4 && count != 6) return false;
+  const double lstDeg = rtk.LST() * 15.0;
+  double dec0 = *localSite.latitude();
+  if (dec0 > 40.0) dec0 = 40.0;
+  if (dec0 < -40.0) dec0 = -40.0;
+  double hours[6];
+  double decOff[6];
+  if (count == 2)
+  {
+    hours[0] = -3.5; hours[1] = 3.5;
+    decOff[0] = -10.0; decOff[1] = 8.0;
+  }
+  else if (count == 4)
+  {
+    hours[0] = -4.8; hours[1] = -2.0; hours[2] = 2.0; hours[3] = 4.8;
+    decOff[0] = -12.0; decOff[1] = 6.0; decOff[2] = -4.0; decOff[3] = 14.0;
+  }
+  else
+  {
+    hours[0] = -5.0; hours[1] = -3.2; hours[2] = -1.4;
+    hours[3] = 1.4; hours[4] = 3.2; hours[5] = 5.0;
+    decOff[0] = -10.0; decOff[1] = 8.0; decOff[2] = -16.0;
+    decOff[3] = 12.0; decOff[4] = 0.0; decOff[5] = -8.0;
+  }
+  for (uint8_t i = 0; i < count; i++)
+  {
+    double ra = lstDeg - hours[i] * 15.0;
+    while (ra < 0.0) ra += 360.0;
+    while (ra >= 360.0) ra -= 360.0;
+    m_plan[i].raDeg = ra;
+    m_plan[i].decDeg = dec0 + decOff[i];
+    m_plan[i].side = POLE_UNDER;
+    if (!skyReaches(m_plan[i].raDeg, m_plan[i].decDeg, POLE_UNDER))
+      return false;
+  }
+  return true;
+}
+
+bool EfinderManager::buildAlignPlan()
+{
+  m_alignFlipped = false;
+  m_pendingFlip = false;
+  // Six stars is 3+3 from the home pier. An alt-azimuth mount has one pier,
+  // so those six places are spread on both sides of the meridian.
+  if (m_alignStars == 6)
+  {
+    m_alignFlip = !mount.isAltAZ();
+    if (!m_alignFlip)
+      return fillAlignSpread(6);
+    const PoleSide side = mount.getPoleSide();
+    const PoleSide other = (side == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
+    if (!fillAlignSide(side, 0, 3, 1.0)) return false;
+    const double ha0 = haRange(rtk.LST() * 15.0 - m_plan[0].raDeg);
+    if (!fillAlignSide(other, 3, 3, (ha0 < 0.0) ? 1.0 : -1.0)) return false;
+    // The two sides must not have picked the same hour-angle sign.
+    const double ha3 = haRange(rtk.LST() * 15.0 - m_plan[3].raDeg);
+    if ((ha0 < 0.0) == (ha3 < 0.0))
+      return false;
+    return true;
+  }
+  // 2 Stars and 4 Stars stay on the home pier. An alt-azimuth mount spreads them.
+  m_alignFlip = false;
+  if (mount.isAltAZ())
+    return fillAlignSpread(m_alignStars);
+  return fillAlignSide(mount.getPoleSide(), 0, m_alignStars, 1.0);
+}
+
+bool EfinderManager::slewToPlan(uint8_t index)
+{
+  if (index >= m_alignStars) return false;
+  const AlignStop& stop = m_plan[index];
+  double ha = haRange(rtk.LST() * 15.0 - stop.raDeg);
+  Coord_EQ eq(0, stop.decDeg * DEG_TO_RAD, ha * DEG_TO_RAD);
+  m_suppressGotoWatch = true;
+  byte err = mount.goToEqu(eq, stop.side, *localSite.latitude() * DEG_TO_RAD);
+  if (err != 0)
+  {
+    m_suppressGotoWatch = false;
+    return false;
+  }
+  mount.alignment.alignPhase = ALIGN_SLEW;
+  mount.alignment.alignStarNum = (uint8_t)(index + 1);
+  m_step = STEP_WAIT_GOTO;
+  m_stepTime = millis();
+  return true;
+}
+
+bool EfinderManager::beginAlignFlip()
+{
+  m_suppressGotoWatch = true;
+  ErrorsGoTo err = mount.flip();
+  if (err != ErrorsGoTo::ERRGOTO_NONE)
+  {
+    m_suppressGotoWatch = false;
+    return false;
+  }
+  m_alignFlipped = true;
+  m_pendingFlip = true;
+  mount.alignment.alignPhase = ALIGN_SLEW;
+  m_step = STEP_WAIT_GOTO;
+  m_stepTime = millis();
+  return true;
+}
+
+void EfinderManager::snapshotAlignModel()
+{
+  m_hadModel = XEEPROM.read(getMountAddress(EE_Tvalid)) == 1;
+  m_hadHead = false;
+  if (!m_hadModel) return;
+  const int addr[9] = {
+    EE_T11, EE_T12, EE_T13, EE_T21, EE_T22, EE_T23, EE_T31, EE_T32, EE_T33
+  };
+  for (int i = 0; i < 9; i++)
+    m_savedT[i] = XEEPROM.readFloat(getMountAddress(addr[i]));
+  m_hadHead = XEEPROM.read(getHeadAddress(EE_head_valid)) == 1;
+  m_savedHead[0] = XEEPROM.readFloat(getHeadAddress(EE_head_cone));
+  m_savedHead[1] = XEEPROM.readFloat(getHeadAddress(EE_head_perp));
+  m_savedHead[2] = XEEPROM.readFloat(getHeadAddress(EE_head_idx2));
+}
+
+void EfinderManager::restoreAlignModel()
+{
+  if (!m_alignActive) return;
+  m_alignActive = false;
+  mount.alignment.plateSolveSession = false;
+  if (!m_hadModel)
+  {
+    initTransformation(true);
+    return;
+  }
+  const int addr[9] = {
+    EE_T11, EE_T12, EE_T13, EE_T21, EE_T22, EE_T23, EE_T31, EE_T32, EE_T33
+  };
+  for (int i = 0; i < 9; i++)
+    XEEPROM.writeFloat(getMountAddress(addr[i]), m_savedT[i]);
+  XEEPROM.write(getMountAddress(EE_Tvalid), 1);
+  XEEPROM.writeFloat(getHeadAddress(EE_head_cone), m_savedHead[0]);
+  XEEPROM.writeFloat(getHeadAddress(EE_head_perp), m_savedHead[1]);
+  XEEPROM.writeFloat(getHeadAddress(EE_head_idx2), m_savedHead[2]);
+  XEEPROM.write(getHeadAddress(EE_head_valid), m_hadHead ? 1 : 0);
+  initTransformation(false);
+}
+
+void EfinderManager::failAlign(char code)
+{
+  m_failCode = code;
+  restoreAlignModel();
+  mount.alignment.alignPhase = ALIGN_IDLE;
+  mount.alignment.alignStarNum = 0;
+  mount.alignment.autoAlignmentBySync = false;
+  m_pendingFlip = false;
+  m_suppressGotoWatch = false;
+  finishJob(EF_RES_FAILED);
+}
+
+void EfinderManager::closeAlignSession()
+{
+  saveAlignModel();
+  m_alignActive = false;
+  mount.alignment.plateSolveSession = false;
+  mount.alignment.alignPhase = ALIGN_IDLE;
+  mount.alignment.autoAlignmentBySync = false;
+  m_pendingFlip = false;
+  m_suppressGotoWatch = false;
+  finishJob(EF_RES_ALIGNED);
+}
+
+bool EfinderManager::startAlign(uint8_t stars)
 {
   if (!present() || m_job != EF_JOB_IDLE) return false;
-  // Enable alignment-by-sync then solve+sync for each star the user confirms via :eY# / startSolve(true).
-  mount.alignment.autoAlignmentBySync = true;
+  if (mount.isParked() || mount.isSlewing()) return false;
+  if (stars != 2 && stars != 4 && stars != 6) return false;
+  if (!mount.parkHome.atHome) return false;
+  m_alignStars = stars;
+  snapshotAlignModel();
+  initTransformation(true);
+  m_alignActive = true;
+  if (!mount.syncAtHome())
+  {
+    restoreAlignModel();
+    return false;
+  }
+  mount.axes.enable(true);
+  if (mount.motorsEncoders.enableMotor)
+    mount.startSideralTracking();
+  if (!buildAlignPlan())
+  {
+    restoreAlignModel();
+    return false;
+  }
+  // Two stars close with the classic pole estimate. Four and six use the
+  // rigid fit, which needs at least four stars.
+  mount.alignment.alignRigidStars = (m_alignStars >= 4) ? m_alignStars : 0;
+  mount.alignment.alignNumStarsSession = m_alignStars;
+  mount.alignment.alignPhase = ALIGN_SLEW;
+  mount.alignment.alignStarNum = 1;
+  mount.alignment.alignPolarThirdPending = false;
+  mount.alignment.autoAlignmentBySync = false;
+  mount.alignment.plateSolveSession = true;
   m_job = EF_JOB_ALIGN;
-  m_step = STEP_START;
+  m_step = STEP_WAIT_GOTO;
   m_stepTime = millis();
   m_pass = 0;
   m_failures = 0;
+  m_alignGot = 0;
   m_lastResult = EF_RES_NONE;
+  m_failCode = 0;
+  if (!slewToPlan(0))
+  {
+    failAlign('G');
+    return false;
+  }
   return true;
 }
 
 void EfinderManager::abort()
 {
+  if (m_alignActive)
+    restoreAlignModel();
+  mount.alignment.plateSolveSession = false;
+  mount.alignment.autoAlignmentBySync = false;
+  m_pendingFlip = false;
+  m_suppressGotoWatch = false;
   m_job = EF_JOB_IDLE;
   m_step = STEP_NONE;
   m_link = LINK_IDLE;
@@ -391,7 +670,10 @@ void EfinderManager::onFailed(char code)
   if (m_failures >= MAX_FAILURES || m_job == EF_JOB_SOLVE || m_job == EF_JOB_OFFSET ||
       m_job == EF_JOB_AIM)
   {
-    finishJob(EF_RES_FAILED);
+    if (m_job == EF_JOB_ALIGN)
+      failAlign(code);
+    else
+      finishJob(EF_RES_FAILED);
     return;
   }
   // retry for GoTo++ / align
@@ -532,21 +814,38 @@ void EfinderManager::onSolved(double raH, double decD)
     return;
   }
 
-  if (m_job == EF_JOB_SOLVE_SYNC || m_job == EF_JOB_ALIGN)
+  if (m_job == EF_JOB_ALIGN)
   {
-    applySync(raH, decD);
-    if (m_job == EF_JOB_ALIGN)
+    const uint8_t star = (uint8_t)(m_alignGot + 1);
+    // The solved telescope axis is the measurement, not the coordinates of the slew.
+    if (!alignmentAcceptSolved(star, raH * 15.0, decD))
     {
-      m_pass++;
-      if (!mount.alignment.autoAlignmentBySync)
-      {
-        finishJob(EF_RES_ALIGNED);
-        return;
-      }
-      // wait for next :eY# / startSolve from host while keeping ALIGN job idle-ish
-      finishJob(EF_RES_SYNCED);
+      failAlign('A');
       return;
     }
+    m_alignGot++;
+    m_failures = 0;
+    if (m_alignGot >= m_alignStars)
+    {
+      closeAlignSession();
+      return;
+    }
+    mount.alignment.plateSolveSession = true;
+    mount.alignment.alignPhase = ALIGN_SLEW;
+    if (m_alignFlip && m_alignGot == 3 && !m_alignFlipped)
+    {
+      if (!beginAlignFlip())
+        failAlign('G');
+      return;
+    }
+    if (!slewToPlan(m_alignGot))
+      failAlign('G');
+    return;
+  }
+
+  if (m_job == EF_JOB_SOLVE_SYNC)
+  {
+    applySync(raH, decD);
     finishJob(EF_RES_SYNCED);
     return;
   }
@@ -680,16 +979,48 @@ void EfinderManager::runJob()
     return;
   }
 
-  if (m_step == STEP_WAIT_GOTO)
+  if (m_step == STEP_SETTLE)
   {
-    if (mount.tracking.gotoState == GOTO_NONE && !mount.parkHome.settling && !mount.isSlewing())
+    unsigned long settle = (unsigned long)mount.parkHome.slewSettleDuration * 1000UL;
+    if (settle < 500UL) settle = 500UL;
+#ifdef EMU_MAINUNIT
+    settle = 200UL;
+#endif
+    if (millis() - m_stepTime >= settle)
     {
       m_step = STEP_START;
       m_stepTime = millis();
     }
-    else if (millis() - m_stepTime > 120000UL)
+    return;
+  }
+
+  if (m_step == STEP_WAIT_GOTO)
+  {
+    const bool idle = mount.tracking.gotoState == GOTO_NONE && !mount.parkHome.settling && !mount.isSlewing();
+    if (idle)
     {
-      finishJob(EF_RES_SYNCED);
+      if (m_job == EF_JOB_ALIGN && m_pendingFlip)
+      {
+        m_pendingFlip = false;
+        if (!slewToPlan(m_alignGot))
+          failAlign('G');
+        return;
+      }
+      if (m_job == EF_JOB_ALIGN)
+      {
+        m_step = STEP_SETTLE;
+        m_stepTime = millis();
+        return;
+      }
+      m_step = STEP_START;
+      m_stepTime = millis();
+    }
+    else if (millis() - m_stepTime > (m_job == EF_JOB_ALIGN ? 180000UL : 120000UL))
+    {
+      if (m_job == EF_JOB_ALIGN)
+        failAlign('T');
+      else
+        finishJob(EF_RES_SYNCED);
     }
   }
 }
