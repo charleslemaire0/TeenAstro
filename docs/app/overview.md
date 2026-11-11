@@ -9,7 +9,7 @@ Android and Windows app: dashboard, planetarium, catalog browser, goto, multi-st
 ## Structure
 
 - **main.dart**, **app.dart**, **theme.dart** — entry, root widget, theme.
-- **screens/** — Connection, Dashboard, Control, Goto, Catalog Browser, Planetarium, Alignment, Tracking, Settings, Sync Panel.
+- **screens/** — Connection, Dashboard, Control, Goto, Catalog Browser, Planetarium, Alignment, Phone finder, Tracking, Settings, Sync Panel.
 - **models/** — MountState, MountConfig, CatalogEntry, equinox_precession, planet_positions, constellation_lines, milky_way_data, lx200_commands, lx200_reply_lengths.
 - **providers/** — Riverpod: mountStateProvider, planetariumSettingsProvider, nightViewProvider, catalog filter.
 - **services/** — lx200_tcp_client, catalog_filter_provider.
@@ -41,10 +41,11 @@ Android and Windows app: dashboard, planetarium, catalog browser, goto, multi-st
 | Catalog Browser | Filter/search Messier, NGC, stars |
 | Planetarium | Sky chart, stars, DSOs, planets, constellation lines |
 | Alignment | Multi-star alignment wizard |
+| Phone finder | Phone-camera plate solve, aim, sync, auto sync |
 | Tracking | Sidereal/lunar/solar, rate control |
 | Settings | Mount config, limits, site |
 | Sync Panel | Manual sync |
 
 ---
 
-**See also:** [Planetarium](planetarium.md) · [Astronomy](astro.md) · [Bulk packets](../protocol-bulk.md)
+**See also:** [Phone finder](phone_finder.md) · [Planetarium](planetarium.md) · [Astronomy](astro.md) · [Bulk packets](../protocol-bulk.md)

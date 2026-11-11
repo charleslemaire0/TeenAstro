@@ -31,6 +31,7 @@ U8g2_ext: selection lists, input value (integer, DMS, float), messages, catalog 
 - **Actions_SyncGoto:** menuSyncGoto, menuCatalogs, menuCoordinates, menuPier, menuSpiral, menuCatalog, menuCatalogAlign, menuSolarSys, menuRADecNow, menuAltAz.
 - **Actions_Tel:** menuTelActionGoto, menuTelActionPushTo, menuSpeedRate, menuTrack, menuReticule.
 - **Actions_Focuser:** focuser actions.
+- **Actions_Efinder:** the eFinder menu, shown only when the main unit has found the camera. Solve, Solve & Sync, Align, GoTo++, Calibrate (camera center), Aim (Hz cone and Ve cone in the telescope frame), Exposure, Gain, Info.
 
 **Display:** SmartController_Display.cpp — updateMainDisplay, drawIntro, icons for tracking/park/guiding/pier/errors.
 

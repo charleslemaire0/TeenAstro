@@ -6,7 +6,7 @@ Eine Anleitung für die Nacht. Sie beschreibt Handkontroller, Steuergerät, Nach
 
 Sie folgt dem Aufbau der FS2-Anleitung von Astro-Electronic (Anschluss, Menüs, Ändern eines Wertes, Drehrichtung, Geschwindigkeiten, Goto, deutsche Montierung, Encoder, Besuchermodus) und stützt sich auf die Menüs des Handkontrollers, das Steuergerät und das Wiki der [TeenAstro-Gruppe](https://groups.io/g/TeenAstro/wiki/home).
 
-Vor der ersten Nacht muss nicht alles gelesen werden. Die Kapitel 3, 5, 7 und 8 genügen für den Start. Eine Nacht an einer schon eingerichteten Montierung ist Kapitel 25. Der Rest dient der Mechanik, der feinen Ausrichtung und der Fehlersuche.
+Vor der ersten Nacht muss nicht alles gelesen werden. Die Kapitel 3, 5, 7 und 8 genügen für den Start. Eine Nacht an einer schon eingerichteten Montierung ist Kapitel 26. Der Rest dient der Mechanik, der feinen Ausrichtung und der Fehlersuche.
 
 Die fett gesetzten Menünamen sind die Beschriftungen der deutschen Handkontroller-Firmware. Einige Zeilen bleiben in dieser Version auf Englisch: `Encoders`, `Auto Sync`, `Calibration`, `Pulse per deg`, `Silent`, `J2000`, `JNow`, `Alt Az`, `Show align. error`, `Wifi`, `Home`, `Park`, `Spiral`.
 
@@ -231,6 +231,8 @@ Auf das Nachführdreieck werden Stern, Sonne, Mond oder Ziel gelegt, danach eine
 | ![](images/icons/atrate_base.png) | Guiding mit Nachführgeschwindigkeit (Fadenkreuz) |
 
 Die Guiding-Pfeile liegen über dem Rahmen, der Zielscheibe oder dem Fadenkreuz, je nachdem ob die Montierung einen ST-4-Impuls, ein Neuzentrieren oder ein Guiding mit Nachführgeschwindigkeit erhält.
+
+Die Buchstaben **eF** erscheinen in der Statuszeile, wenn ein eFinder verbunden ist.
 
 **GNSS, Sperre, Shift.** Das GNSS-Symbol erscheint nur bei Home oder Park.
 
@@ -601,7 +603,7 @@ Wurde der Handkontroller mit Doppelsternen oder Veränderlichen übersetzt, komm
 
 Wenn ein Filter wirklich Objekte entfernt, steht der Katalogtitel zwischen Ausrufezeichen, zum Beispiel **!Goto Messier!**. Bleibt nichts übrig, sagt die Anzeige **No Object**: eine Stufe weiter öffnen, oder **Grundstellung Filters**.
 
-Nord und Süd blättern die verbleibenden Objekte. F startet Goto oder Synchronisierung, je nach dem Menü, aus dem man kommt. Ein vollständiges Beispiel, M13 dann M31, steht in Kapitel 25.
+Nord und Süd blättern die verbleibenden Objekte. F startet Goto oder Synchronisierung, je nach dem Menü, aus dem man kommt. Ein vollständiges Beispiel, M13 dann M31, steht in Kapitel 26.
 
 ### Zentrieren, dann synchronisieren
 
@@ -697,7 +699,7 @@ Ist **Montierungsfehler** auf **AN** und **CH** oder **NP** nicht null, hält di
 
 ### ASCOM und Alpaca
 
-Der Windows-ASCOM-Treiber und Alpaca (Kapitel 23) verwenden dieselben Aktionsnamen. Der Tubus steht auf Home, bevor **AlignStart** kommt. Das Programm schwenkt, rechnet die Plattenlösung und übernimmt die gelösten Koordinaten. Es zentriert nicht nach. Eine Synchronisierung fügt keinen Stern dieser Sitzung hinzu.
+Der Windows-ASCOM-Treiber und Alpaca (Kapitel 24) verwenden dieselben Aktionsnamen. Der Tubus steht auf Home, bevor **AlignStart** kommt. Das Programm schwenkt, rechnet die Plattenlösung und übernimmt die gelösten Koordinaten. Es zentriert nicht nach. Eine Synchronisierung fügt keinen Stern dieser Sitzung hinzu.
 
 | Aktion | Parameter | Rolle |
 |--------|-----------|-------|
@@ -941,7 +943,45 @@ Die Sperre des Fokusierers verhindert, dass ein versehentlicher Druck die Schär
 
 ---
 
-## 23. WLAN, Telefon, Rechner
+## 23. Plattenlösung
+
+Zwei Wege zur Plattenlösung: ein TeenAstro-eFinder am Fokussierer- oder GNSS-Anschluss, oder die Handykamera in der Android-App. Das Handy braucht den eFinder nicht. Beides kann die Montierung synchronisieren und nach einem Goto synchronisieren und nachzentrieren.
+
+Der Sucher blickt nicht entlang des Teleskops. Der Unterschied sind zwei Drehungen im Teleskoprahmen, der **Hz-Kegel** und der **Ve-Kegel**. Hz ist der horizontale Kegel und Ve der vertikale Kegel. Sie gehören zum Tubus, oder zum Handy, das am Tubus sitzt. Einmal messen, an einem hellen Stern. Spätere Lösungen folgen dem Teleskop.
+
+### eFinder am Handkontroller
+
+**eFinder** erscheint unter **Teleskop-Einst.** erst, wenn das Steuergerät die Kamera gefunden hat.
+
+**Solve** zeigt das Feld und ändert das Modell nicht. **Solve & Sync** schreibt diese Position in die Montierung.
+
+**Achse.** Zu einem hellen Stern fahren, ihn im Teleskop zentrieren und synchronisieren. Dann **Achse**. Der Handkontroller verlangt diesen hellen Stern, schon zentriert und synchronisiert, und zeigt **Hz Cone** und **Ve Cone** in Bogenminuten. Achse scheitert, wenn der Tubus an einer äquatorialen Montierung zu nah am Pol steht, oder an einer Altazimut-Montierung zu nah am Zenit. Einen anderen Stern wählen.
+
+**Kalibrieren** ist ein anderer Schritt. Er legt den hellsten Stern auf die Mitte der Kamera. Er misst weder den Hz-Kegel noch den Ve-Kegel.
+
+**GoTo++.** Nach einem Goto löst der eFinder, synchronisiert, und wenn das Teleskop noch weiter vom Ziel entfernt ist als die Schwelle, schwenkt er einmal zu diesem Ziel zurück und löst erneut. Die Zeile **GoTo++** schaltet das ein oder aus und setzt die Schwelle in Bogenminuten.
+
+**Ausrichten** startet eine Ausrichtung aus Plattenlösungen. **Ausrichten** nimmt den ersten Stern. In einen anderen Himmelsteil schwenken und **Solve & Sync** verwenden. Der zweite angenommene Stern schließt das Modell, wie in Kapitel 15, ohne jeden Stern von Hand zu zentrieren. **Ausrichten** löscht kein schon gespeichertes Modell. Dieses Modell zuerst löschen, wenn ein neues gewünscht ist.
+
+**Belichtung** und **Gain** stellen die Kamera ein. **Info** zeigt die eFinder-Version.
+
+### Sucher im Handy
+
+Unter Android **Phone finder** vom Dashboard oder vom Ausrichtungsbildschirm öffnen. Diesen Bildschirm offen lassen: die Kamera muss an bleiben.
+
+**Field** auf den Winkel stellen, den das Objektiv abdeckt, von 15° bis 90°. Der Anfangswert ist 60°. Der Katalog geht bis Magnitude 4,5, ein enges Okularfeld passt also nicht. Das Handy am Tubus festklemmen.
+
+**Solve** zeigt die Teleskopachse, sobald die Kegel bekannt sind, und die Kameraachse, solange sie noch null sind. **Solve & Sync** schickt diese Achse an die Montierung.
+
+**Aim** ist derselbe Ablauf wie am Handkontroller. Einen hellen Stern im Teleskop zentrieren und synchronisieren, dann aufnehmen. Der Bildschirm zeigt **Hz Cone** und **Ve Cone**. **Clear cones** vergisst sie.
+
+**Auto sync.** Einschalten und den Phone-finder-Bildschirm offen lassen. Wenn ein Goto endet, löst das Handy, synchronisiert und zentriert einmal nach, wenn das Teleskop weiter vom Ziel entfernt ist als **Recenter**. Die Grenze läuft von 2 bis 60 Bogenminuten und beginnt bei 2. Schalter und Grenze bleiben im Handy.
+
+Das Handy startet **GoTo++** nicht im Steuergerät und startet auch nicht **Ausrichten**. Es synchronisiert einmal und zentriert einmal nach, wenn die Abweichung über der Grenze liegt.
+
+---
+
+## 24. WLAN, Telefon, Rechner
 
 **Teleskop-Einst. → Wifi**
 
@@ -1019,7 +1059,7 @@ Handkontroller und Steuergerät müssen aus derselben Veröffentlichung stammen.
 
 ---
 
-## 24. Besuchermodus
+## 25. Besuchermodus
 
 **SHC Einst. → Rechte**: **Admin.** oder **Besucher**.
 
@@ -1029,9 +1069,9 @@ Die Wahl wird im Handkontroller gespeichert. Zurück zum Administrator: Shift + 
 
 ---
 
-## 25. Ein Beobachtungsabend
+## 26. Ein Beobachtungsabend
 
-Das Beispiel ist ein Spätsommerabend um 45° nördlicher Breite: Wega und Atair stehen hoch, M13 ist noch da, M31 geht auf. In einer anderen Nacht bleiben die Handgriffe, die Namen wechseln. Die Filter stehen in Kapitel 14, SkySafari in Kapitel 23.
+Das Beispiel ist ein Spätsommerabend um 45° nördlicher Breite: Wega und Atair stehen hoch, M13 ist noch da, M31 geht auf. In einer anderen Nacht bleiben die Handgriffe, die Namen wechseln. Die Filter stehen in Kapitel 14, SkySafari in Kapitel 24.
 
 ### Eine leere Batterie erkennen
 
@@ -1104,13 +1144,13 @@ Mussten die Klemmen in der Nacht gelöst werden, mindestens neu synchronisieren,
 
 ---
 
-## 26. Wenn etwas nicht stimmt
+## 27. Wenn etwas nicht stimmt
 
 | Was zu sehen ist | Wohin schauen |
 |------------------|---------------|
 | **FEHLER** / **version** | Handkontroller und Steuergerät aus verschiedenen Veröffentlichungen |
 | **Nicht verbunden**, dann Neustart | Kabel des Handkontrollers, Batterie, die unter Last einbricht, oder Steuergerät aus |
-| Die Anzeige wird blass, der Handkontroller startet beim Logo neu, ein Goto mit Max bleibt stehen | Batterie leer oder unter Last zu schwach. Der Handkontroller zeigt keine Spannung. Kapitel 25 |
+| Die Anzeige wird blass, der Handkontroller startet beim Logo neu, ein Goto mit Max bleibt stehen | Batterie leer oder unter Last zu schwach. Der Handkontroller zeigt keine Spannung. Kapitel 26 |
 | Schwarzer Bildschirm, Shift weckt ihn | Ruheabschaltung, keine leere Batterie |
 | Die Tasten fahren verkehrt | Kapitel 8, Drehrichtung |
 | Goto liegt immer daneben, um den Faktor zwei oder mehr | Getriebezahl oder Schrittzahl. Getriebe-Check ausführen |
@@ -1157,6 +1197,7 @@ Zeilen in Klammern erscheinen nur im genannten Fall.
 - Montierung — Montierung, Montierungs-Art, Motoren, Encoders, Grenzen, Montierungsfehler, Refraktion, Strichplatte
 - Steuergerät Info — Versionsnr. zeigen, Neustart, zurücksetzen auf Werk
 - Wifi
+- (eFinder verbunden) eFinder — Solve & Sync, Solve, Ausrichten, GoTo++, Kalibrieren, Achse, Belichtung, Info
 
 **Motoren → Motor 1 oder 2**: Zeige Einst., Drehung, Getr. Zahl, Schr. pro Rot., Mikroschritt, Getr. Spiel, Spiel Geschw., niedrige Str., hohe Str., Silent
 
@@ -1271,6 +1312,8 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - **Mount error**, über der Refraktion, hält ein bekanntes CH und NP bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
 - **Speichern** nach **4 Sterne** oder **3+3 Sterne** kopiert auch das veröffentlichte CH und NP nach Montierungsfehler, damit die Web-Seite Montierung und ein späteres 2 Sterne mit Montierungsfehler AN diese Werte sehen (nicht 0,000°).
 - Die Schaltfläche **Auto!** im Firmware-Uploader (Telescope / Focuser) sichert Parameter, erkennt die Platine, flasht, stellt wieder her und prüft (Firmware 1.5+). **EEPROM** bearbeitet den vollen Parametersatz (zwei Montierungen am Steuergerät). **Upload!** flasht weiterhin ohne die Einstellungen anzufassen.
+- Ein eFinder am Fokussierer- oder GNSS-Anschluss fügt **eFinder** unter Teleskop-Einst. ein, und die Buchstaben **eF** in der Statuszeile, nur solange die Kamera gefunden ist. **Achse** speichert den Hz-Kegel und den Ve-Kegel im Teleskoprahmen. **GoTo++** synchronisiert nach einem Goto und zentriert einmal nach, wenn die Schwelle überschritten ist. Kapitel 23.
+- **Phone finder** in der Android-App macht dieselbe Lösung, dieselbe Achse, dieselbe Synchronisierung und ein Nachzentrieren mit der Handykamera. Ein eFinder ist nicht nötig.
 
 ### Ausrichtung von ASCOM und Alpaca
 

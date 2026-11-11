@@ -2,7 +2,7 @@
 
 Plate-solving finder for TeenAstro, based on [AstroKeith/eFinder_Lite](https://github.com/AstroKeith/eFinder_Lite).
 
-The Raspberry Pi Zero 2W attaches to the main unit **Focuser** or **GNSS** UART (3.3 V TTL). The main unit is the master: it probes the port, pushes site and time, requests solves, and applies sync / alignment / GoTo++. The SHC and ASCOM reach the eFinder only through main-unit `:e…#` commands.
+The Raspberry Pi Zero 2W attaches to the main unit **Focuser** or **GNSS** UART (3.3 V TTL). The main unit is the master: it probes the port, pushes site and time, requests solves, and applies sync / alignment / GoTo++. The two axis rotations, the Hz cone and the Ve cone, are measured and stored by the main unit (`:eK#`), not by the Pi. `:eO#` on the Pi is only the brightest star against the camera center. The SHC and ASCOM reach the eFinder only through main-unit `:e…#` commands. The Android app can plate-solve with the phone camera and no Pi; see [docs/app/phone_finder.md](../docs/app/phone_finder.md).
 
 When the eFinder sits on the GNSS port it can relay NMEA from a USB GPS dongle so site/time sync keeps working.
 
