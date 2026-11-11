@@ -25,6 +25,8 @@
 #define T_EFINDER_AIM "Achse"
 #define T_EFINDER_AIM_1 "Heller Stern"
 #define T_EFINDER_AIM_2 "Zentrieren+Sync"
+#define T_EFINDER_HZ "Hz Cone"
+#define T_EFINDER_VE "Ve Cone"
 #define T_EFINDER_EXPOSURE "Belichtung"
 #define T_EFINDER_GAIN "Gain"
 #define T_EFINDER_INFO "Info"

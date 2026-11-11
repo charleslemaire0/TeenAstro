@@ -1013,15 +1013,15 @@ static int runAutomatedTests(LX200Client& lx200)
                    "aim cal result", "timed out");
         printf("         aim: %s\n", res);
         double east = 0, north = 0;
-        TEST_CHECK(res[0] == 'O' && strstr(res, "aim") != NULL &&
+        TEST_CHECK(res[0] == 'O' && strstr(res, "cone") != NULL &&
                    sscanf(res, "O%lf,%lf", &east, &north) == 2,
-                   "aim reply is two rotations", res);
+                   "aim reply is Hz and Ve cone", res);
         const double expectEast = 0.0002 * 15.0 * 60.0 * cos((double)dec1 * DEG_TO_RAD);
         const double expectNorth = 0.001 * 60.0;
-        printf("         aim E %.3f' N %.3f' (stub E %.3f' N %.3f')\n",
+        printf("         Hz %.3f' Ve %.3f' (stub Hz %.3f' Ve %.3f')\n",
                east, north, expectEast, expectNorth);
         TEST_CHECK(fabs(east - expectEast) < 0.03 && fabs(north - expectNorth) < 0.03,
-                   "aim matches stub vs telescope", res);
+                   "Hz and Ve cones match the stub", res);
 
         ta_MountStatus.updateAllState(true);
         double axisRa = ta_MountStatus.getRaHoursCached();

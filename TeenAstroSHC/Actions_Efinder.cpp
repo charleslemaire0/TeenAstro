@@ -117,14 +117,16 @@ void SmartHandController::menuEfinder()
       {
         if (waitEfinderResult(out, sizeof(out)))
         {
-          double east = 0, north = 0;
+          double hz = 0, ve = 0;
           if (out[0] == 'F')
             DisplayMessage(T_EFINDER_AIM, T_FAILED, 1500);
-          else if (sscanf(out, "O%lf,%lf", &east, &north) == 2)
+          else if (sscanf(out, "O%lf,%lf", &hz, &ve) == 2)
           {
-            char line[40];
-            snprintf(line, sizeof(line), "E %+.2f' N %+.2f'", east, north);
-            DisplayMessage(T_EFINDER_AIM, line, 2500);
+            char hzLine[32];
+            char veLine[32];
+            snprintf(hzLine, sizeof(hzLine), "%s %+.2f'", T_EFINDER_HZ, hz);
+            snprintf(veLine, sizeof(veLine), "%s %+.2f'", T_EFINDER_VE, ve);
+            DisplayLongMessage(T_EFINDER_AIM, hzLine, veLine, NULL, 2500);
           }
           else
             DisplayMessage(T_EFINDER_AIM, out, 1500);

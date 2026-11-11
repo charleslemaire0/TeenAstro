@@ -25,6 +25,8 @@
 #define T_EFINDER_AIM "Aim"
 #define T_EFINDER_AIM_1 "Bright star"
 #define T_EFINDER_AIM_2 "Center and Sync"
+#define T_EFINDER_HZ "Hz Cone"
+#define T_EFINDER_VE "Ve Cone"
 #define T_EFINDER_EXPOSURE "Exposure"
 #define T_EFINDER_GAIN "Gain"
 #define T_EFINDER_INFO "Info"

@@ -25,6 +25,8 @@
 #define T_EFINDER_AIM "Visee"
 #define T_EFINDER_AIM_1 "Etoile brillante"
 #define T_EFINDER_AIM_2 "Centrer + Sync"
+#define T_EFINDER_HZ "Hz Cone"
+#define T_EFINDER_VE "Ve Cone"
 #define T_EFINDER_EXPOSURE "Exposition"
 #define T_EFINDER_GAIN "Gain"
 #define T_EFINDER_INFO "Info"

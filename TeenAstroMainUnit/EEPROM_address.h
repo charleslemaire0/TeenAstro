@@ -158,12 +158,13 @@ extern uint8_t midx;
 #define EE_KnownConeBase    576 // float, radians, one per mount (576, 580)
 
 // Global eFinder settings (not per-mount)
-#define EE_efinderFlags     584 // bit0 = GoTo++ enabled
+#define EE_efinderFlags     584 // bit0 = GoTo++ enabled, bit1 = cones measured on alt-az
 #define EE_efinderThresh    585 // GoTo++ threshold in arcmin (1..60)
-// Two tangent-plane rotations, efinder axis minus telescope axis (radians).
+// Hz cone and Ve cone, efinder axis minus telescope axis (radians).
+// Hz is along axis 1, Ve along axis 2, on either mount.
 // 588/592 stay 4-byte aligned; 586-587 are unused.
-#define EE_efinderAimEast   588
-#define EE_efinderAimNorth  592
+#define EE_efinderAimHz     588
+#define EE_efinderAimVe     592
 
 // address: one of the EE_* offsets above; idx (if used): within mount count.
 int getMountAddress(int address);

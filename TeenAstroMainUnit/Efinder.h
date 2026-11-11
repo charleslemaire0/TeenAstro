@@ -14,8 +14,11 @@
  *   :eS#                         -> 1# / 0#   start capture and solve
  *   :eO#                         -> 1# / 0#   start pixel-offset calibration on a bright star
  *   :eo#                         -> 1#        reset pixel offset
- * Host (not forwarded): :eK# plate-solves and stores the two rotations from the
- * telescope axis to the efinder axis. Later solves are reported as the telescope axis.
+ * Host (not forwarded): :eK# plate-solves and stores two cone angles of the
+ * efinder axis relative to the telescope axis. Angle 1 is the horizontal
+ * cone (Hz Cone, along axis 1) and angle 2 is the vertical cone (Ve Cone,
+ * along axis 2). The names are the same on an equatorial and an alt-az mount.
+ * Later solves are reported as the telescope axis.
  *   :eR#                         -> B# busy, N# nothing, F<code># failed,
  *                                   S<raHours>,<decDeg>,<stars>,<ms># solved (JNow),
  *                                   O<dxArcmin>,<dyArcmin>,<name># offset measured
@@ -105,10 +108,13 @@ private:
   bool applySync(double raH, double decD);
   bool gotoAlignPoint();
   void telescopePointing(double& raH, double& decD) const;
-  /// Subtract the stored aim rotations so ra/dec is the telescope axis.
+  bool mountIsAltAz() const;
+  /// Subtract the stored cones so ra/dec is the telescope axis.
   void finderToTelescope(double& raH, double& decD) const;
-  /// Store efinder-minus-telescope rotations from a synced star and a raw solve.
+  /// Store efinder-minus-telescope Hz and Ve cones from a synced star and a raw solve.
   void measureAim(double scopeRaH, double scopeDecD, double finderRaH, double finderDecD);
+  void equToHor(double raH, double decD, double& altRad, double& azRad) const;
+  void horToEqu(double altRad, double azRad, double& raH, double& decD) const;
 
   EfinderPort m_port = EF_PORT_NONE;
   char m_version[24] = "";
@@ -147,9 +153,11 @@ private:
   uint8_t m_thresholdArcmin = 2;
   bool m_nmea = false;
 
-  // Tangent-plane rotations, radians: efinder axis relative to the telescope axis.
-  float m_aimEast = 0;
-  float m_aimNorth = 0;
+  // Cone angles, radians: efinder axis minus telescope axis.
+  // Hz is along axis 1 (HA or azimuth). Ve is along axis 2 (Dec or altitude).
+  float m_aimHz = 0;
+  float m_aimVe = 0;
+  bool m_aimHor = false;
   // Telescope pointing last pushed to the efinder. Aim calibration compares
   // the plate solve to this, not to where tracking has moved since.
   double m_pushedRaH = 0;

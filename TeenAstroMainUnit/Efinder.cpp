@@ -64,19 +64,21 @@ void EfinderManager::loadSettings()
   uint8_t thr = XEEPROM.read(EE_efinderThresh);
   if (thr == 0 || thr > 60) thr = 2;
   m_thresholdArcmin = thr;
-  float east = XEEPROM.readFloat(EE_efinderAimEast);
-  float north = XEEPROM.readFloat(EE_efinderAimNorth);
-  m_aimEast = aimSane(east) ? east : 0.f;
-  m_aimNorth = aimSane(north) ? north : 0.f;
+  float hz = XEEPROM.readFloat(EE_efinderAimHz);
+  float ve = XEEPROM.readFloat(EE_efinderAimVe);
+  m_aimHz = aimSane(hz) ? hz : 0.f;
+  m_aimVe = aimSane(ve) ? ve : 0.f;
+  m_aimHor = (flags & 0x02) != 0;
 }
 
 void EfinderManager::saveSettings()
 {
   uint8_t flags = m_gotoPP ? 0x01 : 0x00;
+  if (m_aimHor) flags |= 0x02;
   XEEPROM.write(EE_efinderFlags, flags);
   XEEPROM.write(EE_efinderThresh, m_thresholdArcmin);
-  XEEPROM.writeFloat(EE_efinderAimEast, m_aimEast);
-  XEEPROM.writeFloat(EE_efinderAimNorth, m_aimNorth);
+  XEEPROM.writeFloat(EE_efinderAimHz, m_aimHz);
+  XEEPROM.writeFloat(EE_efinderAimVe, m_aimVe);
 }
 
 void EfinderManager::setGotoPlusPlus(bool on)
@@ -360,8 +362,9 @@ void EfinderManager::abort()
 bool EfinderManager::resetOffset()
 {
   if (!present()) return false;
-  m_aimEast = 0;
-  m_aimNorth = 0;
+  m_aimHz = 0;
+  m_aimVe = 0;
+  m_aimHor = false;
   saveSettings();
   char reply[16];
   return transact(":eo#", reply, sizeof(reply), REPLY_TIMEOUT_MS);
@@ -411,28 +414,80 @@ void EfinderManager::telescopePointing(double& raH, double& decD) const
   decD = EQ.Dec() * RAD_TO_DEG;
 }
 
+bool EfinderManager::mountIsAltAz() const
+{
+  MountType t = mount.config.identity.mountType;
+  return t == MOUNT_TYPE_ALTAZM || t == MOUNT_TYPE_FORK_ALT;
+}
+
+void EfinderManager::equToHor(double raH, double decD, double& altRad, double& azRad) const
+{
+  double haDeg = haRange(rtk.LST() * 15.0 - raH * 15.0);
+  Coord_EQ eq(0.0, decD * DEG_TO_RAD, haDeg * DEG_TO_RAD);
+  LA3::RefrOpt opt = mount.refrOptForTracking();
+  opt.use = false;
+  Coord_HO ho = eq.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, opt);
+  altRad = ho.Alt();
+  azRad = ho.Az();
+}
+
+void EfinderManager::horToEqu(double altRad, double azRad, double& raH, double& decD) const
+{
+  Coord_HO ho(0.0, altRad, azRad, false);
+  Coord_EQ eq = ho.To_Coord_EQ(*localSite.latitude() * DEG_TO_RAD);
+  raH = eq.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+  decD = eq.Dec() * RAD_TO_DEG;
+}
+
 void EfinderManager::finderToTelescope(double& raH, double& decD) const
 {
-  if (m_aimEast == 0.f && m_aimNorth == 0.f)
+  if (m_aimHz == 0.f && m_aimVe == 0.f)
     return;
+  if (m_aimHor)
+  {
+    double alt = 0, az = 0;
+    equToHor(raH, decD, alt, az);
+    double c = cos(alt);
+    if (c > -AIM_MIN_COS && c < AIM_MIN_COS)
+      c = (c < 0.0) ? -AIM_MIN_COS : AIM_MIN_COS;
+    az -= (double)m_aimHz / c;
+    alt -= (double)m_aimVe;
+    horToEqu(alt, az, raH, decD);
+    return;
+  }
   double c = cos(decD * DEG_TO_RAD);
   if (c > -AIM_MIN_COS && c < AIM_MIN_COS)
     c = (c < 0.0) ? -AIM_MIN_COS : AIM_MIN_COS;
-  raH -= ((double)m_aimEast / c) * RAD_TO_DEG / 15.0;
+  raH -= ((double)m_aimHz / c) * RAD_TO_DEG / 15.0;
   if (raH < 0.0) raH += 24.0;
   else if (raH >= 24.0) raH -= 24.0;
-  decD -= (double)m_aimNorth * RAD_TO_DEG;
+  decD -= (double)m_aimVe * RAD_TO_DEG;
 }
 
 void EfinderManager::measureAim(double scopeRaH, double scopeDecD,
                                  double finderRaH, double finderDecD)
 {
-  double dRaH = finderRaH - scopeRaH;
-  if (dRaH > 12.0) dRaH -= 24.0;
-  else if (dRaH < -12.0) dRaH += 24.0;
-  double c = cos(scopeDecD * DEG_TO_RAD);
-  m_aimEast = (float)(dRaH * 15.0 * DEG_TO_RAD * c);
-  m_aimNorth = (float)((finderDecD - scopeDecD) * DEG_TO_RAD);
+  m_aimHor = mountIsAltAz();
+  if (m_aimHor)
+  {
+    double sAlt = 0, sAz = 0, fAlt = 0, fAz = 0;
+    equToHor(scopeRaH, scopeDecD, sAlt, sAz);
+    equToHor(finderRaH, finderDecD, fAlt, fAz);
+    double dAz = fAz - sAz;
+    if (dAz > M_PI) dAz -= 2.0 * M_PI;
+    else if (dAz < -M_PI) dAz += 2.0 * M_PI;
+    m_aimHz = (float)(dAz * cos(sAlt));
+    m_aimVe = (float)(fAlt - sAlt);
+  }
+  else
+  {
+    double dRaH = finderRaH - scopeRaH;
+    if (dRaH > 12.0) dRaH -= 24.0;
+    else if (dRaH < -12.0) dRaH += 24.0;
+    double c = cos(scopeDecD * DEG_TO_RAD);
+    m_aimHz = (float)(dRaH * 15.0 * DEG_TO_RAD * c);
+    m_aimVe = (float)((finderDecD - scopeDecD) * DEG_TO_RAD);
+  }
   saveSettings();
 }
 
@@ -440,15 +495,25 @@ void EfinderManager::onSolved(double raH, double decD)
 {
   if (m_job == EF_JOB_AIM)
   {
-    if (fabs(cos(m_pushedDecD * DEG_TO_RAD)) < AIM_MIN_COS)
+    if (mountIsAltAz())
+    {
+      double alt = 0, az = 0;
+      equToHor(m_pushedRaH, m_pushedDecD, alt, az);
+      if (fabs(cos(alt)) < AIM_MIN_COS)
+      {
+        onFailed('Z');
+        return;
+      }
+    }
+    else if (fabs(cos(m_pushedDecD * DEG_TO_RAD)) < AIM_MIN_COS)
     {
       onFailed('P');
       return;
     }
     measureAim(m_pushedRaH, m_pushedDecD, raH, decD);
-    double eastArcmin = (double)m_aimEast * RAD_TO_DEG * 60.0;
-    double northArcmin = (double)m_aimNorth * RAD_TO_DEG * 60.0;
-    snprintf(m_offsetInfo, sizeof(m_offsetInfo), "%.2f,%.2f,aim", eastArcmin, northArcmin);
+    double hzArcmin = (double)m_aimHz * RAD_TO_DEG * 60.0;
+    double veArcmin = (double)m_aimVe * RAD_TO_DEG * 60.0;
+    snprintf(m_offsetInfo, sizeof(m_offsetInfo), "%.2f,%.2f,cone", hzArcmin, veArcmin);
     finishJob(EF_RES_OFFSET);
     return;
   }

@@ -63,9 +63,10 @@ void Command_e()
     break;
 
   case 'K':
-    // :eK#  plate-solve and store the two rotations between the telescope
-    // axis and the efinder. The telescope must already be synced on a star
-    // well away from the pole. Result via :eR# is O<eastArcmin>,<northArcmin>,aim#
+    // :eK#  plate-solve and store the Hz cone and the Ve cone between the
+    // telescope axis and the efinder. Same two angles on either mount:
+    // Hz along axis 1, Ve along axis 2. Result via :eR# is
+    // O<hzArcmin>,<veArcmin>,cone#
     replyValueSetShort(efinder.startAimCal());
     break;
 
