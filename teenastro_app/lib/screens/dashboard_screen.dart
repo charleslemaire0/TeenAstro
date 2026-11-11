@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../services/mount_state_provider.dart';
 import '../services/lx200_tcp_client.dart';
 import '../models/mount_state.dart';
@@ -47,6 +48,17 @@ class DashboardScreen extends ConsumerWidget {
 
           // Firmware info
           _FirmwareCard(state: state),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.photo_camera, color: TA.accent),
+              title: const Text('Phone finder'),
+              subtitle: const Text(
+                'Plate solve with the phone camera. No efinder required.',
+              ),
+              onTap: () => context.go('/finder'),
+            ),
+          ),
 
           // Debug panel (temporary)
           const SizedBox(height: 8),

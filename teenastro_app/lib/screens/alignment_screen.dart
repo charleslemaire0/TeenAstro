@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
 import '../models/lx200_commands.dart';
@@ -852,6 +853,12 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                 onPressed: _startAlignment,
                 icon: const Icon(Icons.play_arrow, size: 18),
                 label: Text('Start ${alignKindLabel(_effectiveKind(state))}'),
+              ),
+              const SizedBox(height: 6),
+              OutlinedButton.icon(
+                onPressed: () => context.go('/finder'),
+                icon: const Icon(Icons.photo_camera, size: 18),
+                label: const Text('Phone finder'),
               ),
             ],
             const SizedBox(height: 8),

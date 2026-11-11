@@ -11,6 +11,7 @@ import 'screens/catalog_browser_screen.dart';
 import 'screens/tracking_screen.dart';
 import 'screens/alignment_screen.dart';
 import 'screens/planetarium_screen.dart';
+import 'screens/phone_finder_screen.dart';
 import 'screens/settings_screen.dart';
 import 'providers/last_goto_route_provider.dart';
 
@@ -28,6 +29,7 @@ final _router = GoRouter(
         GoRoute(path: '/planetarium', builder: (_, __) => const PlanetariumScreen()),
         GoRoute(path: '/tracking', builder: (_, __) => const TrackingScreen()),
         GoRoute(path: '/alignment', builder: (_, __) => const AlignmentScreen()),
+        GoRoute(path: '/finder', builder: (_, __) => const PhoneFinderScreen()),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       ],
     ),
@@ -78,7 +80,7 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith('/control')) return 1;
     if (location.startsWith('/goto') || location.startsWith('/catalogs') || location.startsWith('/planetarium')) return 2;
     if (location.startsWith('/tracking')) return 3;
-    if (location.startsWith('/alignment')) return 4;
+    if (location.startsWith('/alignment') || location.startsWith('/finder')) return 4;
     if (location.startsWith('/settings')) return 5;
     return 0;
   }
