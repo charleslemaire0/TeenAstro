@@ -63,10 +63,9 @@ void Command_e()
     break;
 
   case 'K':
-    // :eK#  plate-solve and store the Hz cone and the Ve cone between the
-    // telescope axis and the efinder. Same two angles on either mount:
-    // Hz along axis 1, Ve along axis 2. Result via :eR# is
-    // O<hzArcmin>,<veArcmin>,cone#
+    // :eK#  plate-solve and store the Hz cone and the Ve cone in the
+    // telescope frame. Hz is the horizontal cone, Ve the vertical cone.
+    // Result via :eR# is O<hzArcmin>,<veArcmin>,cone#
     replyValueSetShort(efinder.startAimCal());
     break;
 

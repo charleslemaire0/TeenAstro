@@ -14,11 +14,10 @@
  *   :eS#                         -> 1# / 0#   start capture and solve
  *   :eO#                         -> 1# / 0#   start pixel-offset calibration on a bright star
  *   :eo#                         -> 1#        reset pixel offset
- * Host (not forwarded): :eK# plate-solves and stores two cone angles of the
- * efinder axis relative to the telescope axis. Angle 1 is the horizontal
- * cone (Hz Cone, along axis 1) and angle 2 is the vertical cone (Ve Cone,
- * along axis 2). The names are the same on an equatorial and an alt-az mount.
- * Later solves are reported as the telescope axis.
+ * Host (not forwarded): :eK# plate-solves and stores two cone angles in the
+ * telescope frame, from the telescope axis to the efinder axis. Hz Cone is
+ * the horizontal cone and Ve Cone is the vertical cone. Later solves are
+ * reported as the telescope axis.
  *   :eR#                         -> B# busy, N# nothing, F<code># failed,
  *                                   S<raHours>,<decDeg>,<stars>,<ms># solved (JNow),
  *                                   O<dxArcmin>,<dyArcmin>,<name># offset measured
@@ -153,8 +152,8 @@ private:
   uint8_t m_thresholdArcmin = 2;
   bool m_nmea = false;
 
-  // Cone angles, radians: efinder axis minus telescope axis.
-  // Hz is along axis 1 (HA or azimuth). Ve is along axis 2 (Dec or altitude).
+  // Telescope-frame cones, radians: efinder axis relative to the telescope axis.
+  // m_aimHz is the horizontal cone, m_aimVe the vertical cone.
   float m_aimHz = 0;
   float m_aimVe = 0;
   bool m_aimHor = false;

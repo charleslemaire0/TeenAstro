@@ -102,7 +102,7 @@ TeenAstroEfinder on the Focuser or GNSS port. Hosts talk only to the main unit; 
 | `:eR#` | Poll result: busy, none, fail, solved, or offset. After `:eK#` the offset is `O<hzConeArcmin>,<veConeArcmin>,cone#`. | `B#` / `N#` / `Fcode#` / `Sra,dec,stars,ms#` / `O…#` | TeenAstro extension |
 | `:eO#` | Start camera-center offset calibration (brightest star vs chip center). | `1` / `0` | TeenAstro extension |
 | `:eo#` | Reset the camera-center offset and the stored axis rotations. | `1` / `0` | TeenAstro extension |
-| `:eK#` | Measure the Hz cone and the Ve cone between the telescope axis and the efinder. Hz is along axis 1 and Ve along axis 2, on an equatorial mount and on an alt-az mount. Sync the telescope on a bright star first, away from the pole or the zenith. Later solves are reported as the telescope axis. | `1` / `0` | TeenAstro extension |
+| `:eK#` | Measure the Hz cone and the Ve cone of the efinder axis in the telescope frame. Hz is the horizontal cone and Ve is the vertical cone. Sync the telescope on a bright star first. Later solves are reported as the telescope axis. | `1` / `0` | TeenAstro extension |
 | `:eA#` | Start eFinder alignment (enables alignment-by-sync and solves). | `1` / `0` | TeenAstro extension |
 | `:eB#` | Abort the current eFinder job. | `1` | TeenAstro extension |
 | `:eP#` | GoTo++ settings. | `on,thresholdArcmin#` | TeenAstro extension |

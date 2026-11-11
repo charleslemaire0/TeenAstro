@@ -467,6 +467,9 @@ void EfinderManager::finderToTelescope(double& raH, double& decD) const
 void EfinderManager::measureAim(double scopeRaH, double scopeDecD,
                                  double finderRaH, double finderDecD)
 {
+  // The sync and the plate solve are sky positions. Rotate that separation
+  // into the telescope frame. The stored cones are the telescope's own
+  // horizontal and vertical, not sky coordinates.
   m_aimHor = mountIsAltAz();
   if (m_aimHor)
   {
