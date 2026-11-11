@@ -75,8 +75,11 @@ void Command_A();       // A  Alignment
 void closeTwoStarAlignment(double latDeg);
 void Command_B();       // B  Reticule
 void Command_C();       // C  Sync
+/// Sync (or add an alignment reference in :AA# mode) on targetCurrent.newTargetRA/Dec.
+void syncOnTarget(PoleSide targetPoleSide);
 void Command_D();       // D  Distance bars
 void Command_E();       // E  Encoder / push-to
+void Command_e();       // e  eFinder (plate solving)
 void Command_F();       // F  Focuser
 void Command_G();       // G  Get (LX200)
 void Command_GX();      // GX TeenAstro get

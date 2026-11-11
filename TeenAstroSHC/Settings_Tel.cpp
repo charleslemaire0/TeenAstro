@@ -13,7 +13,7 @@ void SmartHandController::menuTelSettings()
   {
     while (!exitMenu)
     {
-      const char* string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_MAINUNITINFO "\nWifi";
+      const char* string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_EFINDER "\n" T_MAINUNITINFO "\nWifi";
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
       switch (tmp_sel)
@@ -34,9 +34,12 @@ void SmartHandController::menuTelSettings()
         menuMount();
         break;
       case 5:
-        menuMainUnitInfo();
+        menuEfinder();
         break;
       case 6:
+        menuMainUnitInfo();
+        break;
+      case 7:
         menuWifi();
         break;
       default:

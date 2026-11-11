@@ -88,6 +88,28 @@ A `:CM#` / `:CS#` once the flag is off does not change the stored transform. It 
 
 ---
 
+## e — eFinder (plate solving)
+
+TeenAstroEfinder on the Focuser or GNSS port. Hosts talk only to the main unit; the main unit drives the Pi.
+
+| Syntax | Description | Returns | Standard |
+|--------|-------------|---------|----------|
+| `:e?#` | Status: present, port (`F`/`G`), version, job, last result, GoTo++, threshold. | `0#` or `1,F,ver,job,res,pp,thr#` | TeenAstro extension |
+| `:eV#` | Firmware/app version of the eFinder. | `text#` / `0#` | TeenAstro extension |
+| `:eS#` | Start capture and plate-solve (no sync). | `1` / `0` | TeenAstro extension |
+| `:eY#` | Solve and sync (or add an alignment reference when `:AA#` / `:eA#` is active). | `1` / `0` | TeenAstro extension |
+| `:eR#` | Poll result: busy, none, fail, solved. | `B#` / `N#` / `Fcode#` / `Sra,dec,stars,ms#` | TeenAstro extension |
+| `:eO#` | Start finder-to-scope offset calibration (bright star). | `1` / `0` | TeenAstro extension |
+| `:eo#` | Reset finder offset. | `1` / `0` | TeenAstro extension |
+| `:eA#` | Start eFinder alignment (enables alignment-by-sync and solves). | `1` / `0` | TeenAstro extension |
+| `:eB#` | Abort the current eFinder job. | `1` | TeenAstro extension |
+| `:eP#` | GoTo++ settings. | `on,thresholdArcmin#` | TeenAstro extension |
+| `:eT0#` / `:eT1#` | Disable / enable GoTo++ (solve+sync+refine after each goto). | `1` / `0` | TeenAstro extension |
+| `:eT<n>#` | Set GoTo++ threshold in arcmin (`2`…`60`). | `1` / `0` | TeenAstro extension |
+| `:eX…#` | Camera/parameter passthrough to the Pi. | (varies) | TeenAstro extension |
+
+---
+
 ## E — Encoder / push-to
 
 All `:E…#` commands are encoder and push-to related. Not in Meade LX200.

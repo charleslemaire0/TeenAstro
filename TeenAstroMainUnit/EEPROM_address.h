@@ -157,6 +157,10 @@ extern uint8_t midx;
 #define EE_kgeom_use        12  // byte, 1 when a 2-star alignment holds cone and perp
 #define EE_KnownConeBase    576 // float, radians, one per mount (576, 580)
 
+// Global eFinder settings (not per-mount)
+#define EE_efinderFlags     584 // bit0 = GoTo++ enabled
+#define EE_efinderThresh    585 // GoTo++ threshold in arcmin (1..60)
+
 // address: one of the EE_* offsets above; idx (if used): within mount count.
 int getMountAddress(int address);
 int getMountAddress(int address, int idx);

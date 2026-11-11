@@ -1045,6 +1045,37 @@ LX200RETURN LX200Client::focuserIsConnected(bool& connected)
 }
 
 // ===========================================================================
+//  eFinder
+// ===========================================================================
+
+LX200RETURN LX200Client::efinderStatus(char* out, int len) { return get(":e?#", out, len); }
+LX200RETURN LX200Client::efinderVersion(char* out, int len) { return get(":eV#", out, len); }
+LX200RETURN LX200Client::efinderSolve() { return set(":eS#"); }
+LX200RETURN LX200Client::efinderSolveSync() { return set(":eY#"); }
+LX200RETURN LX200Client::efinderResult(char* out, int len) { return get(":eR#", out, len); }
+LX200RETURN LX200Client::efinderOffset() { return set(":eO#"); }
+LX200RETURN LX200Client::efinderResetOffset() { return set(":eo#"); }
+LX200RETURN LX200Client::efinderAlign() { return set(":eA#"); }
+LX200RETURN LX200Client::efinderAbort() { return set(":eB#"); }
+LX200RETURN LX200Client::efinderGotoPPSettings(char* out, int len) { return get(":eP#", out, len); }
+LX200RETURN LX200Client::efinderSetGotoPP(bool on) { return set(on ? ":eT1#" : ":eT0#"); }
+
+LX200RETURN LX200Client::efinderSetThreshold(uint8_t arcmin)
+{
+  if (arcmin < 1 || arcmin > 60) return LX200_INVALIDCOMMAND;
+  char cmd[12];
+  sprintf(cmd, ":eT%u#", (unsigned)arcmin);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::efinderParam(const char* body, char* out, int len)
+{
+  char cmd[40];
+  snprintf(cmd, sizeof(cmd), ":eX%s#", body);
+  return get(cmd, out, len);
+}
+
+// ===========================================================================
 //  Rotator
 // ===========================================================================
 

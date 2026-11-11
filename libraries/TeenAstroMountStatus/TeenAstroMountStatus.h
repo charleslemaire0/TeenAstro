@@ -255,6 +255,7 @@ public:
   bool hasInfoMount()     { return m_mount.valid; }
   bool hasInfoFocuser()   { return m_focuser.valid; }
   bool hasFocuser();
+  bool hasEfinder() { return m_hasEfinder; }
   bool hasInfoAxis1Step() { return m_axis1Step.valid; }
   bool hasInfoAxis2Step() { return m_axis2Step.valid; }
   bool hasInfoAxis1Deg()  { return m_axis1Deg.valid; }
@@ -601,6 +602,7 @@ private:
   CachedStr<45> m_focuser;
   CacheTimer    m_timerFocuser;
   bool          m_hasFocuser = false;
+  bool          m_hasEfinder = false;
 
   // --- All-state bulk cache (:GXAS#) ---
   // Stores the 88-char base64 string + '#' + NUL (90 bytes total).

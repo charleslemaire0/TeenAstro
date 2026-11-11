@@ -1,0 +1,140 @@
+#pragma once
+/**
+ * Efinder - plate-solving finder (TeenAstroEfinder, Raspberry Pi) attached to
+ * the Focuser or the GNSS port. The main unit is the master: it probes both
+ * ports, pushes site and time, requests solves and applies the result
+ * (sync, alignment reference, GoTo++). When the eFinder sits on the GNSS port
+ * it may relay NMEA from its own GPS; those lines are fed to mount.gnss.
+ *
+ * Link protocol (main unit -> eFinder), all replies end with '#':
+ *   :e?#                         -> TeenAstroEfinder,<version>#
+ *   :eTyyyymmddhhmmss#           -> 1#        set UTC
+ *   :eL<lat>,<lonEast>,<elev>#   -> 1#        set site (decimal degrees)
+ *   :eS#                         -> 1# / 0#   start capture and solve
+ *   :eO#                         -> 1# / 0#   start offset calibration on a bright star
+ *   :eo#                         -> 1#        reset offset
+ *   :eR#                         -> B# busy, N# nothing, F<code># failed,
+ *                                   S<raHours>,<decDeg>,<stars>,<ms># solved (JNow),
+ *                                   O<dxArcmin>,<dyArcmin>,<name># offset measured
+ *   :eN1# :eN0#                  -> 1#        NMEA relay on/off
+ *   :eN?#                        -> 1# / 0#   GPS present on the eFinder
+ *   :eX...#                      -> ...#      camera parameters (forwarded from hosts)
+ */
+#include <Arduino.h>
+
+enum EfinderPort : uint8_t { EF_PORT_NONE = 0, EF_PORT_FOCUSER, EF_PORT_GNSS };
+
+enum EfinderJob : uint8_t {
+  EF_JOB_IDLE = 0,
+  EF_JOB_SOLVE,        // solve only, report result
+  EF_JOB_SOLVE_SYNC,   // solve then sync the mount
+  EF_JOB_OFFSET,       // calibrate finder offset
+  EF_JOB_GOTOPP,       // GoTo++ refinement after a goto
+  EF_JOB_ALIGN         // automatic alignment
+};
+
+enum EfinderResult : uint8_t {
+  EF_RES_NONE = 0,
+  EF_RES_SOLVED,
+  EF_RES_SYNCED,
+  EF_RES_OFFSET,
+  EF_RES_FAILED,
+  EF_RES_ALIGNED
+};
+
+class EfinderManager {
+public:
+  void setup();
+  void update();
+
+  bool present() const { return m_port != EF_PORT_NONE; }
+  EfinderPort port() const { return m_port; }
+  bool ownsGnssPort() const { return m_port == EF_PORT_GNSS; }
+  bool busy() const { return m_job != EF_JOB_IDLE; }
+  EfinderJob job() const { return m_job; }
+  const char* version() const { return m_version; }
+
+  bool startSolve(bool sync);
+  bool startOffset();
+  bool startAlign();
+  void abort();
+  bool resetOffset();
+
+  bool gotoPlusPlus() const { return m_gotoPP; }
+  void setGotoPlusPlus(bool on);
+  uint8_t thresholdArcmin() const { return m_thresholdArcmin; }
+  void setThresholdArcmin(uint8_t v);
+
+  /// Formats the last result for :eR# (host side).
+  void formatResult(char* out, int len) const;
+  /// Status for :e?# (host side): present, port, job, last result, GoTo++.
+  void formatStatus(char* out, int len) const;
+  /// Blocking pass-through used for :eX...# parameter commands (short replies only).
+  bool passthrough(const char* cmd, char* reply, int len);
+
+private:
+  enum LinkState : uint8_t { LINK_IDLE = 0, LINK_WAIT };
+  enum Step : uint8_t {
+    STEP_NONE = 0,
+    STEP_START,        // send :eS# or :eO#
+    STEP_POLL,         // poll :eR#
+    STEP_WAIT_GOTO,    // wait end of a goto started by the eFinder logic
+    STEP_SETTLE
+  };
+
+  Stream* stream() const;
+  bool probePort(EfinderPort p);
+  void pump();
+  void handleLine(const char* line);
+  bool sendRequest(const char* cmd);
+  bool transact(const char* cmd, char* reply, int len, unsigned long timeoutMs);
+  void pushSiteAndTime();
+  void runJob();
+  void onSolved(double raH, double decD);
+  void onFailed(char code);
+  void finishJob(EfinderResult r);
+  void watchGoto();
+  void loadSettings();
+  void saveSettings();
+  bool applySync(double raH, double decD);
+  bool gotoAlignPoint();
+
+  EfinderPort m_port = EF_PORT_NONE;
+  char m_version[24] = "";
+  unsigned long m_lastProbe = 0;
+  unsigned long m_lastSeen = 0;
+
+  // incoming frame assembly
+  char m_rx[64];
+  uint8_t m_rxLen = 0;
+  bool m_inNmea = false;
+  char m_reply[64];
+  bool m_replyReady = false;
+  LinkState m_link = LINK_IDLE;
+  unsigned long m_reqTime = 0;
+
+  EfinderJob m_job = EF_JOB_IDLE;
+  Step m_step = STEP_NONE;
+  unsigned long m_stepTime = 0;
+  uint8_t m_pass = 0;
+  uint8_t m_failures = 0;
+
+  EfinderResult m_lastResult = EF_RES_NONE;
+  char m_failCode = 0;
+  double m_solvedRaH = 0;
+  double m_solvedDecD = 0;
+  double m_errorArcmin = 0;
+  char m_offsetInfo[40] = "";
+
+  // GoTo++ target captured at the end of the user goto (RA in degrees)
+  double m_targetRaH = 0;
+  double m_targetDecD = 0;
+  uint8_t m_prevGotoState = 0;
+  bool m_suppressGotoWatch = false;
+
+  bool m_gotoPP = false;
+  uint8_t m_thresholdArcmin = 2;
+  bool m_nmea = false;
+};
+
+extern EfinderManager efinder;
