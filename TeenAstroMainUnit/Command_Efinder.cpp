@@ -82,21 +82,24 @@ void Command_e()
 
   case 'T':
     // :eT0# / :eT1#  disable / enable GoTo++
-    // :eTn#  n=2..60 set threshold arcmin (also leaves GoTo++ as-is)
-    if (commandState.command[2] == '0')
+    // :eTn#  n=2..60 set threshold arcmin (GoTo++ left as-is)
+    // The frame parser strips ':' and '#', so :eT1# arrives as "eT1"
+    // and :eT15# as "eT15". A lone '1' is enable; a longer number is
+    // the threshold, including 10..19.
+    if (commandState.command[2] == '0' && commandState.command[3] == '\0')
     {
       efinder.setGotoPlusPlus(false);
       replyShortTrue();
     }
-    else if (commandState.command[2] == '1' && commandState.command[3] == '#')
+    else if (commandState.command[2] == '1' && commandState.command[3] == '\0')
     {
       efinder.setGotoPlusPlus(true);
       replyShortTrue();
     }
-    else if (commandState.command[2] >= '2' && commandState.command[2] <= '9')
+    else if (commandState.command[2] >= '1' && commandState.command[2] <= '9')
     {
       int v = atoi(&commandState.command[2]);
-      if (v >= 1 && v <= 60)
+      if (v >= 2 && v <= 60)
       {
         efinder.setThresholdArcmin((uint8_t)v);
         replyShortTrue();
@@ -119,6 +122,17 @@ void Command_e()
       strcat(out, "#");
       if (!efinder.passthrough(out, commandState.reply, REPLY_BUFFER_LEN))
         replyLongFalse();
+      else if (strchr(commandState.reply, '#') == NULL)
+      {
+        // The link parser strips the Pi's trailing '#'. Host replies must
+        // end with one or the client waits until its timeout.
+        size_t n = strlen(commandState.reply);
+        if (n + 1 < REPLY_BUFFER_LEN)
+        {
+          commandState.reply[n] = '#';
+          commandState.reply[n + 1] = '\0';
+        }
+      }
     }
     break;
 

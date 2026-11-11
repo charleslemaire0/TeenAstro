@@ -191,34 +191,27 @@ void EfinderManager::pump()
       if (m_port == EF_PORT_GNSS)
         mount.gnss.encode((uint8_t)c);
       if (c == '\n') m_inNmea = false;
+      m_rxLen = 0;
       continue;
     }
 
-    if (m_rxLen == 0 && c != 'T' && c != 'B' && c != 'N' && c != 'F' && c != 'S' &&
-        c != 'O' && c != '1' && c != '0' && c != 'y' && c != 'n')
-    {
-      // ignore noise until a plausible reply start
+    // Bytes that arrive when no command is outstanding are noise (a trailing
+    // '#' , NMEA leftovers). A waiting reply is collected until '#' so values
+    // such as "2.5" and "80" are not dropped for starting with the wrong glyph.
+    if (m_link != LINK_WAIT)
       continue;
-    }
 
-    if (m_rxLen < sizeof(m_rx) - 1)
-      m_rx[m_rxLen++] = c;
-
-    if (c == '#' || (m_rxLen == 1 && (c == '1' || c == '0')))
+    if (c == '#')
     {
-      // short bool replies may omit '#'
-      if (c != '#' && (c == '1' || c == '0'))
-      {
-        m_rx[m_rxLen++] = '#';
-      }
       m_rx[m_rxLen] = 0;
       handleLine(m_rx);
       m_rxLen = 0;
+      continue;
     }
-    else if (m_rxLen >= sizeof(m_rx) - 1)
-    {
+    if (m_rxLen < (int)sizeof(m_rx) - 1)
+      m_rx[m_rxLen++] = c;
+    else
       m_rxLen = 0;
-    }
   }
 }
 
@@ -449,69 +442,69 @@ void EfinderManager::onSolved(double raH, double decD)
 
 void EfinderManager::runJob()
 {
-  if (m_link == LINK_WAIT)
+  // pump()/handleLine() clears LINK_WAIT as soon as the bytes arrive, which
+  // is before this runs. Gate on the reply itself, not on the link still
+  // being in WAIT, or a fast slave (the in-process stub, or a Pi that answers
+  // within one loop) is never observed and the job stays busy.
+  if (m_replyReady)
   {
-    if (m_replyReady)
-    {
-      m_replyReady = false;
-      m_link = LINK_IDLE;
-      const char* r = m_reply;
+    m_replyReady = false;
+    m_link = LINK_IDLE;
+    const char* r = m_reply;
 
-      if (m_step == STEP_START)
+    if (m_step == STEP_START)
+    {
+      if (r[0] == '0')
       {
-        if (r[0] == '0')
-        {
-          onFailed('0');
-          return;
-        }
-        m_step = STEP_POLL;
-        m_stepTime = millis();
+        onFailed('0');
         return;
       }
-
-      if (m_step == STEP_POLL)
-      {
-        if (r[0] == 'B')
-        {
-          // still busy
-          return;
-        }
-        if (r[0] == 'N')
-        {
-          onFailed('N');
-          return;
-        }
-        if (r[0] == 'F')
-        {
-          onFailed(r[1] ? r[1] : 'F');
-          return;
-        }
-        if (r[0] == 'O')
-        {
-          strncpy(m_offsetInfo, r + 1, sizeof(m_offsetInfo) - 1);
-          char* hash = strchr(m_offsetInfo, '#');
-          if (hash) *hash = 0;
-          finishJob(EF_RES_OFFSET);
-          return;
-        }
-        if (r[0] == 'S')
-        {
-          double raH = 0, decD = 0;
-          int stars = 0, ms = 0;
-          if (sscanf(r + 1, "%lf,%lf,%d,%d", &raH, &decD, &stars, &ms) >= 2)
-          {
-            onSolved(raH, decD);
-          }
-          else
-          {
-            onFailed('P');
-          }
-          return;
-        }
-        onFailed('?');
-      }
+      m_step = STEP_POLL;
+      m_stepTime = millis();
+      return;
     }
-    else if (millis() - m_reqTime > ((m_step == STEP_POLL) ? SOLVE_TIMEOUT_MS : REPLY_TIMEOUT_MS))
+
+    if (m_step == STEP_POLL)
+    {
+      if (r[0] == 'B')
+        return;
+      if (r[0] == 'N')
+      {
+        onFailed('N');
+        return;
+      }
+      if (r[0] == 'F')
+      {
+        onFailed(r[1] ? r[1] : 'F');
+        return;
+      }
+      if (r[0] == 'O')
+      {
+        strncpy(m_offsetInfo, r + 1, sizeof(m_offsetInfo) - 1);
+        char* hash = strchr(m_offsetInfo, '#');
+        if (hash) *hash = 0;
+        finishJob(EF_RES_OFFSET);
+        return;
+      }
+      if (r[0] == 'S')
+      {
+        double raH = 0, decD = 0;
+        int stars = 0, ms = 0;
+        if (sscanf(r + 1, "%lf,%lf,%d,%d", &raH, &decD, &stars, &ms) >= 2)
+          onSolved(raH, decD);
+        else
+          onFailed('P');
+        return;
+      }
+      onFailed('?');
+      return;
+    }
+    return;
+  }
+
+  if (m_link == LINK_WAIT)
+  {
+    if (millis() - m_reqTime > ((m_step == STEP_POLL) ? SOLVE_TIMEOUT_MS : REPLY_TIMEOUT_MS))
     {
       m_link = LINK_IDLE;
       onFailed('T');

@@ -13,38 +13,37 @@ void SmartHandController::menuTelSettings()
   {
     while (!exitMenu)
     {
-      const char* string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_EFINDER "\n" T_MAINUNITINFO "\nWifi";
+      // eFinder is omitted until the main unit has detected one.
+      const bool hasEfinder = ta_MountStatus.hasEfinder();
+      char string_list_TelSettings[160];
+      if (hasEfinder)
+        snprintf(string_list_TelSettings, sizeof(string_list_TelSettings),
+                 T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_EFINDER "\n" T_MAINUNITINFO "\nWifi");
+      else
+        snprintf(string_list_TelSettings, sizeof(string_list_TelSettings),
+                 T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_MAINUNITINFO "\nWifi");
+      const uint8_t idEfinder = hasEfinder ? 5 : 0;
+      const uint8_t idInfo = hasEfinder ? 6 : 5;
+      const uint8_t idWifi = hasEfinder ? 7 : 6;
+      if (s_sel > idWifi) s_sel = 1;
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
-      switch (tmp_sel)
-      {
-      case 0:
+      if (tmp_sel == 0)
         exitMenu = true;
-        break;
-      case 1:
+      else if (tmp_sel == 1)
         menuSHCSettings();
-        break;
-      case 2:
+      else if (tmp_sel == 2)
         menuTimeAndSite();
-        break;
-      case 3:
+      else if (tmp_sel == 3)
         menuParkAndHome();
-        break;
-      case 4:
+      else if (tmp_sel == 4)
         menuMount();
-        break;
-      case 5:
+      else if (tmp_sel == idEfinder)
         menuEfinder();
-        break;
-      case 6:
+      else if (tmp_sel == idInfo)
         menuMainUnitInfo();
-        break;
-      case 7:
+      else if (tmp_sel == idWifi)
         menuWifi();
-        break;
-      default:
-        break;
-      }
     }
   }
   else
