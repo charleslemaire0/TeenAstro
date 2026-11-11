@@ -217,25 +217,23 @@ class _PositionCardState extends State<_PositionCard> with SingleTickerProviderS
             Tab(text: 'Alt / Az'),
           ]),
           SizedBox(
-            height: 100,
+            height: 120,
             child: TabBarView(controller: _tabs, children: [
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    CoordinateDisplay(label: 'RA', value: widget.state.ra),
-                    CoordinateDisplay(label: 'Dec', value: widget.state.dec),
+                    Expanded(child: CoordinateDisplay(label: 'RA', value: widget.state.ra)),
+                    Expanded(child: CoordinateDisplay(label: 'Dec', value: widget.state.dec)),
                   ],
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    CoordinateDisplay(label: 'Alt', value: widget.state.alt),
-                    CoordinateDisplay(label: 'Az', value: widget.state.az),
+                    Expanded(child: CoordinateDisplay(label: 'Alt', value: widget.state.alt)),
+                    Expanded(child: CoordinateDisplay(label: 'Az', value: widget.state.az)),
                   ],
                 ),
               ),
@@ -257,11 +255,10 @@ class _TimeCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _InfoItem(label: 'UTC', value: state.utcTime),
-            _InfoItem(label: 'Date', value: state.utcDate),
-            _InfoItem(label: 'LST', value: state.siderealTime),
+            Expanded(child: _InfoItem(label: 'UTC', value: state.utcTime)),
+            Expanded(child: _InfoItem(label: 'Date', value: state.utcDate)),
+            Expanded(child: _InfoItem(label: 'LST', value: state.siderealTime)),
           ],
         ),
       ),
@@ -285,10 +282,9 @@ class _TargetCard extends StatelessWidget {
               color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                CoordinateDisplay(label: 'RA', value: state.targetRa),
-                CoordinateDisplay(label: 'Dec', value: state.targetDec),
+                Expanded(child: CoordinateDisplay(label: 'RA', value: state.targetRa)),
+                Expanded(child: CoordinateDisplay(label: 'Dec', value: state.targetDec)),
               ],
             ),
           ],
