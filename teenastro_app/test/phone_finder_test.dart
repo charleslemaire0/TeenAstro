@@ -135,6 +135,11 @@ void main() {
     expect(frameRead.height, 64);
   });
 
+  test('separation is the tangent-plane distance in arcminutes', () {
+    expect(separationArcmin(5, 10, 5, 10.1), closeTo(6, 0.01));
+    expect(separationArcmin(5.01, 0, 5, 0), closeTo(9, 0.05));
+  });
+
   test('mount coordinate text parses', () {
     expect(parseMountHours('05:15:00'), closeTo(5.25, 1e-9));
     expect(parseMountDeg('+22*30:00'), closeTo(22.5, 1e-9));

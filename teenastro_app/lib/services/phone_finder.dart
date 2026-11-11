@@ -50,6 +50,17 @@ double wrapHours(double h) {
   return x;
 }
 
+/// Angular separation of two sky positions, in arcminutes.
+double separationArcmin(
+  double raH,
+  double decD,
+  double originRa,
+  double originDec,
+) {
+  final (east, north) = skyOffset(raH, decD, originRa, originDec);
+  return math.sqrt(east * east + north * north) * 60.0;
+}
+
 /// East and north separation of [raH], [decD] from an origin, in degrees.
 (double east, double north) skyOffset(
   double raH,

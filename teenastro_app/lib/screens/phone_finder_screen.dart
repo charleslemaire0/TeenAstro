@@ -29,6 +29,9 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   List<FinderStar> _catalog = const [];
   FinderCones _cones = const FinderCones();
   double _fov = 60;
+  bool _auto = false;
+  int _limitArcmin = 2;
+  bool _recenterNext = false;
   bool _busy = false;
   String _status = '';
   String? _cameraError;
@@ -44,6 +47,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   Future<void> _load() async {
     final cones = await _store.loadCones();
     final fov = await _store.loadFov();
+    final auto = await _store.loadAutoSync();
+    final limit = await _store.loadRecenterArcmin();
     final raw = await rootBundle.loadString('assets/catalogs/stars.json');
     final jd = julianDate(DateTime.now().toUtc());
     final catalog = _catalogFromJson(raw, jd);
@@ -51,6 +56,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     setState(() {
       _cones = cones;
       _fov = fov;
+      _auto = auto;
+      _limitArcmin = limit;
       _catalog = catalog;
     });
     if (_hasCamera) await _openCamera();
@@ -236,12 +243,77 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     if (await client.sendCommand(LX200.setTargetRa(formatted.$1)) != '1') {
       return 'The mount rejected the coordinates';
     }
-    if (await client.sendCommand(LX200.setTargetDec(formatted.$2)) != '1') {
+    if (await client.sendCommand(
+            LX200.setTargetDec(formatted.$2.replaceFirst(':', '*'))) !=
+        '1') {
       return 'The mount rejected the coordinates';
     }
     final reply = await client.sendCommand(LX200.syncTarget);
     if (reply == null) return 'Sync failed';
     await ref.read(mountStateProvider.notifier).refresh();
+    return null;
+  }
+
+  Future<void> _afterSlew(double targetRa, double targetDec) async {
+    if (_busy || !_auto) return;
+    final secondPass = _recenterNext;
+    _recenterNext = false;
+    _busy = true;
+    setState(() => _status = secondPass ? 'Syncing after recenter…' : 'Auto sync…');
+    try {
+      final solved = await _solve();
+      if (!mounted || solved == null) return;
+      var axisRa = solved.raH;
+      var axisDec = solved.decD;
+      if (!_cones.isZero) {
+        final axis = telescopeAxis(solved, _cones);
+        axisRa = axis.$1;
+        axisDec = axis.$2;
+      }
+      final err = await _syncMount(axisRa, axisDec);
+      if (!mounted) return;
+      if (err != null) {
+        setState(() => _status = err);
+        return;
+      }
+      final miss = separationArcmin(axisRa, axisDec, targetRa, targetDec);
+      if (!secondPass && miss > _limitArcmin) {
+        final slewErr = await _gotoTarget(targetRa, targetDec);
+        if (!mounted) return;
+        if (slewErr != null) {
+          setState(() => _status = slewErr);
+          return;
+        }
+        _recenterNext = true;
+        setState(() =>
+            _status = 'Off by ${miss.toStringAsFixed(1)}\'. Recentering.');
+        return;
+      }
+      setState(() =>
+          _status = 'Synced. ${miss.toStringAsFixed(1)}\' from the target.');
+    } finally {
+      _busy = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<String?> _gotoTarget(double raH, double decD) async {
+    final client = ref.read(lx200ClientProvider);
+    if (!client.isConnected) return 'Mount is not connected';
+    final formatted = formatRaDecLx200(raH, decD);
+    if (await client.sendCommand(LX200.setTargetRa(formatted.$1)) != '1') {
+      return 'The mount rejected the coordinates';
+    }
+    if (await client.sendCommand(
+            LX200.setTargetDec(formatted.$2.replaceFirst(':', '*'))) !=
+        '1') {
+      return 'The mount rejected the coordinates';
+    }
+    final slew = await client.sendCommand(LX200.gotoTarget);
+    if (slew == null || slew != '0') {
+      final code = gotoErrorFromReply(slew);
+      return code != null ? gotoErrorCause(code) : 'Goto rejected';
+    }
     return null;
   }
 
@@ -252,6 +324,14 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(mountStateProvider, (prev, next) {
+      if (!_auto || _busy || prev == null) return;
+      if (!prev.isSlewing || next.isSlewing) return;
+      final ra = parseMountHours(next.targetRa);
+      final dec = parseMountDeg(next.targetDec);
+      if (ra == null || dec == null) return;
+      _afterSlew(ra, dec);
+    });
     final preview = _cam;
     return Column(
       children: [
@@ -304,6 +384,50 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
                         'Ve Cone ${formatArcmin(_cones.veRad)}',
                 style: TextStyle(color: TA.textHigh, fontFamily: 'monospace'),
               ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Auto sync',
+                      style: TextStyle(color: TA.text),
+                    ),
+                  ),
+                  Switch(
+                    value: _auto,
+                    onChanged: _busy
+                        ? null
+                        : (on) {
+                            setState(() => _auto = on);
+                            _store.saveAutoSync(on);
+                          },
+                  ),
+                ],
+              ),
+              if (_auto)
+                Row(
+                  children: [
+                    Text('Recenter',
+                        style:
+                            TextStyle(color: TA.textSecondary, fontSize: 12)),
+                    Expanded(
+                      child: Slider(
+                        value: _limitArcmin.toDouble(),
+                        min: 2,
+                        max: 60,
+                        divisions: 58,
+                        label: "$_limitArcmin'",
+                        onChanged: _busy
+                            ? null
+                            : (v) => setState(() => _limitArcmin = v.round()),
+                        onChangeEnd: (v) =>
+                            _store.saveRecenterArcmin(v.round()),
+                      ),
+                    ),
+                    Text("$_limitArcmin'",
+                        style:
+                            TextStyle(color: TA.text, fontFamily: 'monospace')),
+                  ],
+                ),
               if (_status.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
