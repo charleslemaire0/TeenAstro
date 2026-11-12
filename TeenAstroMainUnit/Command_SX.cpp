@@ -691,6 +691,7 @@ static void Command_SX_Motors()
       && ((i >= 0) && (i < 2))
       && !ax->motor.isSilentFix)
     {
+      ax->motor.silent = i;
       XEEPROM.write(getMountAddress(ax->eeSilent), i);
       ok = true;
     }

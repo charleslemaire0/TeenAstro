@@ -497,10 +497,12 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
+          motorA2.silent = i;
           XEEPROM.write(getMountAddress(EE_motorA2silent), i);
         }
         else
         {
+          motorA1.silent = i;
           XEEPROM.write(getMountAddress(EE_motorA1silent), i);
         }
         replyShortTrue();

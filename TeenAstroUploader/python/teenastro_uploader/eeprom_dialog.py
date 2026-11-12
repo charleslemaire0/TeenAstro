@@ -145,7 +145,7 @@ class MountEepromDialog(tk.Toplevel):
                 width=16,
             ),
         )
-        settle = _spin(f, 0, 20, width=8)
+        settle = _spin(f, 0, 19, width=8)
         settle.configure(textvariable=self._vars["slew_settle"])
         _add_row(f, 6, "Slew settle (s)", settle)
 
@@ -179,7 +179,7 @@ class MountEepromDialog(tk.Toplevel):
 
             gear = _spin(box, 1, 60000, width=10, increment=0.001)
             gear.configure(textvariable=self._vars[f"{prefix}_gear"])
-            steps = _spin(box, 1, 400, width=10)
+            steps = _spin(box, 10, 400, width=10)
             steps.configure(textvariable=self._vars[f"{prefix}_steps"])
             micro = ttk.Combobox(
                 box,
@@ -230,17 +230,17 @@ class MountEepromDialog(tk.Toplevel):
 
         guide = _spin(f, 0.01, 2.0, width=10, increment=0.01)
         guide.configure(textvariable=self._vars["guide_rate"])
-        r1 = _spin(f, 1, 999, width=10)
+        r1 = _spin(f, 1, 255, width=10)
         r1.configure(textvariable=self._vars["rate1"])
-        r2 = _spin(f, 1, 999, width=10)
+        r2 = _spin(f, 1, 255, width=10)
         r2.configure(textvariable=self._vars["rate2"])
-        r3 = _spin(f, 1, 999, width=10)
+        r3 = _spin(f, 1, 255, width=10)
         r3.configure(textvariable=self._vars["rate3"])
         mx = _spin(f, 1, 9999, width=10)
         mx.configure(textvariable=self._vars["max_rate"])
         dr = _spin(f, 0, 4, width=10)
         dr.configure(textvariable=self._vars["default_rate"])
-        acc = _spin(f, 1, 999, width=10)
+        acc = _spin(f, 1, 250, width=10)
         acc.configure(textvariable=self._vars["deg_acc"])
 
         for i, (lab, w) in enumerate(
@@ -251,7 +251,7 @@ class MountEepromDialog(tk.Toplevel):
                 ("Rate 3", r3),
                 ("Max rate", mx),
                 ("Default rate (0–4)", dr),
-                ("Acceleration (GXRA)", acc),
+                ("Acceleration (0.1°)", acc),
             )
         ):
             _add_row(f, i, lab, w)
@@ -277,7 +277,7 @@ class MountEepromDialog(tk.Toplevel):
         )
         h = _spin(f, -30, 30, width=10)
         h.configure(textvariable=self._vars["horizon"])
-        o = _spin(f, 60, 91, width=10)
+        o = _spin(f, 45, 91, width=10)
         o.configure(textvariable=self._vars["overhead"])
         _add_row(f, 1, "Horizon (°)", h)
         _add_row(f, 2, "Overhead (°)", o)
@@ -328,17 +328,17 @@ class MountEepromDialog(tk.Toplevel):
             ("enc_sync", 0),
         ):
             self._var(key, default)
-        p1 = _spin(f, 0, 999999, width=12)
+        p1 = _spin(f, 0, 360000, width=12)
         p1.configure(textvariable=self._vars["enc1_pulse"])
-        p2 = _spin(f, 0, 999999, width=12)
+        p2 = _spin(f, 0, 360000, width=12)
         p2.configure(textvariable=self._vars["enc2_pulse"])
-        sync = _spin(f, 0, 10, width=12)
+        sync = _spin(f, 0, 7, width=12)
         sync.configure(textvariable=self._vars["enc_sync"])
-        _add_row(f, 0, "Axis1 pulse/°", p1)
+        _add_row(f, 0, "Axis1 pulses/100°", p1)
         ttk.Checkbutton(f, text="Axis1 reverse", variable=self._vars["enc1_reverse"]).grid(
             row=1, column=0, columnspan=2, sticky="w"
         )
-        _add_row(f, 2, "Axis2 pulse/°", p2)
+        _add_row(f, 2, "Axis2 pulses/100°", p2)
         ttk.Checkbutton(f, text="Axis2 reverse", variable=self._vars["enc2_reverse"]).grid(
             row=3, column=0, columnspan=2, sticky="w"
         )
@@ -352,10 +352,10 @@ class MountEepromDialog(tk.Toplevel):
         self._var("timezone", 0.0)
         _add_row(f, 0, "Latitude", ttk.Entry(f, textvariable=self._vars["latitude"], width=14))
         _add_row(f, 1, "Longitude", ttk.Entry(f, textvariable=self._vars["longitude"], width=14))
-        elev = _spin(f, -500, 9000, width=10)
+        elev = _spin(f, -200, 8000, width=10)
         elev.configure(textvariable=self._vars["elevation"])
         _add_row(f, 2, "Elevation (m)", elev)
-        tz = _spin(f, -12, 14, width=10, increment=0.5)
+        tz = _spin(f, -12, 12, width=10, increment=0.1)
         tz.configure(textvariable=self._vars["timezone"])
         _add_row(f, 3, "Time zone (h)", tz)
 
@@ -520,9 +520,6 @@ class MountEepromDialog(tk.Toplevel):
         self.update_idletasks()
         try:
             with self._session() as sess:
-                # Keep both mount names in EEPROM
-                sess.send_ack(f":SXOB,{cfg.mount_name_0}#")
-                sess.send_ack(f":SXOC,{cfg.mount_name_1}#")
                 errors = eeprom_mount.write_eeprom(
                     sess, cfg, write_mount_type=self._write_mtype.get()
                 )

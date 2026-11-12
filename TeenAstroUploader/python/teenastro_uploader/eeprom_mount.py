@@ -15,7 +15,8 @@ from typing import Any
 
 from .serial_lx200 import SerialSession
 
-MICROSTEPS = (8, 16, 32, 64, 128, 256)
+# Firmware stores the base-2 exponent (1..8 → 2..256 microsteps).
+MICROSTEPS = (2, 4, 8, 16, 32, 64, 128, 256)
 MTYPE_LABELS = ("Eq-German", "Eq-Fork", "AltAz-Tee", "AltAz-Fork")
 MTYPE_TO_CMD = {"Eq-German": "1", "Eq-Fork": "2", "AltAz-Tee": "3", "AltAz-Fork": "4"}
 
@@ -94,7 +95,7 @@ class EepromMount:
     rate3: int = 64
     max_rate: int = 800
     default_rate: int = 0  # 0..4
-    deg_acc: int = 10  # tenths of degree (GXRA raw)
+    deg_acc: int = 10  # tenths of a degree; :GXRA# replies in degrees
 
     # Limits (UI units, same as ASCOM / Webserver)
     horizon: int = -10
@@ -225,27 +226,278 @@ class EepromMount:
         return cfg
 
 
+def split_dms(text: str) -> tuple[int, int, int]:
+    """Signed degrees, minutes, seconds. Missing fields are 0."""
+    raw = (text or "").strip().replace("*", " ").replace(":", " ").replace("'", " ")
+    nums: list[int] = []
+    for part in raw.split()[:3]:
+        try:
+            nums.append(int(float(part)))
+        except ValueError:
+            break
+    while len(nums) < 3:
+        nums.append(0)
+    return nums[0], abs(nums[1]), abs(nums[2])
+
+
+def _utc_offset(timezone_hours: float) -> float:
+    """LX200 :SG# offset. Positive zero stays positive so 0 h is not sent as -0.0."""
+    offset = -float(timezone_hours)
+    return 0.0 if offset == 0.0 else offset
+
+
+def format_site_angle(prefix: str, text: str, deg_digits: int) -> str:
+    """High-precision site setter. Lat is +DD*MM:SS, longitude is +DDD*MM:SS."""
+    deg, minute, sec = split_dms(text)
+    width = deg_digits + 1  # sign counts in the width
+    return f":{prefix}{deg:+0{width}d}*{minute:02d}:{sec:02d}#"
+
+
+def _query_angle(sess: SerialSession, precise: str, plain: str) -> str:
+    resp = sess.query(precise)
+    if any(ch.isdigit() for ch in resp):
+        return resp
+    return sess.query(plain)
+
+
+def apply_read_value(cfg: EepromMount, key: str, reply: str) -> None:
+    """Parse one get-reply into the same units write_eeprom sends."""
+    if key == "GXOA":
+        cfg.mount_name = reply
+    elif key == "GXOB":
+        cfg.mount_name_0 = reply
+    elif key == "GXOC":
+        cfg.mount_name_1 = reply
+    elif key == "GXOS":
+        cfg.slew_settle = _as_int(reply)
+    elif key.startswith("GXM") and len(key) == 5:
+        ax = cfg.axis1 if key[-1] == "R" else cfg.axis2
+        field = key[3]
+        if field == "G":
+            ax.gear = round(_as_int(reply) / 1000.0, 3)
+        elif field == "S":
+            ax.steps = _as_int(reply, 200)
+        elif field == "M":
+            exp = _as_int(reply, 4)
+            # Exponent 1..8 is 2..256 microsteps. Anything else is not a stored setting.
+            ax.micro = (1 << exp) if 1 <= exp <= 8 else 16
+        elif field == "R":
+            ax.reverse = reply.strip() != "0"
+        elif field == "c":
+            ax.low_curr = _as_int(reply, 1000)
+        elif field == "C":
+            ax.high_curr = _as_int(reply, 1000)
+        elif field == "B":
+            ax.backlash = _as_int(reply)
+        elif field == "b":
+            ax.backlash_rate = _as_int(reply, 16)
+        elif field == "m":
+            ax.silent = reply.strip() != "0"
+    elif key == "GXR0":
+        cfg.guide_rate = _as_float(reply, 0.5)
+    elif key == "GXR1":
+        cfg.rate1 = _as_int(reply, 4)
+    elif key == "GXR2":
+        cfg.rate2 = _as_int(reply, 16)
+    elif key == "GXR3":
+        cfg.rate3 = _as_int(reply, 64)
+    elif key == "GXRX":
+        cfg.max_rate = _as_int(reply, 800)
+    elif key == "GXRD":
+        cfg.default_rate = _as_int(reply)
+    elif key == "GXRA":
+        # Reply is degrees ("1.0"). The setter payload is tenths.
+        cfg.deg_acc = int(round(_as_float(reply, 1.0) * 10))
+    elif key == "GXLH":
+        cfg.horizon = _as_int(reply, -10)
+    elif key == "GXLO":
+        cfg.overhead = _as_int(reply, 90)
+    elif key == "GXLA":
+        cfg.axis1_min = int(round(_as_int(reply) / 10.0))
+    elif key == "GXLB":
+        cfg.axis1_max = int(round(_as_int(reply) / 10.0))
+    elif key == "GXLC":
+        cfg.axis2_min = int(round(_as_int(reply) / 10.0))
+    elif key == "GXLD":
+        cfg.axis2_max = int(round(_as_int(reply) / 10.0))
+    elif key == "GXLE":
+        cfg.meridian_e = int(round(_as_int(reply) / 4.0))
+    elif key == "GXLW":
+        cfg.meridian_w = int(round(_as_int(reply) / 4.0))
+    elif key == "GXLU":
+        cfg.under_pole = round(_as_int(reply) / 10.0, 1)
+    elif key == "GXLS":
+        cfg.dist_from_pole = _as_int(reply, 181)
+    elif key == "GXEPR":
+        cfg.enc1_pulse = _as_int(reply)
+    elif key == "GXErR":
+        cfg.enc1_reverse = reply.strip() != "0"
+    elif key == "GXEPD":
+        cfg.enc2_pulse = _as_int(reply)
+    elif key == "GXErD":
+        cfg.enc2_reverse = reply.strip() != "0"
+    elif key == "GXEO":
+        cfg.enc_sync = _as_int(reply)
+    elif key == "GXrg":
+        cfg.refr_goto = reply.lower().startswith("y")
+    elif key == "GXrp":
+        cfg.refr_pole = reply.lower().startswith("y")
+    elif key == "GXrt":
+        cfg.refr_tracking = reply.lower().startswith("y")
+    elif key in ("Gt", "Gtf"):
+        cfg.latitude = reply or "+00*00"
+    elif key in ("Gg", "Ggf"):
+        cfg.longitude = reply or "+000*00"
+    elif key == "Ge":
+        cfg.elevation = _as_int(reply)
+    elif key == "GG":
+        cfg.timezone = -_as_float(reply)
+    else:
+        raise KeyError(key)
+
+
+def iter_set_commands(
+    cfg: EepromMount, *, write_mount_type: bool = False
+) -> list[tuple[str, str, str]]:
+    """(read key, set command, error tag) for every value write_eeprom stores.
+
+    Encoder pulse of 0 is omitted: the firmware rejects it, and a cleared
+    pulse does not survive the next boot.
+    """
+    cmds: list[tuple[str, str, str]] = [
+        ("GXOA", f":SXOA,{cfg.mount_name}#", "mount_name"),
+        ("GXOB", f":SXOB,{cfg.mount_name_0}#", "mount_name_0"),
+        ("GXOC", f":SXOC,{cfg.mount_name_1}#", "mount_name_1"),
+        ("GXOS", f":SXOS,{int(cfg.slew_settle)}#", "slew_settle"),
+    ]
+    for ax, suf, tag in (
+        (cfg.axis1, "R", "1"),
+        (cfg.axis2, "D", "2"),
+    ):
+        gear_raw = int(round(float(ax.gear) * 1000))
+        micro = int(ax.micro) if int(ax.micro) >= 1 else 1
+        exp = int(round(math.log(micro, 2)))
+        cmds.extend(
+            [
+                (f"GXMG{suf}", f":SXMG{suf},{gear_raw}#", f"gear{tag}"),
+                (f"GXMS{suf}", f":SXMS{suf},{int(ax.steps)}#", f"steps{tag}"),
+                (f"GXMM{suf}", f":SXMM{suf},{exp}#", f"micro{tag}"),
+                (f"GXMR{suf}", f":SXMR{suf},{'1' if ax.reverse else '0'}#", f"rev{tag}"),
+                (f"GXMc{suf}", f":SXMc{suf},{int(ax.low_curr)}#", f"lc{tag}"),
+                (f"GXMC{suf}", f":SXMC{suf},{int(ax.high_curr)}#", f"hc{tag}"),
+                (f"GXMB{suf}", f":SXMB{suf},{int(ax.backlash)}#", f"bl{tag}"),
+                (f"GXMb{suf}", f":SXMb{suf},{int(ax.backlash_rate)}#", f"blr{tag}"),
+                (
+                    f"GXMm{suf}",
+                    f":SXMm{suf},{'1' if ax.silent else '0'}#",
+                    f"sil{tag}",
+                ),
+            ]
+        )
+    guide_enc = int(round(float(cfg.guide_rate) * 100))
+    cmds.extend(
+        [
+            ("GXR0", f":SXR0,{guide_enc:03d}#", "guide"),
+            ("GXR1", f":SXR1,{int(cfg.rate1)}#", "rate1"),
+            ("GXR2", f":SXR2,{int(cfg.rate2)}#", "rate2"),
+            ("GXR3", f":SXR3,{int(cfg.rate3)}#", "rate3"),
+            ("GXRX", f":SXRX,{int(cfg.max_rate)}#", "max_rate"),
+            ("GXRD", f":SXRD,{int(cfg.default_rate)}#", "default_rate"),
+            ("GXRA", f":SXRA,{int(cfg.deg_acc)}#", "deg_acc"),
+            ("GXLH", f":SXLH,{int(cfg.horizon)}#", "horizon"),
+            ("GXLO", f":SXLO,{int(cfg.overhead)}#", "overhead"),
+            ("GXLA", f":SXLA,{10 * int(cfg.axis1_min)}#", "a1min"),
+            ("GXLB", f":SXLB,{10 * int(cfg.axis1_max)}#", "a1max"),
+            ("GXLC", f":SXLC,{10 * int(cfg.axis2_min)}#", "a2min"),
+            ("GXLD", f":SXLD,{10 * int(cfg.axis2_max)}#", "a2max"),
+            ("GXLE", f":SXLE,{int(cfg.meridian_e) * 4}#", "mer_e"),
+            ("GXLW", f":SXLW,{int(cfg.meridian_w) * 4}#", "mer_w"),
+            ("GXLU", f":SXLU,{int(round(float(cfg.under_pole) * 10))}#", "under_pole"),
+            ("GXLS", f":SXLS,{int(cfg.dist_from_pole)}#", "dist_pole"),
+        ]
+    )
+    if int(cfg.enc1_pulse) > 0:
+        cmds.append(("GXEPR", f":SXEPR,{int(cfg.enc1_pulse)}#", "enc1p"))
+    cmds.append(("GXErR", f":SXErR,{'1' if cfg.enc1_reverse else '0'}#", "enc1r"))
+    if int(cfg.enc2_pulse) > 0:
+        cmds.append(("GXEPD", f":SXEPD,{int(cfg.enc2_pulse)}#", "enc2p"))
+    cmds.append(("GXErD", f":SXErD,{'1' if cfg.enc2_reverse else '0'}#", "enc2r"))
+    cmds.extend(
+        [
+            ("GXEO", f":SXEO,{int(cfg.enc_sync)}#", "enc_sync"),
+            ("GXrg", f":SXrg,{'y' if cfg.refr_goto else 'n'}#", "refr_g"),
+            ("GXrp", f":SXrp,{'y' if cfg.refr_pole else 'n'}#", "refr_p"),
+            ("GXrt", f":SXrt,{'y' if cfg.refr_tracking else 'n'}#", "refr_t"),
+            ("Gtf", format_site_angle("St", cfg.latitude, 2), "latitude"),
+            ("Ggf", format_site_angle("Sg", cfg.longitude, 3), "longitude"),
+            ("Ge", f":Se{int(cfg.elevation):+04d}#", "elevation"),
+            ("GG", ":SG%+02.1f#" % _utc_offset(cfg.timezone), "timezone"),
+        ]
+    )
+    if write_mount_type:
+        code = MTYPE_TO_CMD.get(cfg.mtype, "")
+        if code:
+            cmds.append(("mtype", f":S!{code}#", "mtype"))
+    return cmds
+
+
+_FIELD_KEYS = (
+    "GXOA",
+    "GXOB",
+    "GXOC",
+    "GXOS",
+    "GXMGR",
+    "GXMSR",
+    "GXMMR",
+    "GXMRR",
+    "GXMcR",
+    "GXMCR",
+    "GXMBR",
+    "GXMbR",
+    "GXMmR",
+    "GXMGD",
+    "GXMSD",
+    "GXMMD",
+    "GXMRD",
+    "GXMcD",
+    "GXMCD",
+    "GXMBD",
+    "GXMbD",
+    "GXMmD",
+    "GXR0",
+    "GXR1",
+    "GXR2",
+    "GXR3",
+    "GXRX",
+    "GXRD",
+    "GXRA",
+    "GXLH",
+    "GXLO",
+    "GXLA",
+    "GXLB",
+    "GXLC",
+    "GXLD",
+    "GXLE",
+    "GXLW",
+    "GXLU",
+    "GXLS",
+    "GXEPR",
+    "GXErR",
+    "GXEPD",
+    "GXErD",
+    "GXEO",
+    "GXrg",
+    "GXrp",
+    "GXrt",
+    "Gtf",
+    "Ggf",
+    "Ge",
+    "GG",
+)
+
+
 def _q(sess: SerialSession, cmd: str, max_len: int = 64) -> str:
     return sess.query(cmd, max_len=max_len)
-
-
-def _read_motor(sess: SerialSession, suffix: str) -> MotorAxis:
-    m = MotorAxis()
-    raw_gear = _as_int(_q(sess, f"GXMG{suffix}"))
-    m.gear = round(raw_gear / 1000.0, 3)
-    m.steps = _as_int(_q(sess, f"GXMS{suffix}"), 200)
-    micro_exp = _as_int(_q(sess, f"GXMM{suffix}"), 4)
-    micro_exp = max(0, min(8, micro_exp))
-    m.micro = 1 << micro_exp
-    if m.micro not in MICROSTEPS:
-        m.micro = 16
-    m.reverse = _q(sess, f"GXMR{suffix}") != "0"
-    m.low_curr = _as_int(_q(sess, f"GXMc{suffix}"), 1000)
-    m.high_curr = _as_int(_q(sess, f"GXMC{suffix}"), 1000)
-    m.backlash = _as_int(_q(sess, f"GXMB{suffix}"))
-    m.backlash_rate = _as_int(_q(sess, f"GXMb{suffix}"), 16)
-    m.silent = _q(sess, f"GXMm{suffix}") != "0"
-    return m
 
 
 def read_eeprom(sess: SerialSession) -> EepromMount:
@@ -257,10 +509,6 @@ def read_eeprom(sess: SerialSession) -> EepromMount:
 
     idx = _as_int(_q(sess, "GXOI"))
     cfg.mount_index = 0 if idx not in (0, 1) else idx
-    cfg.mount_name = _q(sess, "GXOA")
-    cfg.mount_name_0 = _q(sess, "GXOB")
-    cfg.mount_name_1 = _q(sess, "GXOC")
-    cfg.slew_settle = _as_int(_q(sess, "GXOS"))
 
     # Mount type from GXAS packet nibble (same as TAConfig)
     try:
@@ -279,47 +527,14 @@ def read_eeprom(sess: SerialSession) -> EepromMount:
     except Exception as exc:  # noqa: BLE001
         cfg.warnings.append(f"mtype: {exc}")
 
-    cfg.axis1 = _read_motor(sess, "R")
-    cfg.axis2 = _read_motor(sess, "D")
-
-    cfg.guide_rate = _as_float(_q(sess, "GXR0"), 0.5)
-    cfg.rate1 = _as_int(_q(sess, "GXR1"), 4)
-    cfg.rate2 = _as_int(_q(sess, "GXR2"), 16)
-    cfg.rate3 = _as_int(_q(sess, "GXR3"), 64)
-    cfg.max_rate = _as_int(_q(sess, "GXRX"), 800)
-    cfg.default_rate = _as_int(_q(sess, "GXRD"))
-    cfg.deg_acc = _as_int(_q(sess, "GXRA"), 10)
-
-    cfg.horizon = _as_int(_q(sess, "GXLH"), -10)
-    cfg.overhead = _as_int(_q(sess, "GXLO"), 90)
-    # Axis limits: stored as tenths of a degree (signed, same as ASCOM)
-    cfg.axis1_min = int(round(_as_int(_q(sess, "GXLA")) / 10.0))
-    cfg.axis1_max = int(round(_as_int(_q(sess, "GXLB")) / 10.0))
-    cfg.axis2_min = int(round(_as_int(_q(sess, "GXLC")) / 10.0))
-    cfg.axis2_max = int(round(_as_int(_q(sess, "GXLD")) / 10.0))
-    # Meridian: minutes past → degrees (min * 15 / 60 = /4)
-    cfg.meridian_e = int(round(_as_int(_q(sess, "GXLE")) / 4.0))
-    cfg.meridian_w = int(round(_as_int(_q(sess, "GXLW")) / 4.0))
-    cfg.under_pole = round(_as_int(_q(sess, "GXLU")) / 10.0, 1)
-    cfg.dist_from_pole = _as_int(_q(sess, "GXLS"), 181)
-
-    cfg.enc1_pulse = _as_int(_q(sess, "GXEPR"))
-    cfg.enc1_reverse = _q(sess, "GXErR") != "0"
-    cfg.enc2_pulse = _as_int(_q(sess, "GXEPD"))
-    cfg.enc2_reverse = _q(sess, "GXErD") != "0"
-    cfg.enc_sync = _as_int(_q(sess, "GXEO"))
-
-    cfg.refr_goto = _q(sess, "GXrg").lower().startswith("y")
-    cfg.refr_pole = _q(sess, "GXrp").lower().startswith("y")
-    cfg.refr_tracking = _q(sess, "GXrt").lower().startswith("y")
-
-    cfg.latitude = _q(sess, "Gt") or "+00*00"
-    cfg.longitude = _q(sess, "Gg") or "+000*00"
-    cfg.elevation = _as_int(_q(sess, "Ge"))
-    try:
-        cfg.timezone = -_as_float(_q(sess, "GG"))
-    except Exception:  # noqa: BLE001
-        cfg.timezone = 0.0
+    for key in _FIELD_KEYS:
+        if key == "Gtf":
+            reply = _query_angle(sess, "Gtf", "Gt")
+        elif key == "Ggf":
+            reply = _query_angle(sess, "Ggf", "Gg")
+        else:
+            reply = _q(sess, key)
+        apply_read_value(cfg, key, reply)
 
     return cfg
 
@@ -333,23 +548,6 @@ def _ack(sess: SerialSession, cmd: str, errors: list[str], tag: str) -> None:
         errors.append(f"{tag}: {exc}")
 
 
-def _write_motor(sess: SerialSession, axis: MotorAxis, suffix: str, errors: list[str]) -> None:
-    gear_raw = int(round(float(axis.gear) * 1000))
-    _ack(sess, f":SXMG{suffix},{gear_raw}#", errors, f"gear{suffix}")
-    _ack(sess, f":SXMS{suffix},{int(axis.steps)}#", errors, f"steps{suffix}")
-    micro = int(axis.micro)
-    if micro < 1:
-        micro = 1
-    exp = int(round(math.log(micro, 2)))
-    _ack(sess, f":SXMM{suffix},{exp}#", errors, f"micro{suffix}")
-    _ack(sess, f":SXMR{suffix},{'1' if axis.reverse else '0'}#", errors, f"rev{suffix}")
-    _ack(sess, f":SXMc{suffix},{int(axis.low_curr)}#", errors, f"lc{suffix}")
-    _ack(sess, f":SXMC{suffix},{int(axis.high_curr)}#", errors, f"hc{suffix}")
-    _ack(sess, f":SXMB{suffix},{int(axis.backlash)}#", errors, f"bl{suffix}")
-    _ack(sess, f":SXMb{suffix},{int(axis.backlash_rate)}#", errors, f"blr{suffix}")
-    _ack(sess, f":SXMm{suffix},{'1' if axis.silent else '0'}#", errors, f"sil{suffix}")
-
-
 def write_eeprom(
     sess: SerialSession,
     cfg: EepromMount,
@@ -358,59 +556,15 @@ def write_eeprom(
 ) -> list[str]:
     """Write EEPROM fields. Returns list of errors (empty = OK)."""
     errors: list[str] = []
-
-    _ack(sess, f":SXOA,{cfg.mount_name}#", errors, "mount_name")
-    _ack(sess, f":SXOS,{int(cfg.slew_settle)}#", errors, "slew_settle")
-
-    _write_motor(sess, cfg.axis1, "R", errors)
-    _write_motor(sess, cfg.axis2, "D", errors)
-
-    guide_enc = int(round(float(cfg.guide_rate) * 100))
-    _ack(sess, f":SXR0,{guide_enc:03d}#", errors, "guide")
-    _ack(sess, f":SXR1,{int(cfg.rate1)}#", errors, "rate1")
-    _ack(sess, f":SXR2,{int(cfg.rate2)}#", errors, "rate2")
-    _ack(sess, f":SXR3,{int(cfg.rate3)}#", errors, "rate3")
-    _ack(sess, f":SXRX,{int(cfg.max_rate)}#", errors, "max_rate")
-    _ack(sess, f":SXRD,{int(cfg.default_rate)}#", errors, "default_rate")
-    _ack(sess, f":SXRA,{int(cfg.deg_acc)}#", errors, "deg_acc")
-
-    _ack(sess, f":SXLH,{int(cfg.horizon)}#", errors, "horizon")
-    _ack(sess, f":SXLO,{int(cfg.overhead)}#", errors, "overhead")
-    _ack(sess, f":SXLA,{10 * int(cfg.axis1_min)}#", errors, "a1min")
-    _ack(sess, f":SXLB,{10 * int(cfg.axis1_max)}#", errors, "a1max")
-    _ack(sess, f":SXLC,{10 * int(cfg.axis2_min)}#", errors, "a2min")
-    _ack(sess, f":SXLD,{10 * int(cfg.axis2_max)}#", errors, "a2max")
-    _ack(sess, f":SXLE,{int(cfg.meridian_e) * 4}#", errors, "mer_e")
-    _ack(sess, f":SXLW,{int(cfg.meridian_w) * 4}#", errors, "mer_w")
-    _ack(sess, f":SXLU,{int(round(float(cfg.under_pole) * 10))}#", errors, "under_pole")
-    _ack(sess, f":SXLS,{int(cfg.dist_from_pole)}#", errors, "dist_pole")
-
-    _ack(sess, f":SXEPR,{int(cfg.enc1_pulse)}#", errors, "enc1p")
-    _ack(sess, f":SXErR,{'1' if cfg.enc1_reverse else '0'}#", errors, "enc1r")
-    _ack(sess, f":SXEPD,{int(cfg.enc2_pulse)}#", errors, "enc2p")
-    _ack(sess, f":SXErD,{'1' if cfg.enc2_reverse else '0'}#", errors, "enc2r")
-    _ack(sess, f":SXEO,{int(cfg.enc_sync)}#", errors, "enc_sync")
-
-    _ack(sess, f":SXrg,{'y' if cfg.refr_goto else 'n'}#", errors, "refr_g")
-    _ack(sess, f":SXrp,{'y' if cfg.refr_pole else 'n'}#", errors, "refr_p")
-    _ack(sess, f":SXrt,{'y' if cfg.refr_tracking else 'n'}#", errors, "refr_t")
-
-    # Site (current site only — matches ASCOM EEPROM form)
-    lat = cfg.latitude.replace(":", "*").replace("'", "").strip()
-    lon = cfg.longitude.replace(":", "*").replace("'", "").strip()
-    _ack(sess, f":St{lat}#", errors, "latitude")
-    _ack(sess, f":Sg{lon}#", errors, "longitude")
-    _ack(sess, f":Se{int(cfg.elevation):+04d}#", errors, "elevation")
-    _ack(sess, f":SG{-float(cfg.timezone):+02.1f}#", errors, "timezone")
-
-    if write_mount_type:
-        code = MTYPE_TO_CMD.get(cfg.mtype, "")
-        if code:
+    for _key, cmd, tag in iter_set_commands(cfg, write_mount_type=write_mount_type):
+        if cmd.startswith(":S!"):
             try:
-                sess._ser.write(f":S!{code}#".encode("ascii"))  # noqa: SLF001
+                # Reboots the board — no reliable ack.
+                sess._ser.write(cmd.encode("ascii"))  # noqa: SLF001
             except Exception as exc:  # noqa: BLE001
-                errors.append(f"mtype: {exc}")
-
+                errors.append(f"{tag}: {exc}")
+            continue
+        _ack(sess, cmd, errors, tag)
     return errors
 
 
@@ -442,6 +596,8 @@ def verify_eeprom(sess: SerialSession, expected: EepromMount) -> list[str]:
 
     chk("mount_index", expected.mount_index, got.mount_index)
     chk("mount_name", expected.mount_name, got.mount_name)
+    chk("mount_name_0", expected.mount_name_0, got.mount_name_0)
+    chk("mount_name_1", expected.mount_name_1, got.mount_name_1)
     chk("slew_settle", expected.slew_settle, got.slew_settle)
 
     for label, e_ax, g_ax in (("axis1", expected.axis1, got.axis1), ("axis2", expected.axis2, got.axis2)):
@@ -483,6 +639,17 @@ def verify_eeprom(sess: SerialSession, expected: EepromMount) -> list[str]:
     chk("refr_goto", expected.refr_goto, got.refr_goto)
     chk("refr_pole", expected.refr_pole, got.refr_pole)
     chk("refr_tracking", expected.refr_tracking, got.refr_tracking)
+
+    if split_dms(expected.latitude) != split_dms(got.latitude):
+        bad.append(
+            f"latitude: wrote {expected.latitude!r}, read {got.latitude!r}"
+        )
+    if split_dms(expected.longitude) != split_dms(got.longitude):
+        bad.append(
+            f"longitude: wrote {expected.longitude!r}, read {got.longitude!r}"
+        )
+    chk("elevation", int(expected.elevation), int(got.elevation))
+    chk("timezone", expected.timezone, got.timezone, tol=0.05)
 
     return bad
 
