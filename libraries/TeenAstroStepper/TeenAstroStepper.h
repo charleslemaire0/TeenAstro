@@ -79,14 +79,15 @@ public:
       return;
     case TMC2130:
       m_tmc2130->en_pwm_mode(i);
+      m_tmc2130->pwm_autoscale(i);
       return;
     case TMC5160:
       m_tmc5160->en_pwm_mode(i);
-      break;
+      m_tmc5160->pwm_autoscale(i);
+      return;
     default:
       break;
     }
-    return;
   };
   //get max current in mA
   unsigned int getMaxCurrent()

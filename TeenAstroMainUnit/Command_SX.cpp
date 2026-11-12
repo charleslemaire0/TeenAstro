@@ -266,7 +266,11 @@ static void Command_SX_Rates()
     // :SXRD,V# define default rate
     int val = strtol(&commandState.command[5], NULL, 10);
     val = val > 4 || val < 0 ? 3 : val;
+    const int previous = mount.guiding.recenterGuideRate;
+    mount.guiding.recenterGuideRate = val;
     XEEPROM.write(getMountAddress(EE_DefaultRate), val);
+    if (mount.guiding.activeGuideRate == previous)
+      mount.enableGuideRate(val);
     replyValueSetShort(true);
     break;
   }
@@ -692,6 +696,7 @@ static void Command_SX_Motors()
       && !ax->motor.isSilentFix)
     {
       ax->motor.silent = i;
+      ax->motor.driver.setmode(i != 0);
       XEEPROM.write(getMountAddress(ax->eeSilent), i);
       ok = true;
     }

@@ -138,6 +138,7 @@ void Command_SX()
       int val = strtol(&command[5], NULL, 10);
       val = val > 4 || val < 0 ? 3 : val;
       XEEPROM.write(getMountAddress(EE_DefaultRate), val);
+      enableGuideRate(val);
       replyShortTrue();
       break;
     }
@@ -498,11 +499,21 @@ void Command_SX()
         if (command[4] == 'D')
         {
           motorA2.silent = i;
+          if (motorA2.drvP)
+          {
+            motorA2.drvP->en_pwm_mode(i);
+            motorA2.drvP->pwm_autoscale(i);
+          }
           XEEPROM.write(getMountAddress(EE_motorA2silent), i);
         }
         else
         {
           motorA1.silent = i;
+          if (motorA1.drvP)
+          {
+            motorA1.drvP->en_pwm_mode(i);
+            motorA1.drvP->pwm_autoscale(i);
+          }
           XEEPROM.write(getMountAddress(EE_motorA1silent), i);
         }
         replyShortTrue();
