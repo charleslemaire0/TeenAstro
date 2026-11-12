@@ -16,6 +16,8 @@ EfinderManager efinder;
 namespace {
 constexpr unsigned long PROBE_PERIOD_MS = 5000;
 constexpr unsigned long PROBE_TIMEOUT_MS = 200;
+// A Pi eFinder can still be booting. After this, an empty port is left alone.
+constexpr unsigned long PROBE_WINDOW_MS = 120000;
 constexpr unsigned long REPLY_TIMEOUT_MS = 800;
 constexpr unsigned long SOLVE_TIMEOUT_MS = 20000;
 constexpr unsigned long SITE_PUSH_PERIOD_MS = 60000;
@@ -66,6 +68,10 @@ void EfinderManager::setup()
 {
   loadSettings();
   m_lastProbe = millis() - PROBE_PERIOD_MS;
+  m_probeUntil = millis() + PROBE_WINDOW_MS;
+  m_probeStopped = false;
+  m_skipFocuser = false;
+  m_skipGnss = false;
   m_rxLen = 0;
   m_inNmea = false;
   m_replyReady = false;
@@ -158,23 +164,41 @@ bool EfinderManager::acceptProbe(EfinderPort p, const char* buf)
   return true;
 }
 
+bool EfinderManager::probeWindowOpen() const
+{
+  return (long)(m_probeUntil - millis()) > 0;
+}
+
+void EfinderManager::retirePort(EfinderPort p)
+{
+  if (p == EF_PORT_FOCUSER) m_skipFocuser = true;
+  else if (p == EF_PORT_GNSS) m_skipGnss = true;
+}
+
 void EfinderManager::beginProbe(EfinderPort p)
 {
   Stream* s = probeStream(p);
   if (!s)
   {
+    retirePort(p);
+    advanceProbe(p);
+    return;
+  }
+  // A GPS or another peripheral is already using the wire. Do not write to it
+  // and do not throw away the bytes it has queued.
+  if (s->available() > 0)
+  {
+    retirePort(p);
     advanceProbe(p);
     return;
   }
 
-  // Drop only what is already buffered. Do not wait, and do not flush():
-  // flush waits until the UART is idle and would stall the control loop.
-  while (s->available() > 0) s->read();
   m_probe = p;
   m_probeLen = 0;
   m_probeStart = millis();
   s->print(":e?#");
-  // A loopback port (the emulator) answers inside print().
+  // A loopback port (the emulator) answers inside print(). Do not flush():
+  // flush waits until the UART is idle and would stall the control loop.
   collectProbe();
 }
 
@@ -196,6 +220,7 @@ bool EfinderManager::collectProbe()
     m_probeLen = 0;
     if (acceptProbe(p, m_probeBuf))
       return true;
+    retirePort(p);
     advanceProbe(p);
     return true;
   }
@@ -206,12 +231,14 @@ void EfinderManager::advanceProbe(EfinderPort failed)
 {
   m_probe = EF_PORT_NONE;
   m_probeLen = 0;
-  if (failed == EF_PORT_FOCUSER && gnssProbeAllowed())
+  if (failed == EF_PORT_FOCUSER && gnssProbeAllowed() && !m_skipGnss && probeWindowOpen())
   {
     beginProbe(EF_PORT_GNSS);
     return;
   }
   m_lastProbe = millis();
+  if (!probeWindowOpen())
+    m_probeStopped = true;
 }
 
 void EfinderManager::pollProbe()
@@ -224,27 +251,37 @@ void EfinderManager::pollProbe()
     return;
   }
 
+  if (!probeWindowOpen())
+  {
+    m_probeStopped = true;
+    return;
+  }
+
   if ((unsigned long)(millis() - m_lastProbe) < PROBE_PERIOD_MS) return;
 
-  if (!mount.config.peripherals.hasFocuser && probeStream(EF_PORT_FOCUSER))
+  const bool focuserOpen = !mount.config.peripherals.hasFocuser && !m_skipFocuser
+                           && probeStream(EF_PORT_FOCUSER) != nullptr;
+  const bool gnssOpen = gnssProbeAllowed() && !m_skipGnss;
+  if (focuserOpen)
   {
     beginProbe(EF_PORT_FOCUSER);
     return;
   }
-  if (gnssProbeAllowed())
+  if (gnssOpen)
   {
     beginProbe(EF_PORT_GNSS);
     return;
   }
-  // Both ports belong to something else. Leave them alone.
-  m_lastProbe = millis();
+  // Nothing left that could be an eFinder. Do not touch the ports again.
+  m_probeStopped = true;
 }
 
 void EfinderManager::update()
 {
   if (m_port == EF_PORT_NONE)
   {
-    pollProbe();
+    if (!m_probeStopped)
+      pollProbe();
     return;
   }
 
