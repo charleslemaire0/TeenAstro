@@ -58,6 +58,27 @@ Republish with `IOGROUP` set:
 py -3 docs/wiki/_publish_uploader_multipage.py
 ```
 
+## Android app
+
+Eight pages. Screenshots are captured with `flutter run -d windows -t tool/wiki_shooter.dart` from `teenastro_app` (the window has to be tall enough for an 844-pixel phone, then restored to 1280×720). The status image is cropped above the temporary debug panel.
+
+| Draft | Wiki |
+|-------|------|
+| [Android_App.md](Android_App.md) | https://groups.io/g/TeenAstro/wiki/43283 |
+| [Android_App_Status.md](Android_App_Status.md) | https://groups.io/g/TeenAstro/wiki/43284 |
+| [Android_App_Control.md](Android_App_Control.md) | https://groups.io/g/TeenAstro/wiki/43285 |
+| [Android_App_Goto.md](Android_App_Goto.md) | https://groups.io/g/TeenAstro/wiki/43286 |
+| [Android_App_Planetarium.md](Android_App_Planetarium.md) | https://groups.io/g/TeenAstro/wiki/43287 |
+| [Android_App_Tracking.md](Android_App_Tracking.md) | https://groups.io/g/TeenAstro/wiki/43288 |
+| [Android_App_Alignment.md](Android_App_Alignment.md) | https://groups.io/g/TeenAstro/wiki/43289 |
+| [Android_App_Phone_finder.md](Android_App_Phone_finder.md) | https://groups.io/g/TeenAstro/wiki/43290 |
+
+Republish with `IOGROUP` set:
+
+```text
+py -3 docs/wiki/_publish_android_app.py
+```
+
 ## Field manuals
 
 Markdown + PDF in [`../manuel/`](../manuel/). Rebuild PDFs with:

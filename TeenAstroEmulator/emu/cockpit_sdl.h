@@ -260,6 +260,8 @@ static void drawTabOverview(int y0) {
     }
     y = drawKV(y, "Focuser", mount.config.peripherals.hasFocuser ? "Connected" : "None",
                mount.config.peripherals.hasFocuser ? COL_GOOD : COL_DIM);
+    y = drawKV(y, "eFinder", mount.config.peripherals.hasEfinder ? "Connected" : "None",
+               mount.config.peripherals.hasEfinder ? COL_GOOD : COL_DIM);
     y = drawKV(y, "GNSS", mount.config.peripherals.hasGNSS ? "Connected" : "None",
                mount.config.peripherals.hasGNSS ? COL_GOOD : COL_DIM);
     y += 4;

@@ -24,6 +24,7 @@
  */
 #include "Command.h"
 #include "Application.h"
+#include "Efinder.h"
 #include "FirmwareDef.h"
 #include "XEEPROM.hpp"
 #include <Arduino.h>
@@ -56,6 +57,7 @@ void Application::setup()
   setupParkHomeAndGuideRates();
   setupGnssProbe();
   setupFocuserProbe();
+  efinder.setup();
   setupCommandSerial();
 }
 
@@ -232,6 +234,7 @@ void Application::loopSiderealAndSafety(bool& forceTracking)
 void Application::loopCommandsAndStatus(ErrorsTraking startLoopError)
 {
   processCommands();
+  efinder.update();
   UpdateGnss();
   if (startLoopError != mount.errors.lastError)
     mount.updateStatusLed(LEDPin);

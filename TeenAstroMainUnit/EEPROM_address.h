@@ -157,6 +157,15 @@ extern uint8_t midx;
 #define EE_kgeom_use        12  // byte, 1 when a 2-star alignment holds cone and perp
 #define EE_KnownConeBase    576 // float, radians, one per mount (576, 580)
 
+// Global eFinder settings (not per-mount)
+#define EE_efinderFlags     584 // bit0 = GoTo++ enabled, bit1 = sky rotation of the stored cones
+#define EE_efinderThresh    585 // GoTo++ threshold in arcmin (1..60)
+// Hz cone and Ve cone in the telescope frame (radians).
+// Hz is the horizontal cone, Ve the vertical cone.
+// 588/592 stay 4-byte aligned; 586-587 are unused.
+#define EE_efinderAimHz     588
+#define EE_efinderAimVe     592
+
 // address: one of the EE_* offsets above; idx (if used): within mount count.
 int getMountAddress(int address);
 int getMountAddress(int address, int idx);

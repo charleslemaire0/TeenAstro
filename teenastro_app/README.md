@@ -29,3 +29,4 @@ Flutter Android app that replaces the SHC (Smart Hand Controller) for TeenAstro 
 - Tracking control (sidereal/lunar/solar/user)
 - 2-star, 4-star, and 3+3 alignment, plus mount error (CH, NP)
 - Park / Home / Unpark
+- Phone finder: plate solve from the Android camera, Hz and Ve cones, auto sync and one recenter. No eFinder is required. See [docs/app/phone_finder.md](../docs/app/phone_finder.md).

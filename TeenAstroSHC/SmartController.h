@@ -220,6 +220,9 @@ private:
   void menuFocuserConfig();
   void menuFocuserMotor();
   void menuFocuserInfo();
+  void menuEfinder();
+  void waitPlateAlign();
+  bool waitEfinderResult(char* out, int len);
   void menuDisplaySettings();
   void menuDisplayActions();
   void menuContrast();

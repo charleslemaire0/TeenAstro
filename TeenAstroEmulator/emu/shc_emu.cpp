@@ -191,6 +191,84 @@ static int g_testFail = 0;
 #define TEST_FAIL(name, detail) do { printf("  [FAIL] %s -- %s\n", name, detail); g_testFail++; } while(0)
 #define TEST_CHECK(cond, name, detail) do { if (cond) TEST_OK(name); else TEST_FAIL(name, detail); } while(0)
 
+/* Wait until GXAS no longer reports a slew. Stops the slew on timeout. */
+static bool emuWaitIdle(LX200Client& lx200, int timeoutMs)
+{
+    int waited = 0;
+    while (waited < timeoutMs) {
+        SDL_Delay(200);
+        waited += 200;
+        ta_MountStatus.updateAllState(true);
+        if (ta_MountStatus.getTrackingState() != TeenAstroMountStatus::TRK_SLEWING)
+            return true;
+    }
+    lx200.stopSlew();
+    return false;
+}
+
+static bool emuGoto(LX200Client& lx200, float ra, float dec)
+{
+    LX200RETURN gr = lx200.syncGoto(NAV_GOTO, ra, dec);
+    if (gr != LX200_GOTO_TARGET) {
+        printf("         goto %.3fh %+.2fd rejected (%d)\n", ra, dec, (int)gr);
+        return false;
+    }
+    if (!emuWaitIdle(lx200, 180000)) {
+        printf("         goto %.3fh %+.2fd timed out\n", ra, dec);
+        return false;
+    }
+    return true;
+}
+
+/* Host :eR# until the job leaves B. Hash is already stripped by LX200Client. */
+static bool emuPollEfinder(LX200Client& lx200, char* out, int len, bool* sawBusy)
+{
+    if (sawBusy) *sawBusy = false;
+    out[0] = 0;
+    for (int i = 0; i < 120; i++) {
+        if (lx200.efinderResult(out, len) != LX200_VALUEGET)
+            return false;
+        if (out[0] != 'B')
+            return true;
+        if (sawBusy) *sawBusy = true;
+        SDL_Delay(100);
+    }
+    return false;
+}
+
+/* After a goto, wait until a new job is seen busy and then finishes. */
+static bool emuPollEfinderJob(LX200Client& lx200, char* out, int len)
+{
+    bool sawBusy = false;
+    out[0] = 0;
+    for (int i = 0; i < 200; i++) {
+        if (lx200.efinderResult(out, len) != LX200_VALUEGET)
+            return false;
+        if (out[0] == 'B') {
+            sawBusy = true;
+            SDL_Delay(100);
+            continue;
+        }
+        if (sawBusy)
+            return true;
+        SDL_Delay(100);
+    }
+    return false;
+}
+
+static bool emuParseSolved(const char* s, double* ra, double* dec, int* stars, int* ms)
+{
+    if (!s || s[0] != 'S') return false;
+    return sscanf(s, "S%lf,%lf,%d,%d", ra, dec, stars, ms) == 4;
+}
+
+static float emuWrap24(float h)
+{
+    while (h < 0.f) h += 24.f;
+    while (h >= 24.f) h -= 24.f;
+    return h;
+}
+
 static int runAutomatedTests(LX200Client& lx200)
 {
     printf("\n========================================\n");
@@ -755,7 +833,13 @@ static int runAutomatedTests(LX200Client& lx200)
         if (wifiOk) {
             LX200Client appClient(wifiStream, 200);
 
-            // Abort any prior alignment via SHC (clean state)
+            // Abort any prior alignment via SHC (clean state). A stopped goto can
+            // still have a GoTo++ refinement in flight; that slew would make
+            // the next :A0# look like ALIGN_SLEW.
+            lx200.stopSlew();
+            lx200.efinderAbort();
+            lx200.efinderSetGotoPP(false);
+            emuWaitIdle(lx200, 8000);
             lx200.alignAbort();
             SDL_Delay(200);
             ta_MountStatus.updateAllState(true);
@@ -810,6 +894,386 @@ static int runAutomatedTests(LX200Client& lx200)
             lx200.enableWifiBridge(false);
             printf("         Cleanup: alignment aborted, WiFi OFF\n");
         }
+    }
+
+    /* ============================================================ */
+    /*  eFinder pipe: SHC client -> main unit -> EfinderStub        */
+    /* ============================================================ */
+    printf("\n[TEST] eFinder interfaces\n");
+    {
+        lx200.stopSlew();
+        lx200.efinderAbort();
+        lx200.efinderSetGotoPP(false);
+        emuWaitIdle(lx200, 8000);
+        SDL_Delay(200);
+        ta_MountStatus.updateAllState(true);
+        if (ta_MountStatus.Parked())
+            lx200.unpark();
+        lx200.enableTracking(true);
+
+        char st[80];
+        TEST_CHECK(lx200.efinderStatus(st, sizeof(st)) == LX200_VALUEGET,
+                   "efinderStatus (:e?#)", "no response");
+        printf("         status: %s\n", st);
+        TEST_CHECK(st[0] == '1', "eFinder present", st);
+        TEST_CHECK(lx200.efinderResetOffset() == LX200_VALUESET,
+                   "reset offsets (:eo#)", "rejected");
+
+        ta_MountStatus.updateAllState(true);
+        TEST_CHECK(ta_MountStatus.hasEfinder(), "GXAS hasEfinder", "bit clear");
+
+        char ver[40];
+        TEST_CHECK(lx200.efinderVersion(ver, sizeof(ver)) == LX200_VALUEGET,
+                   "efinderVersion (:eV#)", "no response");
+        printf("         version: %s\n", ver);
+        TEST_CHECK(strcmp(ver, "emu-0.1") == 0, "version emu-0.1", ver);
+
+        ta_MountStatus.updateAllState(true);
+        double ra0 = ta_MountStatus.getRaHoursCached();
+        double dec0 = ta_MountStatus.getDecDegCached();
+        bool sawBusy = false;
+        char res[80];
+        TEST_CHECK(lx200.efinderSolve() == LX200_VALUESET, "solve (:eS#)", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), &sawBusy),
+                   "solve result", "timed out");
+        printf("         solve: busy=%d reply=%s (pointing %.4fh %+.3fd)\n",
+               (int)sawBusy, res, ra0, dec0);
+        TEST_CHECK(sawBusy, "solve reported B#", "never busy");
+        double sra = 0, sdec = 0;
+        int stars = -1, ms = -1;
+        TEST_CHECK(emuParseSolved(res, &sra, &sdec, &stars, &ms),
+                   "solve reply Sra,dec,0,0", res);
+        TEST_CHECK(stars == 0 && ms == 0, "host solve drops star count", res);
+        TEST_CHECK(fabs(sra - (ra0 + 0.0002)) < 0.02 && fabs(sdec - (dec0 + 0.001)) < 0.05,
+                   "solved tracks pointing + stub offset", res);
+
+        TEST_CHECK(lx200.efinderOffset() == LX200_VALUESET, "offset (:eO#)", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), &sawBusy),
+                   "offset result", "timed out");
+        printf("         offset: %s\n", res);
+        TEST_CHECK(res[0] == 'O' && strstr(res, "Polaris") != NULL,
+                   "offset names Polaris", res);
+
+        char exp[32];
+        TEST_CHECK(lx200.efinderParam("Exposure", exp, sizeof(exp)) == LX200_VALUEGET,
+                   "read Exposure", "no response");
+        TEST_CHECK(lx200.efinderParam("Exposure=2.5", exp, sizeof(exp)) == LX200_VALUEGET,
+                   "write Exposure=2.5", "rejected");
+        TEST_CHECK(lx200.efinderParam("Exposure", exp, sizeof(exp)) == LX200_VALUEGET,
+                   "reread Exposure", "no response");
+        printf("         exposure: %s\n", exp);
+        TEST_CHECK(strcmp(exp, "2.5") == 0, "exposure == 2.5", exp);
+
+        char gain[32];
+        TEST_CHECK(lx200.efinderParam("Gain=80", gain, sizeof(gain)) == LX200_VALUEGET,
+                   "write Gain=80", "rejected");
+        TEST_CHECK(lx200.efinderParam("Gain", gain, sizeof(gain)) == LX200_VALUEGET,
+                   "reread Gain", "no response");
+        TEST_CHECK(strcmp(gain, "80") == 0, "gain == 80", gain);
+
+        char pp[32];
+        TEST_CHECK(lx200.efinderSetGotoPP(false) == LX200_VALUESET,
+                   "GoTo++ off (:eT0#)", "rejected");
+        TEST_CHECK(lx200.efinderSetThreshold(15) == LX200_VALUESET,
+                   "threshold 15 (:eT15#)", "rejected");
+        TEST_CHECK(lx200.efinderGotoPPSettings(pp, sizeof(pp)) == LX200_VALUEGET,
+                   "GoTo++ settings (:eP#)", "no response");
+        printf("         goto++: %s\n", pp);
+        TEST_CHECK(strcmp(pp, "0,15") == 0, "GoTo++ off, threshold 15", pp);
+        TEST_CHECK(lx200.efinderSetGotoPP(true) == LX200_VALUESET,
+                   "GoTo++ on (:eT1#)", "rejected");
+        TEST_CHECK(lx200.efinderGotoPPSettings(pp, sizeof(pp)) == LX200_VALUEGET,
+                   "GoTo++ settings after enable", "no response");
+        TEST_CHECK(strncmp(pp, "1,15", 4) == 0, "GoTo++ on, threshold 15", pp);
+        TEST_CHECK(lx200.efinderSetGotoPP(false) == LX200_VALUESET,
+                   "GoTo++ off before alignment", "rejected");
+    }
+
+    printf("\n[TEST] eFinder two-star alignment by sync\n");
+    {
+        TEST_CHECK(lx200.alignAtHome() == LX200_VALUESET, ":AA# reset model", "rejected");
+        SDL_Delay(400);
+        ta_MountStatus.updateAllState(true);
+        printf("         after :AA#: aligned=%d refs=%u\n",
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getAlignmentRefCount());
+        TEST_CHECK(!ta_MountStatus.isAligned(), "not aligned after :AA#", "hasValid set");
+        TEST_CHECK(ta_MountStatus.getAlignmentRefCount() == 0,
+                   "refs cleared after :AA#", "refs still stored");
+
+        ta_MountStatus.updateAllState(true);
+        float lst = ta_MountStatus.getLstHoursCached();
+        printf("         LST %.3fh, targets kept near the meridian\n", lst);
+        const float ra1 = emuWrap24(lst), dec1 = 30.0f;
+        const float ra2 = emuWrap24(lst + 2.5f), dec2 = 12.0f;
+        TEST_CHECK(emuGoto(lx200, ra1, dec1), "goto first efinder field", "slew failed");
+        char res[80];
+        TEST_CHECK(lx200.efinderAimCal() == LX200_VALUESET, "aim cal (:eK#)", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
+                   "aim cal result", "timed out");
+        printf("         aim: %s\n", res);
+        double east = 0, north = 0;
+        TEST_CHECK(res[0] == 'O' && strstr(res, "cone") != NULL &&
+                   sscanf(res, "O%lf,%lf", &east, &north) == 2,
+                   "aim reply is Hz and Ve cone", res);
+        const double expectEast = 0.0002 * 15.0 * 60.0 * cos((double)dec1 * DEG_TO_RAD);
+        const double expectNorth = 0.001 * 60.0;
+        printf("         Hz %.3f' Ve %.3f' (stub Hz %.3f' Ve %.3f')\n",
+               east, north, expectEast, expectNorth);
+        TEST_CHECK(fabs(east - expectEast) < 0.03 && fabs(north - expectNorth) < 0.03,
+                   "Hz and Ve cones match the stub", res);
+
+        ta_MountStatus.updateAllState(true);
+        double axisRa = ta_MountStatus.getRaHoursCached();
+        double axisDec = ta_MountStatus.getDecDegCached();
+        TEST_CHECK(lx200.efinderSolve() == LX200_VALUESET, "solve after aim cal", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
+                   "corrected solve result", "timed out");
+        double cra = 0, cdec = 0;
+        int cstars = -1, cms = -1;
+        TEST_CHECK(emuParseSolved(res, &cra, &cdec, &cstars, &cms),
+                   "corrected solve reply", res);
+        double dra = cra - axisRa;
+        if (dra > 12.0) dra -= 24.0;
+        else if (dra < -12.0) dra += 24.0;
+        printf("         corrected %.6fh %+.5fd vs axis %.6fh %+.5fd\n",
+               cra, cdec, axisRa, axisDec);
+        TEST_CHECK(fabs(dra) < 0.001 && fabs(cdec - axisDec) < 0.0005,
+                   "corrected solve is the telescope axis", res);
+
+        TEST_CHECK(lx200.efinderSolveSync() == LX200_VALUESET,
+                   "first :eY#", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
+                   "first solve-sync result", "timed out");
+        printf("         first sync: %s\n", res);
+        TEST_CHECK(res[0] == 'S', "first solve-sync solved", res);
+        ta_MountStatus.updateAllState(true);
+        printf("         after star 1: aligned=%d refs=%u\n",
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getAlignmentRefCount());
+        TEST_CHECK(ta_MountStatus.getAlignmentRefCount() == 1,
+                   "one reference after first sync", "wrong ref count");
+        TEST_CHECK(!ta_MountStatus.isAligned(),
+                   "model still open after first sync", "closed early");
+
+        TEST_CHECK(emuGoto(lx200, ra2, dec2), "goto second efinder field", "slew failed");
+        TEST_CHECK(lx200.efinderSolveSync() == LX200_VALUESET,
+                   "second :eY#", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
+                   "second solve-sync result", "timed out");
+        printf("         second sync: %s\n", res);
+        TEST_CHECK(res[0] == 'S', "second solve-sync solved", res);
+        ta_MountStatus.updateAllState(true);
+        printf("         after star 2: aligned=%d refs=%u\n",
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getAlignmentRefCount());
+        TEST_CHECK(ta_MountStatus.isAligned(), "aligned after second sync", "hasValid clear");
+        TEST_CHECK(ta_MountStatus.getAlignmentRefCount() == 0,
+                   "refs consumed when model closes", "refs still open");
+
+        TEST_CHECK(lx200.efinderSolveSync() == LX200_VALUESET,
+                   "third :eY#", "rejected");
+        TEST_CHECK(emuPollEfinder(lx200, res, sizeof(res), NULL),
+                   "third solve-sync result", "timed out");
+        printf("         third sync: %s\n", res);
+        TEST_CHECK(res[0] == 'S', "third solve-sync solved", res);
+        ta_MountStatus.updateAllState(true);
+        printf("         after star 3: aligned=%d refs=%u\n",
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getAlignmentRefCount());
+        TEST_CHECK(ta_MountStatus.isAligned(), "stays aligned after third sync", "lost model");
+        TEST_CHECK(ta_MountStatus.getAlignmentRefCount() == 0,
+                   "third sync does not add a reference", "ref count changed");
+    }
+
+    printf("\n[TEST] Classic two-star goto alignment\n");
+    {
+        TEST_CHECK(lx200.efinderSetGotoPP(false) == LX200_VALUESET,
+                   "GoTo++ stays off", "rejected");
+        TEST_CHECK(lx200.alignClear() == LX200_VALUESET, ":AC# clear model", "rejected");
+        SDL_Delay(400);
+        if (!emuWaitIdle(lx200, 180000))
+            printf("         warning: still slewing after :AC#\n");
+        TEST_CHECK(lx200.alignStart() == LX200_VALUESET, ":A0# start", "rejected");
+        ta_MountStatus.updateAllState(true);
+        printf("         :A0# phase=%u aligned=%d refs=%u\n",
+               (unsigned)ta_MountStatus.getMountAlignPhase(),
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getAlignmentRefCount());
+        TEST_CHECK(ta_MountStatus.getMountAlignPhase() == 1,
+                   "align phase SELECT", "wrong phase");
+        TEST_CHECK(!ta_MountStatus.isAligned(), "not aligned at start", "hasValid set");
+
+        float homeRa = ta_MountStatus.getRaHoursCached();
+        float homeDec = ta_MountStatus.getDecDegCached();
+        char cmd[64];
+        snprintf(cmd, sizeof(cmd), ":SrL%.9f#", (double)homeRa * 15.0);
+        TEST_CHECK(lx200.set(cmd) == LX200_VALUESET, "set home RA as star 1", "rejected");
+        snprintf(cmd, sizeof(cmd), ":SdL%s%.9f#",
+                 homeDec >= 0.f ? "+" : "-", (double)fabs((double)homeDec));
+        TEST_CHECK(lx200.set(cmd) == LX200_VALUESET, "set home Dec as star 1", "rejected");
+        TEST_CHECK(lx200.alignSelectStar(1) == LX200_VALUESET, ":A1#", "rejected");
+        ta_MountStatus.updateAllState(true);
+        printf("         after :A1#: aligned=%d refs=%u\n",
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getAlignmentRefCount());
+        TEST_CHECK(ta_MountStatus.getAlignmentRefCount() == 1,
+                   "one reference after :A1#", "wrong ref count");
+        TEST_CHECK(!ta_MountStatus.isAligned(), "not aligned after :A1#", "closed early");
+
+        ta_MountStatus.updateAllState(true);
+        float lst = ta_MountStatus.getLstHoursCached();
+        TEST_CHECK(emuGoto(lx200, emuWrap24(lst - 2.0f), 18.0f),
+                   "goto second alignment star", "slew failed");
+        TEST_CHECK(lx200.alignSelectStar(2) == LX200_VALUESET, ":A2#", "rejected");
+        ta_MountStatus.updateAllState(true);
+        printf("         after :A2#: aligned=%d refs=%u phase=%u\n",
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getAlignmentRefCount(),
+               (unsigned)ta_MountStatus.getMountAlignPhase());
+        TEST_CHECK(ta_MountStatus.isAligned(), "aligned after :A2#", "hasValid clear");
+        TEST_CHECK(ta_MountStatus.getAlignmentRefCount() == 0,
+                   "refs consumed after :A2#", "refs still open");
+
+        TEST_CHECK(lx200.alignAbort() == LX200_VALUESET, ":AB# abort", "rejected");
+        SDL_Delay(200);
+        ta_MountStatus.updateAllState(true);
+        printf("         after :AB#: aligning=%d aligned=%d phase=%u\n",
+               (int)ta_MountStatus.isAligning(),
+               (int)ta_MountStatus.isAligned(),
+               (unsigned)ta_MountStatus.getMountAlignPhase());
+        TEST_CHECK(!ta_MountStatus.isAligning(), "idle after :AB#", "still aligning");
+        TEST_CHECK(!ta_MountStatus.isAligned(), "model cleared by :AB#", "still aligned");
+        TEST_CHECK(ta_MountStatus.getMountAlignPhase() == 0,
+                   "phase idle after :AB#", "wrong phase");
+    }
+
+    printf("\n[TEST] GoTo++ one-pass refinement\n");
+    {
+        TEST_CHECK(lx200.efinderSetThreshold(2) == LX200_VALUESET,
+                   "threshold 2 arcmin", "rejected");
+        TEST_CHECK(lx200.efinderSetGotoPP(true) == LX200_VALUESET,
+                   "GoTo++ on for refinement", "rejected");
+        ta_MountStatus.updateAllState(true);
+        float lst = ta_MountStatus.getLstHoursCached();
+        const float ra = emuWrap24(lst + 1.0f), dec = 22.0f;
+        TEST_CHECK(emuGoto(lx200, ra, dec), "goto with GoTo++", "slew failed");
+        char res[80];
+        TEST_CHECK(emuPollEfinderJob(lx200, res, sizeof(res)),
+                   "GoTo++ job finished", "never saw a busy solve");
+        printf("         GoTo++ result: %s\n", res);
+        double sra = 0, sdec = 0;
+        int stars = -1, ms = -1;
+        TEST_CHECK(emuParseSolved(res, &sra, &sdec, &stars, &ms),
+                   "GoTo++ result is a solve", res);
+        ta_MountStatus.updateAllState(true);
+        double gotRa = ta_MountStatus.getRaHoursCached();
+        double gotDec = ta_MountStatus.getDecDegCached();
+        printf("         commanded %.4fh %+.3fd  solved %.4fh %+.3fd  reported %.4fh %+.3fd\n",
+               ra, dec, sra, sdec, gotRa, gotDec);
+        TEST_CHECK(fabs(gotRa - sra) < 0.002 && fabs(gotDec - sdec) < 0.02,
+                   "reported place matches the solve", "sync did not apply");
+        double dCmd = fabs(gotRa - (double)ra);
+        double dSol = fabs(gotRa - sra);
+        TEST_CHECK(dSol < dCmd, "reported RA closer to solve than to command", "still on the command");
+        SDL_Delay(1500);
+        ta_MountStatus.updateAllState(true);
+        TEST_CHECK(ta_MountStatus.getTrackingState() != TeenAstroMountStatus::TRK_SLEWING,
+                   "no second GoTo++ slew", "refinement slew started");
+        lx200.efinderSetGotoPP(false);
+    }
+
+    printf("\n[TEST] eFinder automatic six-star alignment\n");
+    {
+        TEST_CHECK(lx200.efinderSetGotoPP(false) == LX200_VALUESET,
+                   "GoTo++ off during align", "rejected");
+        TEST_CHECK(lx200.set(":eA#") != LX200_VALUESET,
+                   ":eA# refused away from home", "accepted");
+        TEST_CHECK(lx200.homeReset() == LX200_VALUESET, ":hF# before 3+3", "rejected");
+        TEST_CHECK(lx200.efinderAlign() == LX200_VALUESET,
+                   ":eA# from home", "rejected");
+        char res[80];
+        res[0] = 0;
+        bool done = false;
+        for (int i = 0; i < 900; i++)
+        {
+            if (lx200.efinderResult(res, sizeof(res)) != LX200_VALUEGET)
+                break;
+            if (res[0] != 'B')
+            {
+                done = true;
+                break;
+            }
+            SDL_Delay(200);
+        }
+        printf("         align result: %s\n", res);
+        TEST_CHECK(done && res[0] == 'S', "automatic align finished", res);
+        ta_MountStatus.updateAllState(true);
+        uint8_t stars = 0;
+        lx200.getAlignStarCount(stars);
+        printf("         aligned=%d stars=%u\n",
+               (int)ta_MountStatus.isAligned(), (unsigned)stars);
+        TEST_CHECK(ta_MountStatus.isAligned(),
+                   "model valid after automatic align", "hasValid clear");
+        TEST_CHECK(stars >= 4, "redundant star set", "too few stars");
+    }
+
+    printf("\n[TEST] eFinder 2-star and 4-star from home\n");
+    {
+        TEST_CHECK(lx200.set(":eA2#") != LX200_VALUESET,
+                   ":eA2# refused away from home", "accepted");
+        TEST_CHECK(lx200.set(":eA4#") != LX200_VALUESET,
+                   ":eA4# refused away from home", "accepted");
+        TEST_CHECK(lx200.homeReset() == LX200_VALUESET, ":hF# at home", "rejected");
+        TEST_CHECK(lx200.efinderAlignFromHome(2) == LX200_VALUESET,
+                   ":eA2# from home", "rejected");
+        char res[80];
+        res[0] = 0;
+        bool done = false;
+        for (int i = 0; i < 600; i++)
+        {
+            if (lx200.efinderResult(res, sizeof(res)) != LX200_VALUEGET)
+                break;
+            if (res[0] != 'B')
+            {
+                done = true;
+                break;
+            }
+            SDL_Delay(200);
+        }
+        printf("         2-star result: %s\n", res);
+        TEST_CHECK(done && res[0] == 'S', "2-star align finished", res);
+        ta_MountStatus.updateAllState(true);
+        printf("         2-star aligned=%d\n", (int)ta_MountStatus.isAligned());
+        TEST_CHECK(ta_MountStatus.isAligned(),
+                   "model valid after 2 stars", "hasValid clear");
+
+        TEST_CHECK(lx200.homeReset() == LX200_VALUESET, ":hF# before 4 stars", "rejected");
+        TEST_CHECK(lx200.efinderAlignFromHome(4) == LX200_VALUESET,
+                   ":eA4# from home", "rejected");
+        res[0] = 0;
+        done = false;
+        for (int i = 0; i < 800; i++)
+        {
+            if (lx200.efinderResult(res, sizeof(res)) != LX200_VALUEGET)
+                break;
+            if (res[0] != 'B')
+            {
+                done = true;
+                break;
+            }
+            SDL_Delay(200);
+        }
+        printf("         4-star result: %s\n", res);
+        TEST_CHECK(done && res[0] == 'S', "4-star align finished", res);
+        ta_MountStatus.updateAllState(true);
+        uint8_t four = 0;
+        lx200.getAlignStarCount(four);
+        printf("         4-star aligned=%d stars=%u\n",
+               (int)ta_MountStatus.isAligned(), (unsigned)four);
+        TEST_CHECK(ta_MountStatus.isAligned(),
+                   "model valid after 4 stars", "hasValid clear");
+        TEST_CHECK(four >= 4, "four stars recorded", "too few stars");
     }
 
     printf("\n========================================\n");

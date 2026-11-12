@@ -31,6 +31,7 @@ struct MountPeripherals {
   Pushto PushtoStatus;
   bool hasFocuser;
   bool hasGNSS;
+  bool hasEfinder;
 };
 
 /** Config group: identity (mount type, name, meridian flip) and peripherals (push-to, focuser, GNSS). */

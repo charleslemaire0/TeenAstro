@@ -303,7 +303,7 @@ CmdReply getReplyType(String cmd) {
       return CmdReply.invalid;
     case 'M': // Move/Slew
       if ('ewnsg'.contains(c2)) return CmdReply.none;
-      if ('PSAUF?a'.contains(c2)) return CmdReply.short_;
+      if ('FPSAUF?a'.contains(c2)) return CmdReply.short_;
       if ('12@'.contains(c2)) return CmdReply.shortBool;
       return CmdReply.invalid;
     case 'Q': // Halt

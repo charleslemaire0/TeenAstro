@@ -37,6 +37,7 @@ Full documentation in **Markdown**. Use the repo as the navigation basis: open a
 | [firmware/README.md](firmware/README.md) | Firmware index |
 | [MainUnit](firmware/mainunit.md) | Application, Axis classes, sidereal clock, tracking, goto, EEPROM |
 | [SHC](firmware/shc.md) | Smart Hand Controller, menus, display |
+| [eFinder](TeenAstroEfinder.md) | Wiring, hand-controller menu, axis cones |
 | [WiFi Server](firmware/server.md) | TCP bridge, web config |
 | [Motor & stepper](firmware/stepper.md) | StepDir, TMC, motion control |
 
@@ -46,6 +47,7 @@ Full documentation in **Markdown**. Use the repo as the navigation basis: open a
 |----------|-------------|
 | [app/README.md](app/README.md) | App index |
 | [Flutter app](app/overview.md) | Structure, state, screens, TCP client |
+| [Phone finder](app/phone_finder.md) | Phone-camera plate solve, Hz and Ve cones, auto sync |
 | [Planetarium](app/planetarium.md) | Stereographic projection, rendering layers |
 | [Astronomy algorithms](app/astro.md) | Precession, nutation, aberration, planet positions |
 

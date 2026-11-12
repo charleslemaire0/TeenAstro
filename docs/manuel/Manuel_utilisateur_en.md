@@ -6,7 +6,7 @@ A field manual for the mount user. It describes the hand controller, the main un
 
 It follows the path of the Astro-Electronic FS2 manual (connections, menus, changing a value, rotation direction, speeds, goto, German mount, encoders, visitor mode), and it is based on the hand-controller menus, the main unit, and the [TeenAstro group wiki](https://groups.io/g/TeenAstro/wiki/home).
 
-You do not need to read all of it before the first night. Chapters 3, 5, 7, and 8 are enough to start. A night on a mount that is already set up is chapter 25. The rest covers mechanical setup, a full alignment, and troubleshooting.
+You do not need to read all of it before the first night. Chapters 3, 5, 7, and 8 are enough to start. A night on a mount that is already set up is chapter 26. The rest covers mechanical setup, a full alignment, and troubleshooting.
 
 Menu names in bold are the labels of the English hand-controller firmware.
 
@@ -231,6 +231,8 @@ The tracking triangle is overlaid with the star, the sun, the moon, or the targe
 | ![](images/icons/atrate_base.png) | Guiding at the track rate (crosshair) |
 
 The guide arrows are drawn on top of the frame, the bullseye, or the crosshair, depending on whether the mount is receiving an ST-4 pulse, a recenter, or a guide at the track rate.
+
+The letters **eF** appear in the status row when an eFinder is connected.
 
 **GNSS, lock, Shift.** The GNSS icon appears only at home or at park.
 
@@ -601,7 +603,7 @@ If the hand controller was built with the double-star or variable catalogs, two 
 
 When a filter actually removes objects, the catalog title is wrapped in exclamation marks, for example **!Goto Messier!**. If nothing remains, the screen says **No Object**: loosen one step, or **Reset Filters**.
 
-North and South scroll the objects that remain. F starts the goto or the sync, depending on the menu you came from. A full example, M13 then M31, is in chapter 25.
+North and South scroll the objects that remain. F starts the goto or the sync, depending on the menu you came from. A full example, M13 then M31, is in chapter 26.
 
 ### Center, then sync
 
@@ -697,7 +699,7 @@ If **Mount error** is **On** and at least one of **CH** and **NP** is not zero, 
 
 ### ASCOM and Alpaca
 
-The Windows ASCOM driver and Alpaca (chapter 23) use the same action names. The tube is at home before **AlignStart**. The program slews, plate-solves, and accepts the solved coordinates. It does not recenter. Sync does not add a star of this session.
+The Windows ASCOM driver and Alpaca (chapter 24) use the same action names. The tube is at home before **AlignStart**. The program slews, plate-solves, and accepts the solved coordinates. It does not recenter. Sync does not add a star of this session.
 
 | Action | Parameters | Role |
 |--------|------------|------|
@@ -941,7 +943,47 @@ Locking the focuser keeps an accidental press from losing focus during an exposu
 
 ---
 
-## 23. Wi-Fi, phone, computer
+## 23. Plate solving
+
+Two ways to plate-solve: a TeenAstro eFinder on the focuser or GNSS port, or the phone camera in the Android app. The phone does not need the eFinder. Either one can sync the mount, and either one can sync and recenter after a goto.
+
+The finder does not look along the telescope. The difference is two rotations in the telescope frame, the **Hz cone** and the **Ve cone**. Hz is the horizontal cone and Ve is the vertical cone. They belong to the tube, or to the phone clamped on the tube. Measure them once, on a bright star. Later solves follow the telescope.
+
+### eFinder on the hand controller
+
+**eFinder** appears under **Telescope Settings** only after the main unit has found the camera.
+
+**Solve** reports the field and does not change the model. **Solve & Sync** writes that position into the mount.
+
+**Aim.** Go to a bright star, center it in the telescope, and sync. Then **Aim**. The hand controller asks for that bright star, already centered and synced, and shows **Hz Cone** and **Ve Cone** in arcminutes. Aim fails when the tube is too close to the pole on an equatorial mount, or too close to the zenith on an alt-azimuth mount. Choose another star.
+
+**Calibrate** is a different step. It places the brightest star against the center of the camera. It does not measure the Hz cone or the Ve cone.
+
+**GoTo++.** After a goto, the eFinder solves, syncs, and if the telescope is still farther from the target than the threshold, slews back to that target once and solves again. The **GoTo++** line turns this on or off and sets the threshold in arcminutes.
+
+**Align** offers **2 Stars** and **4 Stars** on every mount, and **3+3 Stars** on a German equatorial mount. The tube is already at home for every one of them. The eFinder then slews and plate-solves; nothing is centered by hand. **2 Stars** takes two places on the home pier. **4 Stars** takes four places on that pier, or, on an alt-azimuth mount, four places spread around the sky. **3+3 Stars** takes three places on the home pier, flips, then takes three on the other pier. The solved position is what is recorded, including where it differs from the slew. The model is saved when the solves are accepted. A key press during **Align** stops it and puts the previous model back. **Align** does not run while the mount is parked.
+
+**Exposure** and **Gain** set the camera. **Info** shows the eFinder version.
+
+### Phone finder
+
+On Android, open **Phone finder** from the dashboard or from the alignment screen. Leave that screen open: the camera has to stay on.
+
+Set **Field** to the angle the phone lens covers, from 15° to 90°. The default is 60°. The catalog is bright stars, down to magnitude 4.5, so a narrow eyepiece field will not match. Clamp the phone to the tube.
+
+**Solve** shows the telescope axis once the cones are known, and the camera axis while they are still zero. **Solve & Sync** sends that axis to the mount.
+
+**Aim** is the same procedure as on the hand controller. Center a bright star in the telescope and sync, then capture. The screen shows **Hz Cone** and **Ve Cone**. **Clear cones** forgets them.
+
+**Auto sync.** Turn it on and leave the Phone finder screen open. When a goto finishes, the phone solves, syncs, and recenters once if the telescope is farther from the target than **Recenter**. The limit runs from 2 to 60 arcminutes and starts at 2. The switch and the limit stay on the phone.
+
+The phone does not run **GoTo++** inside the main unit. It syncs once and, when the miss is past the limit, recenters once.
+
+**Align** offers **2 Stars** and **4 Stars** on every mount, and **3+3 Stars** on a German equatorial mount. The telescope is already at home. The phone slews and plate-solves; nothing is centered by hand. **2 Stars** takes two places on the home pier. **4 Stars** takes four places on that pier, or, on an alt-azimuth mount, four places spread around the sky. **3+3 Stars** takes three places on the home pier, flips, then takes three on the other pier. The solved position is what is recorded. The model is saved when the solves are accepted. **Stop** cancels the session.
+
+---
+
+## 24. Wi-Fi, phone, computer
 
 **Telescope Settings → Wifi**
 
@@ -1019,7 +1061,7 @@ The hand controller and the main unit must come from the same release. Otherwise
 
 ---
 
-## 24. Visitor mode
+## 25. Visitor mode
 
 **SHC Settings → Rights**: **Administrator** or **Visitor**.
 
@@ -1029,9 +1071,9 @@ The choice is stored in the hand controller. To return to administrator: Shift +
 
 ---
 
-## 25. An observing night
+## 26. An observing night
 
-The example is a late-summer evening around 45° north: Vega and Altair are high, M13 is still up, M31 is rising. On another night, keep the same actions and change the names. Filters are in chapter 14, SkySafari in chapter 23.
+The example is a late-summer evening around 45° north: Vega and Altair are high, M13 is still up, M31 is rising. On another night, keep the same actions and change the names. Filters are in chapter 14, SkySafari in chapter 24.
 
 ### Telling that the battery is empty
 
@@ -1104,7 +1146,7 @@ If you loosened the clutches during the night, do at least a sync again, and an 
 
 ---
 
-## 26. When something is wrong
+## 27. When something is wrong
 
 | What you see | Where to look |
 |--------------|----------------|
@@ -1157,6 +1199,7 @@ Lines in parentheses appear only in the case indicated.
 - Mount — Mount, Mount type, Motors, Encoders, Limits, Mount error, Refraction, Reticule
 - Main Unit Info — Show Version, Reboot, Reset to Factory
 - Wifi
+- (eFinder connected) eFinder — Solve & Sync, Solve, Align, GoTo++, Calibrate, Aim, Exposure, Info
 
 **Motors → Motor 1 or 2**: Show Settings, Rotation, Gear, Steps per Rot., MicroStep, Backlash, Backlash Speed, Low Curr., High Curr., Silent
 
@@ -1271,6 +1314,8 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - **Mount error**, above Refraction, holds a known CH and NP during a two-star alignment and during a plate-solve sync.
 - **Save** after **4 Stars** or **3+3 Stars** also copies published CH and NP into Mount error, so the web Mount page and a later 2-star with Mount error On see those values (not 0.000°).
 - The firmware uploader **Auto!** button (Telescope / Focuser) backs up parameters, detects the board, flashes, restores, and verifies (firmware 1.5+). **EEPROM** edits the full parameter set (two mounts on the MainUnit). **Upload!** still flashes without touching settings.
+- An eFinder on the focuser or GNSS port adds **eFinder** to Telescope Settings, and the letters **eF** on the status row, only while the camera is found. **Aim** stores the Hz cone and the Ve cone in the telescope frame. **GoTo++** syncs after a goto and recenters once past the threshold. Chapter 23.
+- The Android app **Phone finder** does the same solve, aim, sync, and one recenter from the phone camera. No eFinder is required.
 
 ### Alignment from ASCOM and Alpaca
 

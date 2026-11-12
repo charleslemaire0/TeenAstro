@@ -3,6 +3,7 @@
  * One file per letter (plan). All :gx# TeenAstro specific (not in Meade LX200).
  */
 #include "Command.h"
+#include "Efinder.h"
 
 #define GPS_COMPARISON_PERIOD_MS  2000
 #define GPS_VALID_TIMEOUT_MS      2000
@@ -32,9 +33,13 @@ void UpdateGnss()
 #endif
   if (mount.config.peripherals.hasGNSS && (mount.isAtHome() || mount.isParked()))
   {
-    while (GNSS_Serial.available())
+    // When the eFinder owns the GNSS UART it already pumps NMEA into mount.gnss.
+    if (!efinder.ownsGnssPort())
     {
-      mount.gnss.encode(GNSS_Serial.read());
+      while (GNSS_Serial.available())
+      {
+        mount.gnss.encode(GNSS_Serial.read());
+      }
     }
 
     // Once after startup: if still at home and RTC differs from GNSS, sync time silently.

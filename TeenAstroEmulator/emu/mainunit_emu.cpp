@@ -27,6 +27,7 @@ namespace sim {
 #include "arduino.h"
 #include "EEPROM.h"
 #include "FocuserStub.h"
+#include "EfinderStub.h"
 #include "TimeLib.h"
 #include "Teensy3Clock.h"
 #include "IntervalTimer.h"
@@ -70,6 +71,7 @@ static TcpServerStream g_tcpUsb;
 static TcpServerStream g_tcpShc;
 static TcpServerStream g_tcpWifi;   /* Android / SkySafari LX200 */
 static FocuserStub     g_focuserStub;
+static EfinderStub     g_efinderStub;
 
 /// Initialise RTC/LST from PC UTC (matches ASCOM calculator / Alpaca bridge), and
 /// force RA+Dec tracking compensation so :SXRr/:SXRd (ASCOM rates) succeed —
@@ -163,6 +165,9 @@ int main(int, char**)
     /* Route Focus_Serial (Serial2) to the in-process focuser emulation */
     Serial2.setForward(&g_focuserStub);
     printf("[EMU] Focuser stub attached to Serial2 (Focus_Serial).\n");
+    /* eFinder on GNSS UART (Serial3) — main unit auto-detects via :e?# */
+    Serial3.setForward(&g_efinderStub);
+    printf("[EMU] eFinder stub attached to Serial3 (GNSS_Serial).\n");
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
         printf("[EMU] SDL_Init failed: %s\n", SDL_GetError());
@@ -190,6 +195,7 @@ int main(int, char**)
     unsigned long lastEepromFlush = millis();
 
     while (true) {
+        g_efinderStub.tick();
         application.loop();
         cockpit::cockpit_update();
 

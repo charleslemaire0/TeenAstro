@@ -23,6 +23,9 @@ struct MountAlignment {
   /// hasValid=false, EE_Tvalid cleared) and syncs at the recentered star.
   bool alignPolarThirdPending = false;
   bool autoAlignmentBySync = false;
+  /// Plate-solve session. The hand controller must not ask for a recenter
+  /// when a slew of this session ends; the solved position is the measurement.
+  bool plateSolveSession = false;
   AlignPhase alignPhase = ALIGN_IDLE;
   uint8_t alignStarNum  = 0;
   char alignStarName[16] = {0};  // name of current alignment star (set by app via :SXAs,name#)

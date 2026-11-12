@@ -98,6 +98,7 @@ void processCommands() {
     case Cmd::SYNC:      Command_C(); break;
     case Cmd::DISTANCE:  Command_D(); break;
     case Cmd::ENCODER:   Command_E(); break;
+    case Cmd::EFINDER:   Command_e(); break;
     case Cmd::FOCUSER:   Command_F(); break;
     case Cmd::GET:       Command_G(); break;
     case Cmd::GNSS:      Command_GNSS(); break;

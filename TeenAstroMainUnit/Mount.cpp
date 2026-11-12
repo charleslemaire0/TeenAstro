@@ -52,6 +52,7 @@ Mount::Mount() : limits(*this), guiding(*this), limitManager(*this), st4(*this),
   config.peripherals.PushtoStatus = Pushto::PT_OFF;
   config.peripherals.hasFocuser = false;
   config.peripherals.hasGNSS = true;
+  config.peripherals.hasEfinder = false;
   refraction.forPole = false;
   refraction.forGoto = false;
   refraction.forTracking = false;

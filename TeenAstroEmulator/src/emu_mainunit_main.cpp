@@ -49,6 +49,8 @@
 #include "../../TeenAstroMainUnit/Command_D.cpp"
 #include "../../TeenAstroMainUnit/Command_dollar.cpp"
 #include "../../TeenAstroMainUnit/Command_E.cpp"
+#include "../../TeenAstroMainUnit/Command_Efinder.cpp"
+#include "../../TeenAstroMainUnit/Efinder.cpp"
 #include "../../TeenAstroMainUnit/Command_Focuser.cpp"
 #include "../../TeenAstroMainUnit/Command_G.cpp"
 #include "../../TeenAstroMainUnit/Command_GNSS.cpp"

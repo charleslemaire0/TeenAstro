@@ -852,6 +852,11 @@ void SmartHandController::updateMainDisplay(PAGES page)
           display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, Aligned_bits);
           xr -= icon_width + 1;
         }
+        if (ta_MountStatus.hasEfinder())
+        {
+          u8g2_DrawUTF8(u8g2, xr - 14, 10, "eF");
+          xr -= 15;
+        }
       }
       switch (ta_MountStatus.getError())
       {

@@ -38,7 +38,7 @@ static void PrintRa(double& val) {
 // 102 bytes → 136 base64 chars + '#'.  Padding: 2 bytes (102 % 3 == 0, no pad).
 //
 // Packet layout (little-endian). All float fields are float64 (double) for full precision.
-//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, GuidingState[5:7], error, enableFlags, hasFocuser)
+//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, GuidingState[5:7], error, enableFlags, hasFocuser, hasEfinder)
 //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
 //   Bytes 12-83: Positions and rates (9 × float64 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec, TrackRate RA, TrackRate Dec)
 //   Bytes 84-91: Stored rates (int32 LE at 84, 88 — same as :GXRe#/:GXRf#)
@@ -153,6 +153,7 @@ static void Command_GX_AllState()
   bitWrite(enableFlags, 2, mount.config.peripherals.PushtoStatus != PT_OFF);
   bitWrite(enableFlags, 3, mount.motorsEncoders.enableMotor);
   bitWrite(enableFlags, 4, mount.config.peripherals.hasFocuser);
+  bitWrite(enableFlags, 5, mount.config.peripherals.hasEfinder);
   pkt[5] = enableFlags;
 
   // ── Bytes 6-11: UTC date/time ─────────────────────────────────────────────
@@ -239,7 +240,9 @@ static void Command_GX_AllState()
       phase = ALIGN_SLEW;
       mount.alignment.alignPhase = ALIGN_SLEW;
     }
-    if (phase == ALIGN_SLEW && !mount.isMovingTo()) {
+    // A plate-solve alignment measures the solved position. Ending the slew
+    // must not switch the hand controller into the recenter step.
+    if (phase == ALIGN_SLEW && !mount.isMovingTo() && !mount.alignment.plateSolveSession) {
       phase = ALIGN_RECENTER;
       mount.alignment.alignPhase = ALIGN_RECENTER;
     }

@@ -27,6 +27,7 @@ namespace Cmd {
   constexpr char SYNC        = 'C';   // :Cx#  Sync
   constexpr char DISTANCE    = 'D';   // :D#   Distance bars
   constexpr char ENCODER     = 'E';   // :Ex#  Encoder / push-to
+  constexpr char EFINDER     = 'e';   // :ex#  eFinder (plate solving)
   constexpr char FOCUSER     = 'F';   // :Fx#  Focuser
   constexpr char GET         = 'G';   // :Gx#  Get (LX200 + :GXnn# TeenAstro)
   constexpr char GNSS        = 'g';   // :gx#  GNSS sync
@@ -91,6 +92,13 @@ inline CMDREPLY getReplyType(const char* command)
     if (strchr("ACD", command[2])) return CMDR_LONG;
     if (command[2] == 'M' && strchr("ASUQ", command[3])) return CMDR_SHORT;
     if (command[2] == 'W' && (command[3] == '1' || command[3] == '0')) return CMDR_SHORT_BOOL;  // EW1#/EW0# emu WiFi
+    return CMDR_INVALID;
+
+  // ---- e  eFinder ----------------------------------------------------
+  case Cmd::EFINDER:
+    if (strchr("?RVX", command[2]))                return CMDR_LONG;
+    if (command[2] == 'P' && (command[3] == '#' || command[3] == 0)) return CMDR_LONG;
+    if (strchr("SYOoABTK", command[2]))            return CMDR_SHORT_BOOL;
     return CMDR_INVALID;
 
   // ---- F  Focuser -----------------------------------------------------

@@ -27,7 +27,10 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(lastGotoTabRouteProvider.notifier).state = '/catalogs';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(lastGotoTabRouteProvider.notifier).state = '/catalogs';
+    });
     _searchController = TextEditingController(
       text: ref.read(catalogFilterProvider).search,
     );

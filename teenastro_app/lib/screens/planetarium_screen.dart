@@ -95,7 +95,10 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(lastGotoTabRouteProvider.notifier).state = '/planetarium';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(lastGotoTabRouteProvider.notifier).state = '/planetarium';
+    });
     final saved = ref.read(planetariumSettingsProvider);
     _zoom = saved.lastZoom;
     _rotation = saved.lastRotation;

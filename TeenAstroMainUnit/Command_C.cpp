@@ -3,6 +3,38 @@
  */
 #include "Command.h"
 
+void syncOnTarget(PoleSide targetPoleSide)
+{
+  if (mount.alignment.autoAlignmentBySync) {
+    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+    Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto());
+
+    if (mount.alignment.conv.getRefs() == 0)
+    {
+      mount.syncAzAlt(&HO_T, targetPoleSide);
+    }
+    Coord_IN IN_T = mount.getInstr();
+    mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    if (mount.alignment.conv.isReady())
+    {
+      closeTwoStarAlignment(*localSite.latitude());
+      mount.syncAzAlt(&HO_T, mount.getPoleSide());
+      mount.alignment.hasValid = true;
+      mount.alignment.autoAlignmentBySync = false;
+    }
+  }
+  else
+  {
+    // The model is left as it is. This sync only moves the axes so the
+    // current pointing matches the target through the stored transform.
+    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+    Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    mount.syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
+  }
+  mount.startSideralTracking();
+}
+
 // -----------------------------------------------------------------------------
 //   C - Sync  :CA# :CM# :CS# :CU#
 // -----------------------------------------------------------------------------
@@ -23,38 +55,11 @@ void Command_C() {
     case 'S':
     {
       // :CM# :CS#  LX200 standard
-      if (mount.alignment.autoAlignmentBySync) {
-        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
-        Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto());
-
-        if (mount.alignment.conv.getRefs() == 0)
-        {
-          mount.syncAzAlt(&HO_T, targetPoleSide);
-        }
-        Coord_IN IN_T = mount.getInstr();
-        mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
-        if (mount.alignment.conv.isReady())
-        {
-          closeTwoStarAlignment(*localSite.latitude());
-          mount.syncAzAlt(&HO_T, mount.getPoleSide());
-          mount.alignment.hasValid = true;
-          mount.alignment.autoAlignmentBySync = false;
-        }
-      }
-      else
-      {
-        // The model is left as it is. This sync only moves the axes so the
-        // current pointing matches the target through the stored transform.
-        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
-        Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        mount.syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
-      }
+      syncOnTarget(targetPoleSide);
       if (commandState.command[1] == 'M')
       {
         strcpy(commandState.reply, "N/A#");
       }
-      mount.startSideralTracking();
     }
     break;
     case 'U':

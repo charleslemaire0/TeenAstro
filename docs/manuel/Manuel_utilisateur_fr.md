@@ -6,7 +6,7 @@ Manuel de terrain pour l'utilisateur de la monture. Il décrit la raquette, l'un
 
 Il s'inspire de la démarche du manuel FS2 d'Astro-Electronic (connexion, menus, changement d'une valeur, sens de rotation, vitesses, goto, monture allemande, codeurs, mode visiteur), et il s'appuie sur les menus de la raquette, sur l'unité principale, et sur le wiki du groupe [TeenAstro](https://groups.io/g/TeenAstro/wiki/home).
 
-Vous n'avez pas besoin de tout lire avant la première nuit. Pour démarrer, les chapitres 3, 5, 7 et 8 suffisent. Une soirée déjà réglée se conduit avec le chapitre 25. Le reste sert au réglage de la mécanique, à l'alignement fin et au dépannage.
+Vous n'avez pas besoin de tout lire avant la première nuit. Pour démarrer, les chapitres 3, 5, 7 et 8 suffisent. Une soirée déjà réglée se conduit avec le chapitre 26. Le reste sert au réglage de la mécanique, à l'alignement fin et au dépannage.
 
 Les noms de menus cités entre guillemets sont ceux du firmware français de la raquette. Quelques libellés restent en anglais dans cette version : `Silent`, `J2000`, `JNow`, `Alt Az`, `Show align. error`, `Wifi`.
 
@@ -229,6 +229,8 @@ Le triangle du suivi reçoit par-dessus l'étoile, le soleil, la lune ou la cibl
 | ![](images/icons/atrate_base.png) | Guidage à la vitesse de suivi (réticule) |
 
 Les flèches de guidage se dessinent par-dessus le cadre, la cible ou le réticule, selon que la monture reçoit une impulsion ST-4, un recentrage, ou un guidage à la vitesse de suivi.
+
+Les lettres **eF** apparaissent dans la ligne d'état lorsqu'un eFinder est connecté.
 
 **GNSS, verrou, Shift.** L'icône GNSS n'apparaît qu'à la maison ou au parc.
 
@@ -599,7 +601,7 @@ Si la raquette a été compilée avec les doubles ou les variables, deux lignes 
 
 Quand un filtre retire vraiment des objets, le titre du catalogue s'entoure de points d'exclamation, par exemple **!Goto Messier!**. S'il ne reste rien, l'écran dit **No Object** : élargissez un cran, ou **Reset Filtres**.
 
-Nord et Sud font défiler les objets qui restent. F lance le goto ou la synchro selon le menu d'où vous venez. Un exemple complet, M13 puis M31, est au chapitre 25.
+Nord et Sud font défiler les objets qui restent. F lance le goto ou la synchro selon le menu d'où vous venez. Un exemple complet, M13 puis M31, est au chapitre 26.
 
 ### Centrer puis synchroniser
 
@@ -695,7 +697,7 @@ Si **Erreur monture** est sur **ON** et si **CH** ou **NP** n'est pas nul, cet a
 
 ### ASCOM et Alpaca
 
-Le pilote ASCOM Windows et Alpaca (chapitre 23) utilisent les mêmes noms d'action. Le tube est à la maison avant **AlignStart**. Le programme pointe, fait la résolution, et accepte les coordonnées résolues. Il ne recentre pas. Une synchro n'ajoute pas une étoile de cette session.
+Le pilote ASCOM Windows et Alpaca (chapitre 24) utilisent les mêmes noms d'action. Le tube est à la maison avant **AlignStart**. Le programme pointe, fait la résolution, et accepte les coordonnées résolues. Il ne recentre pas. Une synchro n'ajoute pas une étoile de cette session.
 
 | Action | Paramètres | Rôle |
 |--------|------------|------|
@@ -939,7 +941,47 @@ Le verrouillage du focuser évite qu'un appui accidentel ne perde la mise au poi
 
 ---
 
-## 23. Wi-Fi, téléphone, ordinateur
+## 23. Résolution de champ
+
+Deux façons de résoudre le champ : un eFinder TeenAstro sur le port mise au point ou le port GNSS, ou l'appareil photo du téléphone dans l'application Android. Le téléphone n'a pas besoin de l'eFinder. L'un comme l'autre peut synchroniser la monture, et synchroniser puis recentrer après un goto.
+
+Le chercheur ne regarde pas dans l'axe du télescope. L'écart est deux rotations dans le repère du télescope, le **cône Hz** et le **cône Ve**. Hz est le cône horizontal et Ve le cône vertical. Ils appartiennent au tube, ou au téléphone fixé sur le tube. On les mesure une fois, sur une étoile brillante. Les résolutions suivantes suivent le télescope.
+
+### eFinder à la raquette
+
+**eFinder** apparaît dans **Param. Télescope** seulement après que l'unité principale a trouvé la caméra.
+
+**Solve** affiche le champ et ne change pas le modèle. **Solve & Sync** écrit cette position dans la monture.
+
+**Visee.** Aller sur une étoile brillante, la centrer dans le télescope, et synchroniser. Puis **Visee**. La raquette demande cette étoile, déjà centrée et synchronisée, et affiche **Hz Cone** et **Ve Cone** en minutes d'arc. Visee échoue si le tube est trop près du pôle sur une monture équatoriale, ou trop près du zénith sur une monture altazimutale. Choisir une autre étoile.
+
+**Calibrer** est une autre étape. Elle place l'étoile la plus brillante au centre de la caméra. Elle ne mesure ni le cône Hz ni le cône Ve.
+
+**GoTo++.** Après un goto, l'eFinder résout, synchronise, et si le télescope est encore plus loin de la cible que le seuil, revient une fois sur cette cible et résout à nouveau. La ligne **GoTo++** active ou coupe ce comportement et règle le seuil en minutes d'arc.
+
+**Alignement** propose **2 étoiles** et **4 étoiles** sur toute monture, et **3+3 étoiles** sur une monture allemande. Le tube est déjà à la maison pour chacune. L'eFinder pointe ensuite et fait une résolution ; rien n'est centré à la main. **2 étoiles** prend deux endroits du côté de la maison. **4 étoiles** en prend quatre sur ce côté, ou, sur une monture alt-azimutale, quatre endroits répartis dans le ciel. **3+3 étoiles** prend trois endroits du côté de la maison, fait un retournement, puis trois sur l'autre côté. La position résolue est celle qui est enregistrée, y compris là où elle diffère du pointage. Le modèle est enregistré quand les résolutions sont acceptées. Une touche pendant **Alignement** l'arrête et remet le modèle précédent. **Alignement** ne part pas tant que la monture est parquée.
+
+**Exposition** et **Gain** règlent la caméra. **Info** affiche la version de l'eFinder.
+
+### Chercheur du téléphone
+
+Sur Android, ouvrir **Phone finder** depuis le tableau de bord ou depuis l'écran d'alignement. Laisser cet écran ouvert : l'appareil photo doit rester allumé.
+
+Régler **Field** sur l'angle couvert par l'objectif, de 15° à 90°. La valeur de départ est 60°. Le catalogue va jusqu'à la magnitude 4,5, donc un champ d'oculaire étroit ne correspond pas. Fixer le téléphone sur le tube.
+
+**Solve** montre l'axe du télescope une fois les cônes connus, et l'axe de la caméra tant qu'ils sont nuls. **Solve & Sync** envoie cet axe à la monture.
+
+**Aim** suit la même procédure qu'à la raquette. Centrer une étoile brillante dans le télescope et synchroniser, puis capturer. L'écran affiche **Hz Cone** et **Ve Cone**. **Clear cones** les oublie.
+
+**Auto sync.** L'activer et laisser l'écran Phone finder ouvert. Quand un goto se termine, le téléphone résout, synchronise, et recentre une fois si le télescope est plus loin de la cible que **Recenter**. La limite va de 2 à 60 minutes d'arc et part de 2. L'interrupteur et la limite restent dans le téléphone.
+
+Le téléphone ne lance pas **GoTo++** dans l'unité principale. Il synchronise une fois et, si l'écart dépasse la limite, recentre une fois.
+
+**Alignement** propose **2 étoiles** et **4 étoiles** sur toute monture, et **3+3 étoiles** sur une monture allemande. Le tube est déjà à la maison. Le téléphone pointe et fait une résolution ; rien n'est centré à la main. **2 étoiles** prend deux endroits du côté de la maison. **4 étoiles** en prend quatre sur ce côté, ou, sur une monture alt-azimutale, quatre endroits répartis dans le ciel. **3+3 étoiles** prend trois endroits du côté de la maison, fait un retournement, puis trois sur l'autre côté. La position résolue est celle qui est enregistrée. Le modèle est enregistré quand les résolutions sont acceptées. **Stop** annule la séance.
+
+---
+
+## 24. Wi-Fi, téléphone, ordinateur
 
 **Param. Télescope → Wifi**
 
@@ -1017,7 +1059,7 @@ Raquette et unité principale doivent provenir de la même publication. Sinon l'
 
 ---
 
-## 24. Mode visiteur
+## 25. Mode visiteur
 
 **Param. Raquette → Privilèges** : **Administrateur** ou **Visiteur**.
 
@@ -1027,9 +1069,9 @@ Le choix est mémorisé dans la raquette. Pour revenir en administrateur : Shift
 
 ---
 
-## 25. Une soirée d'observation
+## 26. Une soirée d'observation
 
-L'exemple est une fin d'été, vers 45° de latitude nord : Véga et Altaïr sont hautes, M13 passe encore, M31 se lève. Une autre nuit, gardez les mêmes gestes et changez les noms. Les filtres sont détaillés au chapitre 14, SkySafari au chapitre 23.
+L'exemple est une fin d'été, vers 45° de latitude nord : Véga et Altaïr sont hautes, M13 passe encore, M31 se lève. Une autre nuit, gardez les mêmes gestes et changez les noms. Les filtres sont détaillés au chapitre 14, SkySafari au chapitre 24.
 
 ### Reconnaître une batterie vide
 
@@ -1102,7 +1144,7 @@ Si vous avez desserré les freins dans la nuit, refaites au moins une synchro, e
 
 ---
 
-## 26. En cas de problème
+## 27. En cas de problème
 
 | Ce que vous voyez | Piste |
 |-------------------|--------|
@@ -1155,6 +1197,7 @@ Les lignes entre parenthèses n'apparaissent que dans le cas indiqué.
 - Monture — Monture, Type de Monture, Moteurs, Encodeurs, Limites, Erreur monture, Réfraction, Réticule
 - Info Unité Princip. — Affichage Version, Redémarrage, Réinit. Usine
 - Wifi
+- (eFinder connecté) eFinder — Solve & Sync, Solve, Alignement, GoTo++, Calibrer, Visee, Exposition, Info
 
 **Moteurs → Moteur 1 ou 2** : Afficher Paramètres, Rotation, Réduction, Nb. Pas par Rot., Micropas, Jeu, Vitesse Jeu, Amp. Bas, Amp. Haut, Silent
 
@@ -1269,6 +1312,8 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - **Erreur de monture**, au-dessus de la réfraction, conserve un CH et un NP déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
 - **Sauver** après **4 étoiles** ou **3+3 étoiles** copie aussi le CH et le NP publiés dans Erreur monture, pour que la page Monture du web et un 2 étoiles ultérieur avec Erreur monture ON voient ces valeurs (pas 0,000°).
 - Le bouton **Auto!** de l'uploader (Telescope / Focuser) sauvegarde les paramètres, détecte la carte, flashe, restaure et vérifie (firmware 1.5+). **EEPROM** édite l'ensemble des paramètres (deux montures sur l'unité principale). **Upload!** flashe toujours sans toucher aux réglages.
+- Un eFinder sur le port mise au point ou le port GNSS ajoute **eFinder** dans Param. Télescope, et les lettres **eF** sur la ligne d'état, seulement tant que la caméra est trouvée. **Visee** enregistre le cône Hz et le cône Ve dans le repère du télescope. **GoTo++** synchronise après un goto et recentre une fois au-delà du seuil. Chapitre 23.
+- **Phone finder** dans l'application Android fait la même résolution, la même visée, la même synchro et un recentrage, avec l'appareil photo du téléphone. L'eFinder n'est pas nécessaire.
 
 ### Alignement depuis ASCOM et Alpaca
 

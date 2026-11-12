@@ -117,8 +117,10 @@ class _SpeedSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final labels = ['Guide', 'Slow', 'Med', 'Fast', 'Max'];
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
       children: List.generate(5, (i) {
         final selected = current.index == i;
         return Padding(

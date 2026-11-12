@@ -88,6 +88,32 @@ A `:CM#` / `:CS#` once the flag is off does not change the stored transform. It 
 
 ---
 
+## e — eFinder (plate solving)
+
+TeenAstroEfinder on the Focuser or GNSS port. Hosts talk only to the main unit; the main unit drives the Pi.
+
+| Syntax | Description | Returns | Standard |
+|--------|-------------|---------|----------|
+| `:e?#` | Status: present, port (`F`/`G`), version, job, last result, GoTo++, threshold. | `0#` or `1,F,ver,job,res,pp,thr#` | TeenAstro extension |
+| `:eV#` | Firmware/app version of the eFinder. | `text#` / `0#` | TeenAstro extension |
+| `:eC…` | (Pi link only) Main unit pushes current pointing as `:eC<raHours>,<decDeg>#` before each solve so a SimCamera can render that field. Not a host command. | `1#` | TeenAstro extension |
+| `:eS#` | Start capture and plate-solve (no sync). | `1` / `0` | TeenAstro extension |
+| `:eY#` | Solve and sync (or add an alignment reference when `:AA#` / `:eA#` is active). | `1` / `0` | TeenAstro extension |
+| `:eR#` | Poll result: busy, none, fail, solved, or offset. After `:eK#` the offset is `O<hzConeArcmin>,<veConeArcmin>,cone#`. | `B#` / `N#` / `Fcode#` / `Sra,dec,stars,ms#` / `O…#` | TeenAstro extension |
+| `:eO#` | Start camera-center offset calibration (brightest star vs chip center). | `1` / `0` | TeenAstro extension |
+| `:eo#` | Reset the camera-center offset and the stored axis rotations. | `1` / `0` | TeenAstro extension |
+| `:eK#` | Measure the Hz cone and the Ve cone of the efinder axis in the telescope frame. Hz is the horizontal cone and Ve is the vertical cone. Sync the telescope on a bright star first. Later solves are reported as the telescope axis. | `1` / `0` | TeenAstro extension |
+| `:eA2#` | Two-star alignment from home, any mount. Two slews and plate solves on the home pier. Nothing is recentered. | `1` / `0` | TeenAstro extension |
+| `:eA4#` | Four-star alignment from home, any mount. On an alt-azimuth mount the four places are spread around the sky. Nothing is recentered. | `1` / `0` | TeenAstro extension |
+| `:eA#` | Six places from home. On a mount that flips: three on the home pier, a flip, then three more. The solved position is recorded. Saves the model. A key press aborts and restores the previous model. | `1` / `0` | TeenAstro extension |
+| `:eB#` | Abort the current eFinder job. | `1` | TeenAstro extension |
+| `:eP#` | GoTo++ settings. | `on,thresholdArcmin#` | TeenAstro extension |
+| `:eT0#` / `:eT1#` | Disable / enable GoTo++ (solve+sync+refine after each goto). | `1` / `0` | TeenAstro extension |
+| `:eT<n>#` | Set GoTo++ threshold in arcmin (`2`…`60`). | `1` / `0` | TeenAstro extension |
+| `:eX…#` | Camera/parameter passthrough to the Pi. | (varies) | TeenAstro extension |
+
+---
+
 ## E — Encoder / push-to
 
 All `:E…#` commands are encoder and push-to related. Not in Meade LX200.

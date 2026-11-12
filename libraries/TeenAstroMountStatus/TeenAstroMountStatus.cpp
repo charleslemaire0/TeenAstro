@@ -497,6 +497,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   uint8_t eFlags   = pkt[5];
   m_mount.enableFlags = eFlags & 0x0F;
   m_hasFocuser      = (eFlags >> 4) & 0x1;
+  m_hasEfinder      = (eFlags >> 5) & 0x1;
   m_mount.alignmentRefCount = pkt[99] & 0x3;
   m_mount.alignPhase   = pkt[100] & 0x3;
   m_mount.alignStarNum = (pkt[100] >> 2) & 0x7;

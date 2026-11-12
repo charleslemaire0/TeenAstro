@@ -100,7 +100,10 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(lastGotoTabRouteProvider.notifier).state = '/goto';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(lastGotoTabRouteProvider.notifier).state = '/goto';
+    });
   }
 
   @override

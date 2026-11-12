@@ -340,6 +340,25 @@ public:
   LX200RETURN focuserIsConnected(bool& connected); // :F~#
 
   // -----------------------------------------------------------------------
+  //  eFinder (plate solving)
+  // -----------------------------------------------------------------------
+  LX200RETURN efinderStatus(char* out, int len);     // :e?#
+  LX200RETURN efinderVersion(char* out, int len);    // :eV#
+  LX200RETURN efinderSolve();                        // :eS#
+  LX200RETURN efinderSolveSync();                    // :eY#
+  LX200RETURN efinderResult(char* out, int len);     // :eR#
+  LX200RETURN efinderOffset();                       // :eO#
+  LX200RETURN efinderResetOffset();                  // :eo#
+  LX200RETURN efinderAimCal();                       // :eK#
+  LX200RETURN efinderAlign();                        // :eA#  six places
+  LX200RETURN efinderAlignFromHome(uint8_t stars);   // :eA2# / :eA4#
+  LX200RETURN efinderAbort();                        // :eB#
+  LX200RETURN efinderGotoPPSettings(char* out, int len); // :eP#
+  LX200RETURN efinderSetGotoPP(bool on);             // :eT0# / :eT1#
+  LX200RETURN efinderSetThreshold(uint8_t arcmin);   // :eTn#
+  LX200RETURN efinderParam(const char* body, char* out, int len); // :eX…#
+
+  // -----------------------------------------------------------------------
   //  Rotator
   // -----------------------------------------------------------------------
   LX200RETURN rotatorCenter();                   // :rC#
