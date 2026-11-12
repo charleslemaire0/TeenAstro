@@ -977,7 +977,9 @@ Unter Android **Phone finder** vom Dashboard oder vom Ausrichtungsbildschirm öf
 
 **Auto sync.** Einschalten und den Phone-finder-Bildschirm offen lassen. Wenn ein Goto endet, löst das Handy, synchronisiert und zentriert einmal nach, wenn das Teleskop weiter vom Ziel entfernt ist als **Recenter**. Die Grenze läuft von 2 bis 60 Bogenminuten und beginnt bei 2. Schalter und Grenze bleiben im Handy.
 
-Das Handy startet **GoTo++** nicht im Steuergerät und startet auch nicht **Ausrichten**. Es synchronisiert einmal und zentriert einmal nach, wenn die Abweichung über der Grenze liegt.
+Das Handy startet **GoTo++** nicht im Steuergerät. Es synchronisiert einmal und zentriert einmal nach, wenn die Abweichung über der Grenze liegt.
+
+**Ausrichten** bietet **2 Sterne** und **4 Sterne** auf jeder Montierung, und **3+3 Sterne** auf einer deutschen Montierung. Das Rohr steht schon in der Grundstellung. Das Handy schwenkt und löst das Bild; nichts wird von Hand zentriert. **2 Sterne** nimmt zwei Stellen auf der Seite der Grundstellung. **4 Sterne** nimmt vier Stellen auf dieser Seite, oder, auf einer Alt-Azimut-Montierung, vier Stellen über den Himmel verteilt. **3+3 Sterne** nimmt drei Stellen auf der Seite der Grundstellung, schlägt um, dann drei auf der anderen Seite. Gespeichert wird die gelöste Position. Das Modell wird gespeichert, wenn die Lösungen angenommen sind. **Stop** bricht die Sitzung ab.
 
 ---
 

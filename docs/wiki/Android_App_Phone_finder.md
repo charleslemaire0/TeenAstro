@@ -18,6 +18,8 @@ The finder does not look along the telescope. The difference is two rotations in
 
 **Auto sync.** Turn it on and leave the Phone finder screen open. When a goto finishes, the phone solves, syncs, and recenters once if the telescope is farther from the target than **Recenter**. The limit runs from 2 to 60 arcminutes and starts at 2. The switch and the limit stay on the phone.
 
-This is the same sequence as **GoTo++** on an eFinder. The phone does not turn GoTo++ on inside the mount, and it does not start **Align**.
+This is the same sequence as **GoTo++** on an eFinder. The phone does not turn GoTo++ on inside the mount.
+
+**Align** offers **2 Stars** and **4 Stars** on every mount, and **3+3 Stars** on a German equatorial mount. The telescope must already be at home. The phone slews and plate-solves; nothing is centered by hand. **3+3 Stars** flips after the third place. The solved position is recorded, and the model is saved when the solves are accepted. **Stop** cancels the session.
 
 Back to the [Android app](https://groups.io/g/TeenAstro/wiki/43283).

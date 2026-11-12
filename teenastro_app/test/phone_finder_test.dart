@@ -146,4 +146,51 @@ void main() {
     expect(parseMountDeg('-03*00:00'), closeTo(-3, 1e-9));
     expect(parseMountHours('?'), isNull);
   });
+
+  double haHours(double lst, double ra) {
+    var d = lst - ra;
+    if (d > 12) d -= 24;
+    if (d < -12) d += 24;
+    return d;
+  }
+
+  test('from-home plans match the efinder places', () {
+    const lat = 48.85;
+    const lst = 12.0;
+    final two = phoneAlignPlans(stars: 2, lstH: lst, latDeg: lat, altAz: false);
+    expect(two, isNotEmpty);
+    expect(two.first.places, hasLength(2));
+    expect(two.first.flipAfterThird, isFalse);
+    expect(haHours(lst, two.first.places[0].raH), closeTo(2.2, 0.02));
+    expect(haHours(lst, two.first.places[1].raH), closeTo(5.0, 0.02));
+
+    final four = phoneAlignPlans(stars: 4, lstH: lst, latDeg: lat, altAz: false);
+    expect(four.first.places, hasLength(4));
+    expect(four.first.flipAfterThird, isFalse);
+    expect(haHours(lst, four.first.places[0].raH), greaterThan(0));
+
+    final six = phoneAlignPlans(stars: 6, lstH: lst, latDeg: lat, altAz: false);
+    expect(six.first.places, hasLength(6));
+    expect(six.first.flipAfterThird, isTrue);
+    final ha0 = haHours(lst, six.first.places[0].raH);
+    final ha3 = haHours(lst, six.first.places[3].raH);
+    expect(ha0.sign, isNot(ha3.sign));
+
+    final spread =
+        phoneAlignPlans(stars: 4, lstH: lst, latDeg: lat, altAz: true);
+    expect(spread.single.flipAfterThird, isFalse);
+    expect(haHours(lst, spread.single.places.first.raH), lessThan(0));
+    expect(haHours(lst, spread.single.places.last.raH), greaterThan(0));
+
+    expect(
+      phoneAlignPlans(
+          stars: 2, lstH: lst, latDeg: lat, altAz: false, minAlt: 70),
+      isEmpty,
+    );
+    expect(phoneAlignPlans(stars: 5, lstH: lst, latDeg: lat, altAz: false),
+        isEmpty);
+    final high =
+        phoneAlignPlans(stars: 2, lstH: lst, latDeg: 80, altAz: false);
+    expect(high.first.places.first.decD, closeTo(38, 0.01));
+  });
 }

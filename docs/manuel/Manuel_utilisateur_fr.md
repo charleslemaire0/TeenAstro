@@ -975,7 +975,9 @@ Régler **Field** sur l'angle couvert par l'objectif, de 15° à 90°. La valeur
 
 **Auto sync.** L'activer et laisser l'écran Phone finder ouvert. Quand un goto se termine, le téléphone résout, synchronise, et recentre une fois si le télescope est plus loin de la cible que **Recenter**. La limite va de 2 à 60 minutes d'arc et part de 2. L'interrupteur et la limite restent dans le téléphone.
 
-Le téléphone ne lance pas **GoTo++** dans l'unité principale, et il ne lance pas **Alignement**. Il synchronise une fois et, si l'écart dépasse la limite, recentre une fois.
+Le téléphone ne lance pas **GoTo++** dans l'unité principale. Il synchronise une fois et, si l'écart dépasse la limite, recentre une fois.
+
+**Alignement** propose **2 étoiles** et **4 étoiles** sur toute monture, et **3+3 étoiles** sur une monture allemande. Le tube est déjà à la maison. Le téléphone pointe et fait une résolution ; rien n'est centré à la main. **2 étoiles** prend deux endroits du côté de la maison. **4 étoiles** en prend quatre sur ce côté, ou, sur une monture alt-azimutale, quatre endroits répartis dans le ciel. **3+3 étoiles** prend trois endroits du côté de la maison, fait un retournement, puis trois sur l'autre côté. La position résolue est celle qui est enregistrée. Le modèle est enregistré quand les résolutions sont acceptées. **Stop** annule la séance.
 
 ---
 

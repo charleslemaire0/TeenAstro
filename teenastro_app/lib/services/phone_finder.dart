@@ -209,6 +209,223 @@ class _Vote {
   }
 }
 
+/// One automatic alignment place. [raH] is hours, [decD] is degrees.
+class PhoneAlignPlace {
+  final double raH;
+  final double decD;
+  const PhoneAlignPlace(this.raH, this.decD);
+}
+
+/// Places for a from-home phone alignment. [flipAfterThird] is the 3+3 pier change.
+class PhoneAlignPlan {
+  final List<PhoneAlignPlace> places;
+  final bool flipAfterThird;
+  const PhoneAlignPlan({required this.places, required this.flipAfterThird});
+}
+
+double _wrap360(double deg) {
+  var x = deg % 360.0;
+  if (x < 0) x += 360.0;
+  return x;
+}
+
+double _placeAltitude(double latDeg, double lstH, double raH, double decD) {
+  final lat = latDeg * math.pi / 180;
+  final dec = decD * math.pi / 180;
+  var ha = (lstH - raH) * 15 * math.pi / 180;
+  while (ha > math.pi) {
+    ha -= 2 * math.pi;
+  }
+  while (ha < -math.pi) {
+    ha += 2 * math.pi;
+  }
+  final sinAlt = math.sin(lat) * math.sin(dec) +
+      math.cos(lat) * math.cos(dec) * math.cos(ha);
+  return math.asin(sinAlt.clamp(-1.0, 1.0)) * 180 / math.pi;
+}
+
+bool _placeReaches(
+  double raH,
+  double decD, {
+  required double lstH,
+  required double latDeg,
+  required double minAlt,
+  required double maxAlt,
+}) {
+  final alt = _placeAltitude(latDeg, lstH, raH, decD);
+  if (alt < minAlt + 12) return false;
+  if (alt > maxAlt - 8) return false;
+  if (alt > 78) return false;
+  return true;
+}
+
+List<PhoneAlignPlace>? _placesFromHours({
+  required List<double> hours,
+  required List<double> decOff,
+  required double lstH,
+  required double dec0,
+  required double latDeg,
+  required double minAlt,
+  required double maxAlt,
+}) {
+  final places = <PhoneAlignPlace>[];
+  for (var i = 0; i < hours.length; i++) {
+    final dec = dec0 + decOff[i];
+    final raH = _wrap360(lstH * 15.0 - hours[i] * 15.0) / 15.0;
+    if (!_placeReaches(raH, dec,
+        lstH: lstH, latDeg: latDeg, minAlt: minAlt, maxAlt: maxAlt)) {
+      return null;
+    }
+    places.add(PhoneAlignPlace(raH, dec));
+  }
+  return places;
+}
+
+List<PhoneAlignPlace>? _onePier({
+  required int count,
+  required double sign,
+  required double lstH,
+  required double dec0,
+  required double latDeg,
+  required double minAlt,
+  required double maxAlt,
+}) {
+  final List<double> hours;
+  final List<double> decOff;
+  if (count == 2) {
+    hours = [2.2, 5.0];
+    decOff = [-12.0, 8.0];
+  } else if (count == 4) {
+    hours = [1.6, 3.0, 4.4, 5.8];
+    decOff = [-18.0, -4.0, 8.0, 14.0];
+  } else if (count == 3) {
+    hours = [2.0, 3.6, 5.2];
+    decOff = [-18.0, 0.0, 12.0];
+  } else {
+    return null;
+  }
+  return _placesFromHours(
+    hours: [for (final h in hours) sign * h],
+    decOff: decOff,
+    lstH: lstH,
+    dec0: dec0,
+    latDeg: latDeg,
+    minAlt: minAlt,
+    maxAlt: maxAlt,
+  );
+}
+
+List<PhoneAlignPlace>? _spread({
+  required int count,
+  required double lstH,
+  required double dec0,
+  required double latDeg,
+  required double minAlt,
+  required double maxAlt,
+}) {
+  final List<double> hours;
+  final List<double> decOff;
+  if (count == 2) {
+    hours = [-3.5, 3.5];
+    decOff = [-10.0, 8.0];
+  } else if (count == 4) {
+    hours = [-4.8, -2.0, 2.0, 4.8];
+    decOff = [-12.0, 6.0, -4.0, 14.0];
+  } else if (count == 6) {
+    hours = [-5.0, -3.2, -1.4, 1.4, 3.2, 5.0];
+    decOff = [-10.0, 8.0, -16.0, 12.0, 0.0, -8.0];
+  } else {
+    return null;
+  }
+  return _placesFromHours(
+    hours: hours,
+    decOff: decOff,
+    lstH: lstH,
+    dec0: dec0,
+    latDeg: latDeg,
+    minAlt: minAlt,
+    maxAlt: maxAlt,
+  );
+}
+
+double _clampDec(double latDeg, double limit) {
+  if (latDeg > limit) return limit;
+  if (latDeg < -limit) return -limit;
+  return latDeg;
+}
+
+/// From-home plans, preferred hour-angle sign first.
+/// An empty list means no set of places stays inside the altitude margins.
+/// [altAz] spreads the places. Every other mount keeps 2 and 4 on one pier,
+/// and 6 is three, a flip, then three on the other pier.
+List<PhoneAlignPlan> phoneAlignPlans({
+  required int stars,
+  required double lstH,
+  required double latDeg,
+  required bool altAz,
+  double minAlt = 0,
+  double maxAlt = 90,
+}) {
+  if (stars != 2 && stars != 4 && stars != 6) return const [];
+  if (altAz) {
+    final places = _spread(
+      count: stars,
+      lstH: lstH,
+      dec0: _clampDec(latDeg, 40),
+      latDeg: latDeg,
+      minAlt: minAlt,
+      maxAlt: maxAlt,
+    );
+    if (places == null) return const [];
+    return [PhoneAlignPlan(places: places, flipAfterThird: false)];
+  }
+  final dec0 = _clampDec(latDeg, 50);
+  if (stars == 6) {
+    final plans = <PhoneAlignPlan>[];
+    for (final sign in [1.0, -1.0]) {
+      final first = _onePier(
+        count: 3,
+        sign: sign,
+        lstH: lstH,
+        dec0: dec0,
+        latDeg: latDeg,
+        minAlt: minAlt,
+        maxAlt: maxAlt,
+      );
+      final second = _onePier(
+        count: 3,
+        sign: -sign,
+        lstH: lstH,
+        dec0: dec0,
+        latDeg: latDeg,
+        minAlt: minAlt,
+        maxAlt: maxAlt,
+      );
+      if (first == null || second == null) continue;
+      plans.add(PhoneAlignPlan(
+        places: [...first, ...second],
+        flipAfterThird: true,
+      ));
+    }
+    return plans;
+  }
+  final plans = <PhoneAlignPlan>[];
+  for (final sign in [1.0, -1.0]) {
+    final places = _onePier(
+      count: stars,
+      sign: sign,
+      lstH: lstH,
+      dec0: dec0,
+      latDeg: latDeg,
+      minAlt: minAlt,
+      maxAlt: maxAlt,
+    );
+    if (places == null) continue;
+    plans.add(PhoneAlignPlan(places: places, flipAfterThird: false));
+  }
+  return plans;
+}
+
 /// Bright peaks in a camera frame, brightest first.
 List<PixelStar> detectStars(img.Image src, {int maxStars = 18}) {
   final w = src.width;

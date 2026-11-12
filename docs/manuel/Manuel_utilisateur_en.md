@@ -977,7 +977,9 @@ Set **Field** to the angle the phone lens covers, from 15° to 90°. The default
 
 **Auto sync.** Turn it on and leave the Phone finder screen open. When a goto finishes, the phone solves, syncs, and recenters once if the telescope is farther from the target than **Recenter**. The limit runs from 2 to 60 arcminutes and starts at 2. The switch and the limit stay on the phone.
 
-The phone does not run **GoTo++** inside the main unit, and it does not start **Align**. It syncs once and, when the miss is past the limit, recenters once.
+The phone does not run **GoTo++** inside the main unit. It syncs once and, when the miss is past the limit, recenters once.
+
+**Align** offers **2 Stars** and **4 Stars** on every mount, and **3+3 Stars** on a German equatorial mount. The telescope is already at home. The phone slews and plate-solves; nothing is centered by hand. **2 Stars** takes two places on the home pier. **4 Stars** takes four places on that pier, or, on an alt-azimuth mount, four places spread around the sky. **3+3 Stars** takes three places on the home pier, flips, then takes three on the other pier. The solved position is what is recorded. The model is saved when the solves are accepted. **Stop** cancels the session.
 
 ---
 

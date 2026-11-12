@@ -20,4 +20,8 @@ Center a bright star in the telescope and sync, then capture. The screen shows *
 
 Turn **Auto sync** on. When a goto finishes, the phone solves, syncs the telescope axis, and if that axis is farther from the goto target than **Recenter**, slews back to the target once, then solves and syncs again. The limit runs from 2 to 60 arcminutes and starts at 2. The switch and the limit stay on the phone.
 
-This is the same sequence as eFinder **GoTo++**. The phone does not turn on the main unit's GoTo++, and it does not start an alignment.
+This is the same sequence as eFinder **GoTo++**. The phone does not turn on the main unit's GoTo++.
+
+## Align
+
+**Align** offers **2 Stars** and **4 Stars** on every mount, and **3+3 Stars** on a German equatorial mount. The telescope must already be at home. The phone then slews and plate-solves; nothing is centered by hand. **2 Stars** takes two places on the home pier. **4 Stars** takes four on that pier, or four places spread around the sky on an alt-azimuth mount. **3+3 Stars** takes three on the home pier, flips, then takes three on the other pier. The solved telescope axis is what is recorded. The model is saved when the solves are accepted. **Stop** cancels the session. The hardware eFinder commands are not used.
