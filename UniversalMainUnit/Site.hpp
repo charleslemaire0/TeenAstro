@@ -80,7 +80,9 @@ public:
   }
   bool setToff(float toff)
   {
-    if (toff <= -12 || toff >= 12)
+    // Stored as uint8 (toff+12)*10: -12 h → 0, +12 h → 240.
+    // Erased EEPROM (0xFF) decodes to 13.5 h and stays out of range.
+    if (toff < -12.0f || toff > 12.0f)
       return false;
     m_site.toff = toff;
     int val = (toff + 12.0) * 10.0;
@@ -124,7 +126,7 @@ public:
       setElev(0);
     }
     m_site.toff = (float)XEEPROM.read(getSiteAddress(EE_site_time, siteIndex)) / 10.0 - 12.0;
-    if (m_site.toff < -12 && m_site.toff >12)
+    if (m_site.toff < -12.0f || m_site.toff > 12.0f)
     {
       setToff(0);
     }

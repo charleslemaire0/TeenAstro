@@ -794,12 +794,8 @@ void Command_S(Command& process_command)
   case 'G':
   {
     f = strtod(&command[2], &conv_end);
-    if ((&command[2] != conv_end) &&
-      (f >= -12 && f <= 12.0))
-    {
-      localSite.setToff(f);
+    if ((&command[2] != conv_end) && localSite.setToff((float)f))
       replyShortTrue();
-    }
     else replyLongUnknown();
   }
   break;

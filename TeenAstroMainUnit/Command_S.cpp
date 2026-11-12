@@ -132,11 +132,7 @@ void Command_S(Command& process_command)
   {
     char* conv_end;
     double f = strtod(&commandState.command[2], &conv_end);
-    bool ok = (&commandState.command[2] != conv_end) && (f >= -12 && f <= 12.0);
-    if (ok)
-    {
-      localSite.setToff(f);
-    }
+    bool ok = (&commandState.command[2] != conv_end) && localSite.setToff((float)f);
     replyValueSetShort(ok);
   }
   break;

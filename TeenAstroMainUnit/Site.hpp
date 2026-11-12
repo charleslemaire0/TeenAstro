@@ -86,7 +86,9 @@ public:
   }
   bool setToff(float toff)
   {
-    if (toff <= -12 || toff >= 12)
+    // Stored as uint8 (toff+12)*10, so the endpoints are representable:
+    // -12 h → 0, +12 h → 240. Erased EEPROM (0xFF) decodes to 13.5 h.
+    if (toff < -12.0f || toff > 12.0f)
       return false;
     m_site.toff = toff;
     int val = (toff + 12.0) * 10.0;
@@ -133,7 +135,7 @@ public:
     }
     address += 2;
     m_site.toff = (float)EEPROM.read(address) / 10.0 - 12.0;
-    if (m_site.toff <= -12 || m_site.toff >= 12)
+    if (m_site.toff < -12.0f || m_site.toff > 12.0f)
     {
       setToff(0);
     }
