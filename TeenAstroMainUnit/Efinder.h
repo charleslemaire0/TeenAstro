@@ -94,7 +94,16 @@ private:
   };
 
   Stream* stream() const;
-  bool probePort(EfinderPort p);
+  /// Look for an eFinder without stalling loop(). A mount with nothing
+  /// attached only spends a few instructions here, except for one short
+  /// transmit every few seconds on a port that boot already found empty.
+  void pollProbe();
+  void beginProbe(EfinderPort p);
+  /// Read whatever is already buffered. True when the attempt finished
+  /// (identity accepted, or a frame that was not an eFinder).
+  bool collectProbe();
+  void advanceProbe(EfinderPort failed);
+  bool acceptProbe(EfinderPort p, const char* buf);
   void pump();
   void handleLine(const char* line);
   bool sendRequest(const char* cmd);
@@ -132,6 +141,11 @@ private:
   char m_version[24] = "";
   unsigned long m_lastProbe = 0;
   unsigned long m_lastSeen = 0;
+  // Port waiting for a :e?# reply. EF_PORT_NONE means discovery is idle.
+  EfinderPort m_probe = EF_PORT_NONE;
+  unsigned long m_probeStart = 0;
+  char m_probeBuf[48] = {};
+  uint8_t m_probeLen = 0;
 
   // incoming frame assembly
   char m_rx[64];

@@ -43,6 +43,23 @@ Stream* gnssStream()
   return (Stream*)&GNSS_Serial;
 #endif
 }
+
+Stream* probeStream(EfinderPort p)
+{
+  if (p == EF_PORT_FOCUSER) return focuserStream();
+  if (p == EF_PORT_GNSS) return gnssStream();
+  return nullptr;
+}
+
+// A GPS that already announced itself at boot keeps the GNSS port.
+bool gnssProbeAllowed()
+{
+#if VERSION == 220
+  return false;
+#else
+  return !mount.config.peripherals.hasGNSS && gnssStream() != nullptr;
+#endif
+}
 }  // namespace
 
 void EfinderManager::setup()
@@ -60,7 +77,11 @@ void EfinderManager::setup()
 
 void EfinderManager::loadSettings()
 {
+  // 584+ is unused until an eFinder setting is saved. Erased EEPROM reads
+  // 0xFF, which must not turn GoTo++ on.
   uint8_t flags = XEEPROM.read(EE_efinderFlags);
+  if (flags & ~0x03u)
+    flags = 0;
   m_gotoPP = (flags & 0x01) != 0;
   uint8_t thr = XEEPROM.read(EE_efinderThresh);
   if (thr == 0 || thr > 60) thr = 2;
@@ -103,31 +124,9 @@ Stream* EfinderManager::stream() const
   return nullptr;
 }
 
-bool EfinderManager::probePort(EfinderPort p)
+bool EfinderManager::acceptProbe(EfinderPort p, const char* buf)
 {
-  Stream* s = (p == EF_PORT_FOCUSER) ? focuserStream() : gnssStream();
-  if (!s) return false;
-
-  while (s->available() > 0) s->read();
-  s->print(":e?#");
-  s->flush();
-
-  char buf[48];
-  int n = 0;
-  unsigned long t0 = millis();
-  while (millis() - t0 < PROBE_TIMEOUT_MS)
-  {
-    if (s->available() <= 0)
-    {
-      delay(1);
-      continue;
-    }
-    char c = (char)s->read();
-    if (n < (int)sizeof(buf) - 1) buf[n++] = c;
-    if (c == '#') break;
-  }
-  buf[n] = 0;
-  if (n < 10) return false;
+  if (!buf || strlen(buf) < 10) return false;
   if (strncmp(buf, "TeenAstroEfinder", 16) != 0) return false;
 
   m_port = p;
@@ -159,28 +158,93 @@ bool EfinderManager::probePort(EfinderPort p)
   return true;
 }
 
+void EfinderManager::beginProbe(EfinderPort p)
+{
+  Stream* s = probeStream(p);
+  if (!s)
+  {
+    advanceProbe(p);
+    return;
+  }
+
+  // Drop only what is already buffered. Do not wait, and do not flush():
+  // flush waits until the UART is idle and would stall the control loop.
+  while (s->available() > 0) s->read();
+  m_probe = p;
+  m_probeLen = 0;
+  m_probeStart = millis();
+  s->print(":e?#");
+  // A loopback port (the emulator) answers inside print().
+  collectProbe();
+}
+
+bool EfinderManager::collectProbe()
+{
+  Stream* s = probeStream(m_probe);
+  if (!s) return false;
+
+  while (s->available() > 0)
+  {
+    char c = (char)s->read();
+    if (m_probeLen < (uint8_t)(sizeof(m_probeBuf) - 1))
+      m_probeBuf[m_probeLen++] = c;
+    if (c != '#') continue;
+
+    m_probeBuf[m_probeLen] = 0;
+    EfinderPort p = m_probe;
+    m_probe = EF_PORT_NONE;
+    m_probeLen = 0;
+    if (acceptProbe(p, m_probeBuf))
+      return true;
+    advanceProbe(p);
+    return true;
+  }
+  return false;
+}
+
+void EfinderManager::advanceProbe(EfinderPort failed)
+{
+  m_probe = EF_PORT_NONE;
+  m_probeLen = 0;
+  if (failed == EF_PORT_FOCUSER && gnssProbeAllowed())
+  {
+    beginProbe(EF_PORT_GNSS);
+    return;
+  }
+  m_lastProbe = millis();
+}
+
+void EfinderManager::pollProbe()
+{
+  if (m_probe != EF_PORT_NONE)
+  {
+    if (collectProbe()) return;
+    if ((unsigned long)(millis() - m_probeStart) < PROBE_TIMEOUT_MS) return;
+    advanceProbe(m_probe);
+    return;
+  }
+
+  if ((unsigned long)(millis() - m_lastProbe) < PROBE_PERIOD_MS) return;
+
+  if (!mount.config.peripherals.hasFocuser && probeStream(EF_PORT_FOCUSER))
+  {
+    beginProbe(EF_PORT_FOCUSER);
+    return;
+  }
+  if (gnssProbeAllowed())
+  {
+    beginProbe(EF_PORT_GNSS);
+    return;
+  }
+  // Both ports belong to something else. Leave them alone.
+  m_lastProbe = millis();
+}
+
 void EfinderManager::update()
 {
   if (m_port == EF_PORT_NONE)
   {
-    if (millis() - m_lastProbe < PROBE_PERIOD_MS) return;
-    m_lastProbe = millis();
-    if (!mount.config.peripherals.hasFocuser)
-    {
-      if (probePort(EF_PORT_FOCUSER)) return;
-    }
-#if VERSION != 220
-    // Only claim the GNSS port when nothing already produced NMEA at boot,
-    // or when hasGNSS was cleared because the eFinder took over.
-    if (!mount.config.peripherals.hasGNSS || !GNSS_Serial.available())
-    {
-      // Avoid stealing a live GPS that already flagged hasGNSS at boot.
-      if (!mount.config.peripherals.hasGNSS)
-      {
-        if (probePort(EF_PORT_GNSS)) return;
-      }
-    }
-#endif
+    pollProbe();
     return;
   }
 
