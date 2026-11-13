@@ -66,6 +66,9 @@ bool gnssProbeAllowed()
 
 void EfinderManager::setup()
 {
+#ifdef EFINDER_OFF
+  return;
+#endif
   loadSettings();
   m_lastProbe = millis() - PROBE_PERIOD_MS;
   m_probeUntil = millis() + PROBE_WINDOW_MS;
@@ -278,6 +281,9 @@ void EfinderManager::pollProbe()
 
 void EfinderManager::update()
 {
+#ifdef EFINDER_OFF
+  return;
+#endif
   if (m_port == EF_PORT_NONE)
   {
     if (!m_probeStopped)

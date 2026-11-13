@@ -13,6 +13,10 @@
 // -----------------------------------------------------------------------------
 void Command_e()
 {
+#ifdef EFINDER_OFF
+  replyNothing();
+  return;
+#endif
   switch (commandState.command[1])
   {
   case '?':

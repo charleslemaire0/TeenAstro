@@ -24,8 +24,15 @@
  *   :eN1# :eN0#                  -> 1#        NMEA relay on/off
  *   :eN?#                        -> 1# / 0#   GPS present on the eFinder
  *   :eX...#                      -> ...#      camera parameters (forwarded from hosts)
+ *
+ * The eFinder is not activated. EFINDER_OFF keeps port probing and host
+ * commands off. Comment out that define to enable the eFinder.
  */
 #include <Arduino.h>
+#include <TeenAstroMath.h>
+
+// eFinder is not activated
+#define EFINDER_OFF
 
 enum EfinderPort : uint8_t { EF_PORT_NONE = 0, EF_PORT_FOCUSER, EF_PORT_GNSS };
 
