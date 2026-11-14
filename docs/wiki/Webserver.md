@@ -10,7 +10,7 @@ Screenshots below are from firmware **1.6** (dark theme). The navigation bar lis
 
 ## Status
 
-Live mount state: time, coordinates, pier side, alignment, tracking and parking.
+Live mount state: time, coordinates, pier side, alignment, tracking and parking. **Last Error** shows **RTC battery empty** when the coin cell on the main unit is empty or missing. Set the time on the Site page, or from GNSS. Sky gotos and sync stay refused until then.
 
 ## Control
 

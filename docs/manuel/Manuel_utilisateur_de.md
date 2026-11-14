@@ -258,6 +258,7 @@ Die Buchstaben **eF** erscheinen in der Statuszeile, wenn ein eFinder verbunden 
 | ![](images/icons/ErrUp.png) | Unter dem Pol |
 | ![](images/icons/ErrPs.png) | Pfeilerseite, die dieser Montierungstyp nicht nutzt (Achse 2 über 90°). Goto, Schwenk und Nachführung stoppen; von Hand oder per Goto zurückfahren |
 | ![](images/icons/ErrMf.png) | Motorfehler |
+| ![](images/icons/ErrRtc.png) | Pufferbatterie der Uhr leer, oder die Uhr wurde nie gestellt. Goto und Synchronisierung werden abgelehnt, bis die Zeit gesetzt ist |
 
 ---
 
@@ -431,6 +432,8 @@ Das Spiel erst einstellen, wenn Getriebezahl und Drehrichtung stimmen. Zu viel S
 - **GNSS Zeit**: Zeit vom Satellitenempfänger, falls einer vorhanden ist.
 
 Das Steuergerät leitet daraus die lokale Sternzeit ab. Eine um eine Minute falsche Uhr verschiebt das Zeigen um etwa 15' in Rektaszension.
+
+Die Uhr hält eine Knopfzelle auf dem Steuergerät. Ist diese Zelle leer oder fehlt sie, beginnt die Zeit am 1. Januar 2019 und die Statuszeile zeigt **Er!** / **T**. Goto, Meridianumschlag, Push-to und Synchronisierung werden abgelehnt, bis die Zeit hier, per GNSS oder vom Rechner gesetzt ist. Home, Parken und die Richtungstasten bleiben möglich. Das ist nicht die Versorgungsbatterie.
 
 ### Ort
 
@@ -1151,6 +1154,7 @@ Mussten die Klemmen in der Nacht gelöst werden, mindestens neu synchronisieren,
 | Was zu sehen ist | Wohin schauen |
 |------------------|---------------|
 | **FEHLER** / **version** | Handkontroller und Steuergerät aus verschiedenen Veröffentlichungen |
+| **Er!** / **T**, Datum nahe dem 1. Januar 2019 | Pufferbatterie der Uhr am Steuergerät. Zeit setzen, oder GNSS das tun lassen. Nicht die Versorgungsbatterie |
 | **Nicht verbunden**, dann Neustart | Kabel des Handkontrollers, Batterie, die unter Last einbricht, oder Steuergerät aus |
 | Die Anzeige wird blass, der Handkontroller startet beim Logo neu, ein Goto mit Max bleibt stehen | Batterie leer oder unter Last zu schwach. Der Handkontroller zeigt keine Spannung. Kapitel 26 |
 | Schwarzer Bildschirm, Shift weckt ihn | Ruheabschaltung, keine leere Batterie |
@@ -1264,7 +1268,7 @@ Platinen, Versorgungsspannungen und Motorkabel sind von Version zu Version nicht
 
 ## Anhang E. Änderungen seit Version 1.6.0
 
-Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.9 und dem passenden ASCOM-Treiber, danach die Ausrichtungsaktionen der aktuellen Treiber vom Rechner.
+Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.18 und dem passenden ASCOM-Treiber, danach die Ausrichtungsaktionen der aktuellen Treiber vom Rechner.
 
 ### 1.6.1
 
@@ -1316,6 +1320,12 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - Die Schaltfläche **Auto!** im Firmware-Uploader (Telescope / Focuser) sichert Parameter, erkennt die Platine, flasht, stellt wieder her und prüft (Firmware 1.5+). **EEPROM** bearbeitet den vollen Parametersatz (zwei Montierungen am Steuergerät). **Upload!** flasht weiterhin ohne die Einstellungen anzufassen.
 - Ein eFinder am Fokussierer- oder GNSS-Anschluss fügt **eFinder** unter Teleskop-Einst. ein, und die Buchstaben **eF** in der Statuszeile, nur solange die Kamera gefunden ist. **Achse** speichert den Hz-Kegel und den Ve-Kegel im Teleskoprahmen. **GoTo++** synchronisiert nach einem Goto und zentriert einmal nach, wenn die Schwelle überschritten ist. Kapitel 23.
 - **Phone finder** in der Android-App macht dieselbe Lösung, dieselbe Achse, dieselbe Synchronisierung und ein Nachzentrieren mit der Handykamera. Ein eFinder ist nicht nötig.
+
+### 1.6.18
+
+- Eine leere oder fehlende Pufferbatterie der Uhr am Steuergerät ist ein Fehler. Der Handkontroller zeigt **Er!** / **T**. Die Webseite sagt **RTC battery empty**. Die Android-App sagt **RTC battery**.
+- Goto, Meridianumschlag, Push-to und Synchronisierung werden abgelehnt, bis die Uhr vom Handkontroller, von GNSS oder vom Rechner gestellt ist. Home, Parken und die Richtungstasten bleiben möglich.
+- ASCOM nennt den Fehler, wenn ein Schwenk abgelehnt wird. Alpaca lehnt den Schwenk ebenfalls ab.
 
 ### Ausrichtung von ASCOM und Alpaca
 

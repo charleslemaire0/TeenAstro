@@ -37,6 +37,10 @@ The classic [ASCOM Driver](https://groups.io/g/TeenAstro/wiki/8102) (COM / IP on
 ## Devices exposed
 
 - **Telescope** — mount goto, sync, tracking, park/home, pulse guide, move axis, site/time, and plate-solve alignment.
+
+## Empty RTC battery
+
+If the coin cell on the main unit is empty or missing, the clock starts at 1 January 2019. The Windows ASCOM driver refuses a slew and says the RTC battery is empty. Alpaca refuses the slew as well (`Slew or sync was rejected`). Set the time from the hand controller, from GNSS, or with the client's site/time commands. Home, park and manual moves still work.
 - **Focuser** — when a focuser is attached to the main unit.
 
 ## Plate-solve alignment

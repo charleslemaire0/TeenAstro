@@ -258,6 +258,7 @@ The letters **eF** appear in the status row when an eFinder is connected.
 | ![](images/icons/ErrUp.png) | Under the pole |
 | ![](images/icons/ErrPs.png) | Pier side this mount type does not use (axis 2 past 90°). Gotos, slews and tracking stop; move back by hand or with a goto |
 | ![](images/icons/ErrMf.png) | Motor fault |
+| ![](images/icons/ErrRtc.png) | RTC coin cell empty, or the clock was never set. Sky gotos and sync are refused until the time is set |
 
 ---
 
@@ -431,6 +432,8 @@ Set backlash only after the gear ratio and the direction are correct. Too much b
 - **GNSS Time**: time read from the satellite receiver, if one is fitted.
 
 The main unit derives local sidereal time from this. A clock wrong by one minute shifts pointing by about 15' in right ascension.
+
+The clock is kept by a coin cell on the main unit. If that cell is empty or missing, the time starts at 1 January 2019 and the status row shows **Er!** / **T**. Sky gotos, meridian flips, push-to and sync are refused until the time is set here, by GNSS, or from a computer. Going home, parking and the direction buttons still work. This is not the supply battery.
 
 ### Site
 
@@ -1151,6 +1154,7 @@ If you loosened the clutches during the night, do at least a sync again, and an 
 | What you see | Where to look |
 |--------------|----------------|
 | **ERROR** / **version** | Hand controller and main unit from different releases |
+| **Er!** / **T**, date near 1 January 2019 | RTC coin cell on the main unit. Set the time, or let GNSS do it. Not the supply battery |
 | **Not Connected**, then a reboot | Hand-controller cable, a battery sagging under load, or the main unit off |
 | The display dims, the hand controller restarts at the logo, a Max-speed goto stalls | Battery empty or too weak under load. The hand controller does not show voltage. Chapter 25 |
 | Black screen, Shift wakes it | Sleep timeout, not an empty battery |
@@ -1264,7 +1268,7 @@ Boards, supply voltages, and motor harnesses are not the same from one version t
 
 ## Appendix E. Changes since version 1.6.0
 
-Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.9 and the matching ASCOM driver, then the computer alignment actions of the current drivers.
+Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.18 and the matching ASCOM driver, then the computer alignment actions of the current drivers.
 
 ### 1.6.1
 
@@ -1316,6 +1320,12 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - The firmware uploader **Auto!** button (Telescope / Focuser) backs up parameters, detects the board, flashes, restores, and verifies (firmware 1.5+). **EEPROM** edits the full parameter set (two mounts on the MainUnit). **Upload!** still flashes without touching settings.
 - An eFinder on the focuser or GNSS port adds **eFinder** to Telescope Settings, and the letters **eF** on the status row, only while the camera is found. **Aim** stores the Hz cone and the Ve cone in the telescope frame. **GoTo++** syncs after a goto and recenters once past the threshold. Chapter 23.
 - The Android app **Phone finder** does the same solve, aim, sync, and one recenter from the phone camera. No eFinder is required.
+
+### 1.6.18
+
+- An empty or missing RTC coin cell on the main unit is an error. The hand controller shows **Er!** / **T**. The web page says **RTC battery empty**. The Android app says **RTC battery**.
+- Sky gotos, meridian flips, push-to and sync are refused until the clock is set from the hand controller, from GNSS, or from a computer. Going home, parking and the direction buttons still work.
+- ASCOM names the fault when a slew is refused. Alpaca refuses the slew as well.
 
 ### Alignment from ASCOM and Alpaca
 

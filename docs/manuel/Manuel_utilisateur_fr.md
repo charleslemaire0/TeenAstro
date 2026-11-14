@@ -256,6 +256,7 @@ Les lettres **eF** apparaissent dans la ligne d'état lorsqu'un eFinder est conn
 | ![](images/icons/ErrUp.png) | Sous le pôle |
 | ![](images/icons/ErrPs.png) | Côté de pilier que ce type de monture n'utilise pas (axe 2 au-delà de 90°). Goto, déplacement et suivi s'arrêtent ; revenez à la main ou par un goto |
 | ![](images/icons/ErrMf.png) | Défaut moteur |
+| ![](images/icons/ErrRtc.png) | Pile de l'horloge vide, ou l'heure n'a jamais été réglée. Les goto et la synchro sont refusés tant que l'heure n'est pas saisie |
 
 ---
 
@@ -429,6 +430,8 @@ Réglez le jeu après que la réduction et le sens sont justes. Trop de jeu fait
 - **Heure GNSS** : lecture de l'heure satellite, si un récepteur est présent.
 
 L'unité principale en déduit le temps sidéral local. Une heure fausse d'une minute décale le pointage d'environ 15' en ascension droite.
+
+L'heure est conservée par une pile bouton sur l'unité principale. Si cette pile est vide ou absente, l'heure part du 1er janvier 2019 et le bandeau affiche **Er !** / **T**. Les goto, les retournements, le push-to et la synchro sont refusés tant que l'heure n'est pas saisie ici, par le GNSS, ou depuis un ordinateur. Aller à la maison, parquer et les boutons de direction restent possibles. Ce n'est pas la batterie d'alimentation.
 
 ### Site
 
@@ -1149,6 +1152,7 @@ Si vous avez desserré les freins dans la nuit, refaites au moins une synchro, e
 | Ce que vous voyez | Piste |
 |-------------------|--------|
 | **ERREUR** / **version** | Raquette et unité principale de publications différentes |
+| **Er !** / **T**, date proche du 1er janvier 2019 | Pile de l'horloge sur l'unité principale. Saisissez l'heure, ou laissez le GNSS le faire. Pas la batterie d'alimentation |
 | **pas Connecté**, puis redémarrage | Câble raquette, ou batterie qui s'écroule, ou unité principale arrêtée |
 | L'écran faiblit, la raquette repart sur le logo, un goto cale en vitesse Max | Batterie vide ou trop faible en charge. La raquette n'affiche pas la tension. Chapitre 25 |
 | Écran noir, Shift le rallume | Veille, pas une batterie vide |
@@ -1262,7 +1266,7 @@ Les cartes, les tensions d'alimentation et les faisceaux moteurs ne sont pas les
 
 ## Annexe E. Changements depuis la version 1.6.0
 
-Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.9 et au pilote ASCOM correspondant, puis les actions d'alignement par ordinateur des pilotes actuels.
+Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.18 et au pilote ASCOM correspondant, puis les actions d'alignement par ordinateur des pilotes actuels.
 
 ### 1.6.1
 
@@ -1314,6 +1318,12 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - Le bouton **Auto!** de l'uploader (Telescope / Focuser) sauvegarde les paramètres, détecte la carte, flashe, restaure et vérifie (firmware 1.5+). **EEPROM** édite l'ensemble des paramètres (deux montures sur l'unité principale). **Upload!** flashe toujours sans toucher aux réglages.
 - Un eFinder sur le port mise au point ou le port GNSS ajoute **eFinder** dans Param. Télescope, et les lettres **eF** sur la ligne d'état, seulement tant que la caméra est trouvée. **Visee** enregistre le cône Hz et le cône Ve dans le repère du télescope. **GoTo++** synchronise après un goto et recentre une fois au-delà du seuil. Chapitre 23.
 - **Phone finder** dans l'application Android fait la même résolution, la même visée, la même synchro et un recentrage, avec l'appareil photo du téléphone. L'eFinder n'est pas nécessaire.
+
+### 1.6.18
+
+- Une pile d'horloge vide ou absente sur l'unité principale est une erreur. La raquette affiche **Er !** / **T**. La page web dit **RTC battery empty**. L'application Android dit **RTC battery**.
+- Les goto, les retournements, le push-to et la synchro sont refusés tant que l'heure n'est pas réglée depuis la raquette, le GNSS ou un ordinateur. Aller à la maison, parquer et les boutons de direction restent possibles.
+- ASCOM nomme le défaut lorsqu'un pointage est refusé. Alpaca refuse aussi le pointage.
 
 ### Alignement depuis ASCOM et Alpaca
 

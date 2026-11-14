@@ -119,7 +119,14 @@ def build_webserver() -> str:
     )
 
     parts.append(h("Status"))
-    parts.append(p("Live mount state: time, coordinates, pier side, alignment, tracking and parking."))
+    parts.append(
+        p(
+            "Live mount state: time, coordinates, pier side, alignment, tracking and parking. "
+            "<strong>Last Error</strong> shows <strong>RTC battery empty</strong> when the coin cell "
+            "on the main unit is empty or missing. Set the time on the Site page, or from GNSS. "
+            "Sky gotos and sync stay refused until then."
+        )
+    )
     parts.append(img_tag("web_status.png", "Webserver Status"))
 
     parts.append(h("Control"))
