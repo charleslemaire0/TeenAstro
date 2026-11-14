@@ -614,6 +614,21 @@ void test_updateAllState_pier_side_error(void) {
     TEST_ASSERT_EQUAL(MountState::ERR_PIER_SIDE, status->getError());
 }
 
+void test_updateAllState_rtc_battery_error(void) {
+    uint8_t pkt[GXAS_PKT_LEN];
+    buildValidPacket(pkt);
+    pkt[4] = MountState::ERR_RTC;
+    setChecksum(pkt);
+    loadGXASResponse(pkt);
+
+    status->updateAllState(true);
+    TEST_ASSERT_EQUAL(10, (int)MountState::ERR_RTC);
+    TEST_ASSERT_EQUAL(MountState::ERR_RTC, status->getError());
+    char msg[40];
+    TEST_ASSERT_TRUE(status->getLastErrorMessage(msg));
+    TEST_ASSERT_EQUAL_STRING("RTC battery empty", msg);
+}
+
 void test_updateAllState_all_zero_bits(void) {
     uint8_t pkt[GXAS_PKT_LEN];
     memset(pkt, 0, GXAS_PKT_LEN);
@@ -696,6 +711,7 @@ int main(int argc, char** argv) {
     // Boundary enum values
     RUN_TEST(test_updateAllState_all_maxed_enum_bits);
     RUN_TEST(test_updateAllState_pier_side_error);
+    RUN_TEST(test_updateAllState_rtc_battery_error);
     RUN_TEST(test_updateAllState_all_zero_bits);
 
     return UNITY_END();

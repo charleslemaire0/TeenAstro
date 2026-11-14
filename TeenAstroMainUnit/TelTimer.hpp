@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <TimeLib.h>
 #include <TeenAstroMath.h>
+#include "RtcBattery.h"
 
 class DateTimeTimers
 {
@@ -21,7 +22,16 @@ private:
   double                  m_LT = 0.0;//tmp variable  
   double                  m_JD = 0.0;//tmp variable                  
   double                  m_Sitelongitude;
+  bool                    m_rtcLost = false;            // boot found the Teensy unset epoch
 public:
+
+  bool rtcLost() const { return m_rtcLost; }
+
+  // Once, from setup, before GNSS or a manual set can overwrite the RTC.
+  void latchIfRtcUninitialized()
+  {
+    m_rtcLost = rtcTimeIsUnset((uint32_t)getTime(), millis());
+  }
 
   double* getUT()
   {
@@ -95,6 +105,7 @@ public:
     Teensy3Clock.set(t);
     setTime(t);
     syncClock();
+    m_rtcLost = false;
   }
 
   // Set RTC with give input
@@ -113,6 +124,7 @@ public:
     Teensy3Clock.set(t);
     setTime(t);
     syncClock();
+    m_rtcLost = false;
   }
 
   void resetLongitude(double Sitelongitude)

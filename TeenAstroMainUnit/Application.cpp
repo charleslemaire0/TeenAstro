@@ -91,6 +91,9 @@ void Application::setupTimeSync()
   setSyncProvider(rtk.getTime);
   setSyncInterval(1);
   setTime(rtk.getTime());
+  // Before GNSS or :SL#/:SC# can replace the seed. Stays latched until a
+  // clock write; not stored in lastError (that slot is cleared at home).
+  rtk.latchIfRtcUninitialized();
 }
 
 // Reticule LED pins and brightness (if defined).
@@ -176,7 +179,7 @@ void Application::loop()
 
   // Process serial commands first so :Q# abort is seen before moveTo runs this iteration.
   loopCommandsAndStatus(startLoopError);
-  startLoopError = mount.errors.lastError;
+  startLoopError = mount.reportedError();
   loopSt4AndGuiding();
   loopEncoderSync();
   loopSiderealAndSafety(forceTracking);
@@ -236,7 +239,7 @@ void Application::loopCommandsAndStatus(ErrorsTraking startLoopError)
   processCommands();
   efinder.update();
   UpdateGnss();
-  if (startLoopError != mount.errors.lastError)
+  if (startLoopError != mount.reportedError())
     mount.updateStatusLed(LEDPin);
 }
 

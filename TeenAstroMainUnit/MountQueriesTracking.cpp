@@ -23,6 +23,7 @@
  * Description: Mount queries, tracking rates, safety, updateRatios, spiral. See Mount.h.
  */
 #include "MainUnit.h"
+#include "TelTimer.hpp"
 #include "Site.hpp"
 #include "TeenAstroCoord_LO.hpp"
 
@@ -71,6 +72,14 @@ PoleSide Mount::supportedPoleSide(PoleSide side) const
 bool Mount::hasTracking() const { return tracking.sideralTracking; }
 bool Mount::hasGuiding() const { return guiding.hasGuiding(); }
 ErrorsTraking Mount::lastError() const { return errors.lastError; }
+ErrorsTraking Mount::reportedError() const
+{
+  if (errors.lastError != ERRT_NONE)
+    return errors.lastError;
+  if (rtk.rtcLost())
+    return ERRT_RTC;
+  return ERRT_NONE;
+}
 void Mount::setError(ErrorsTraking e) { errors.lastError = e; }
 void Mount::clearError() { setError(ERRT_NONE); }
 bool Mount::isAltAZ() const { return config.identity.mountType == MOUNT_TYPE_ALTAZM || config.identity.mountType == MOUNT_TYPE_FORK_ALT; }

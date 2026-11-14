@@ -39,6 +39,13 @@ void syncOnTarget(PoleSide targetPoleSide)
 //   C - Sync  :CA# :CM# :CS# :CU#
 // -----------------------------------------------------------------------------
 void Command_C() {
+  const char op = commandState.command[1];
+  const bool syncCmd = (op == 'A' || op == 'M' || op == 'S' || op == 'U');
+  if (syncCmd && rtk.rtcLost())
+  {
+    replyLongFalse();
+    return;
+  }
   if ((!mount.isParked()) &&
     !mount.isSlewing() &&
     (commandState.command[1] == 'A' || commandState.command[1] == 'M' || commandState.command[1] == 'S' || commandState.command[1] == 'U'))

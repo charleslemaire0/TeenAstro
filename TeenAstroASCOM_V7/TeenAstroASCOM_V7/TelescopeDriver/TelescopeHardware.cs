@@ -2518,6 +2518,11 @@ namespace ASCOM.TeenAstro.Telescope
             // ERRGOTO_PIER_SIDE
             throw new ASCOM.InvalidOperationException("The telescope is on a pier side this mount type does not support.");
           }
+        case 'C': // '0' + 19
+          {
+            // ERRGOTO_RTC
+            throw new ASCOM.InvalidOperationException("RTC battery is empty or the clock was never set. Set the time before slewing.");
+          }
         default:
           {
             throw new ASCOM.DriverException($"Goto failed with unrecognised error code '{code}' from mount.");

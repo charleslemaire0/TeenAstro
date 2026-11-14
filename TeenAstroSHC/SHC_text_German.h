@@ -330,6 +330,8 @@
 #define T_UNDERPOLE "Unter dem Pol"
 #define T_UNDERPOLELIMIT "Grenze unt. Pol"
 #define T_PIERSIDELIMIT "auf falscher Seite"
+#define T_RTC "RTC"
+#define T_BATTERYEMPTY "Batterie leer"
 
 #define T_FARFROMPOLE "Far From Pole"
 #define T_DISTANCE "Distance"

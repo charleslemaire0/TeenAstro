@@ -31,6 +31,12 @@ void main() {
       final s = const MountState().parseBinaryState(_gxasWithError(7));
       expect(s.error, MountError.meridian);
     });
+
+    test('byte 4 = 10 is an empty RTC battery', () {
+      final s = const MountState().parseBinaryState(_gxasWithError(10));
+      expect(s.error, MountError.rtc);
+      expect(s.errorLabel, 'RTC battery');
+    });
   });
 
   group('Goto reply', () {
@@ -38,6 +44,12 @@ void main() {
       expect(gotoErrorFromReply('B'), GotoError.pierSide);
       expect(gotoErrorCause(GotoError.pierSide),
           'Mount type does not support this pier side');
+    });
+
+    test("'0' + 19 = 'C' is an empty RTC battery", () {
+      expect(gotoErrorFromReply('C'), GotoError.rtc);
+      expect(gotoErrorCause(GotoError.rtc),
+          'RTC battery is empty; set the time');
     });
 
     test('codes from 10 up decode from their character', () {

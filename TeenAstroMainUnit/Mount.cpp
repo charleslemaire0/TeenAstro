@@ -206,7 +206,7 @@ void Mount::configureFaultPins()
 
 void Mount::updateStatusLed(int ledPin) const
 {
-  if (errors.lastError == ERRT_NONE)
+  if (reportedError() == ERRT_NONE)
     digitalWrite(ledPin, LOW);
   else
     digitalWrite(ledPin, HIGH);

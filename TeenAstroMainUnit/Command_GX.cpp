@@ -142,8 +142,8 @@ static void Command_GX_AllState()
   gFlags |= ((uint8_t)(mount.guiding.GuidingState & 0x7)) << 5;
   pkt[3] = gFlags;
 
-  // ── Byte 4: error ────────────────────────────────────────────────────────
-  pkt[4] = (uint8_t)(mount.errors.lastError);
+  // ── Byte 4: error (tracking fault, else latched RTC / unset clock) ─────
+  pkt[4] = (uint8_t)mount.reportedError();
 
   // ── Byte 5: enableFlags | hasFocuser ─────────────────────────────────────
   uint8_t enableFlags = 0;

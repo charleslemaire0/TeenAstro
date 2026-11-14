@@ -36,11 +36,16 @@ enum ErrorsTraking {
   ERRT_AXIS2,
   ERRT_UNDER_POLE,
   ERRT_MERIDIAN,
-  ERRT_PIER_SIDE   // alt-az mount with axis 2 past +/-90 deg
+  ERRT_PIER_SIDE,  // alt-az mount with axis 2 past +/-90 deg
+  // Wire value 9 is MountState::ERR_SYNC (client only). Do not store this in
+  // lastError: safetyCheck and syncAtHome clear that slot, and a battery fault
+  // must not kick the mount out of home. Reported by Mount::reportedError().
+  ERRT_RTC = 10    // RTC was the Teensy unset epoch at boot; time is wrong
 };
 
 // When goTo() returns a tracking-style error, it uses lastError + 10 (ERRGOTO_* from ERRT_*).
 // Do not reorder ErrorsTraking or ErrorsGoTo without updating Mount::goTo().
+// ERRT_RTC is not part of that +10 mapping.
 // ErrorsGoTo is now defined in CommandEnums.h (TeenAstroCommandDef library).
 
 enum SID_Mode { SIDM_STAR, SIDM_SUN, SIDM_MOON, SIDM_TARGET };

@@ -299,12 +299,21 @@ static void drawTabOverview(int y0) {
             gi > 0 ? COL_GOOD : COL_DIM);
     }
     {
-        const char* errNames[] = { "None", "Motor Fault", "Altitude", "Limit Sense",
-                                   "Axis1", "Axis2", "Under Pole", "Meridian", "Pier Side" };
-        int ei = (int)mount.errors.lastError;
-        if (ei < 0 || ei >= (int)(sizeof(errNames) / sizeof(errNames[0]))) ei = 0;
-        y = drawKV(y, "Last Error", errNames[ei],
-            ei > 0 ? COL_BAD : COL_GOOD);
+        const char* errName = "None";
+        switch (mount.reportedError()) {
+        case ERRT_MOTOR_FAULT: errName = "Motor Fault"; break;
+        case ERRT_ALT:         errName = "Altitude"; break;
+        case ERRT_LIMIT_SENSE: errName = "Limit Sense"; break;
+        case ERRT_AXIS1:       errName = "Axis1"; break;
+        case ERRT_AXIS2:       errName = "Axis2"; break;
+        case ERRT_UNDER_POLE:  errName = "Under Pole"; break;
+        case ERRT_MERIDIAN:    errName = "Meridian"; break;
+        case ERRT_PIER_SIDE:   errName = "Pier Side"; break;
+        case ERRT_RTC:         errName = "RTC battery"; break;
+        default: break;
+        }
+        y = drawKV(y, "Last Error", errName,
+            mount.reportedError() != ERRT_NONE ? COL_BAD : COL_GOOD);
     }
     {
         const char* poleNames[] = { "Not Valid", "Under", "Over" };

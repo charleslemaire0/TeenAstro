@@ -569,11 +569,17 @@ LX200RETURN LX200Client::setTargetAlt(bool& ispos, uint16_t& vd1, uint8_t& vd2, 
 //  Navigation
 // ===========================================================================
 
+// ErrorsGoTo is '0' + code. Values past 9 are ':' .. 'C' (ERRGOTO_RTC), not digits.
+static bool isGotoErrorChar(char c)
+{
+  return c >= '0' && c <= static_cast<char>('0' + ERRGOTO_RTC);
+}
+
 LX200RETURN LX200Client::gotoPolarAlignCurrent()
 {
   char out[LX200_SBUF];
   if (!sendReceive(":MP#", CMDR_SHORT, out, sizeof(out), m_timeout)
-      || out[0] < '0' || out[0] > '9')
+      || !isGotoErrorChar(out[0]))
     return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, true);
@@ -591,7 +597,7 @@ LX200RETURN LX200Client::moveToTarget(TARGETTYPE target)
   default:          return LX200_ERRGOTO_UNKOWN;
   }
   if (!sendReceive(cmd, CMDR_SHORT, out, sizeof(out), m_timeout)
-      || out[0] < '0' || out[0] > '9')
+      || !isGotoErrorChar(out[0]))
     return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, true);
@@ -609,7 +615,7 @@ LX200RETURN LX200Client::pushToTarget(TARGETTYPE target)
   default:          return LX200_ERRGOTO_UNKOWN;
   }
   if (!sendReceive(cmd, CMDR_SHORT, out, sizeof(out), m_timeout)
-      || out[0] < '0' || out[0] > '9')
+      || !isGotoErrorChar(out[0]))
     return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, false);
@@ -778,7 +784,7 @@ LX200RETURN LX200Client::meridianFlip()
   if (cmdreply == CMDR_INVALID)
     return LX200_INVALIDCOMMAND;
   if (!sendReceive(cmd, cmdreply, out, sizeof(out), m_timeout)
-      || out[0] < '0' || out[0] > '9')
+      || !isGotoErrorChar(out[0]))
     return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, true);

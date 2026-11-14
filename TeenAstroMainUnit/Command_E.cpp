@@ -59,6 +59,11 @@ void Command_E() {
       break;
     case 'S':
       // :ECS#  Sync Telescope and Encoder to Target  TeenAstro specific
+      if (rtk.rtcLost())
+      {
+        replyLongFalse();
+        break;
+      }
       switch (mount.config.peripherals.PushtoStatus) {
       case PT_RADEC: {
         double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);

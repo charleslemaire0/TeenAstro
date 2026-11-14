@@ -23,6 +23,7 @@
  * Description: Mount goto, sync, coordinate getters, predictTarget, goTo, flip. See Mount.h.
  */
 #include "MainUnit.h"
+#include "TelTimer.hpp"
 #include "EmuDbgGoto_log.h"
 #include <math.h>
 
@@ -365,6 +366,9 @@ byte Mount::goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat)
 
 byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
 {
+  if (rtk.rtcLost())
+  { tracking.gotoState = GOTO_NONE; return ERRGOTO_RTC; }
+
   long axis1_target = 0, axis2_target = 0;
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
@@ -427,6 +431,9 @@ ErrorsGoTo Mount::goTo(long thisTargetAxis1, long thisTargetAxis2)
 // ----- flip: current sky → other pier side via predictTargetHO, then goTo -----
 ErrorsGoTo Mount::flip()
 {
+  if (rtk.rtcLost())
+    return ERRGOTO_RTC;
+
   long axis1Flip = 0, axis2Flip = 0;
   PoleSide selectedSide = POLE_NOTVALID;
 

@@ -9,6 +9,7 @@
 #include <unity.h>
 #include "CommandEnums.h"
 #include "PierSideRule.h"
+#include "RtcBattery.h"
 
 // MainUnit MountTypes.h pulls in Arduino.h; its tracking error values are
 // mirrored here. goTo() reports a tracking error as lastError + 10.
@@ -54,6 +55,22 @@ void test_goto_code_maps_to_client_error(void) {
   TEST_ASSERT_FALSE(isOk(LX200_ERR_PIER_SIDE));
 }
 
+void test_rtc_goto_is_its_own_code(void) {
+  TEST_ASSERT_EQUAL(19, (int)ERRGOTO_RTC);
+  TEST_ASSERT_EQUAL('C', '0' + (int)ERRGOTO_RTC);
+  TEST_ASSERT_EQUAL(LX200_ERR_RTC, gotoErrorToReturn(ERRGOTO_RTC, true));
+  TEST_ASSERT_FALSE(isOk(LX200_ERR_RTC));
+}
+
+void test_rtc_unset_epoch_matches_boot_seed_only(void) {
+  const uint32_t seed = 1546300800u;
+  TEST_ASSERT_TRUE(rtcTimeIsUnset(seed, 0));
+  TEST_ASSERT_TRUE(rtcTimeIsUnset(seed + 2, 1500));
+  TEST_ASSERT_FALSE(rtcTimeIsUnset(seed + 3600, 2000));
+  TEST_ASSERT_FALSE(rtcTimeIsUnset(1709600000u, 2000));
+  TEST_ASSERT_FALSE(rtcTimeIsUnset(seed - 1, 0));
+}
+
 void setUp() {}
 void tearDown() {}
 
@@ -67,5 +84,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_sm_west_refused_on_altaz);
   RUN_TEST(test_goto_code_follows_tracking_error);
   RUN_TEST(test_goto_code_maps_to_client_error);
+  RUN_TEST(test_rtc_goto_is_its_own_code);
+  RUN_TEST(test_rtc_unset_epoch_matches_boot_seed_only);
   return UNITY_END();
 }

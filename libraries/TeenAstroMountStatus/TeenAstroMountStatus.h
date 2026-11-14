@@ -65,7 +65,8 @@ struct MountState
                        MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
   enum Errors        { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE,
                        ERR_LIMIT_A1, ERR_LIMIT_A2, ERR_UNDER_POLE,
-                       ERR_MERIDIAN, ERR_PIER_SIDE, ERR_SYNC };
+                       ERR_MERIDIAN, ERR_PIER_SIDE, ERR_SYNC,
+                       ERR_RTC = 10 };  // GXAS byte 4; 9 is ERR_SYNC (not sent by the mount)
   enum GuidingStateE { GS_OFF, GS_PULSE, GS_ST4, GS_RECENTER, GS_AT_RATE, GS_UNKNOWN };
   /// Same numeric values as MainUnit CommandEnums.h GotoState / GXAS byte 100 bits 5–7
   enum GotoKind { GK_NONE = 0, GK_EQ = 1, GK_ALTAZ = 2, GK_FLIP_PIER_SIDE = 3 };
@@ -160,6 +161,7 @@ public:
   static constexpr Errors ERR_MERIDIAN    = MountState::ERR_MERIDIAN;
   static constexpr Errors ERR_PIER_SIDE   = MountState::ERR_PIER_SIDE;
   static constexpr Errors ERR_SYNC        = MountState::ERR_SYNC;
+  static constexpr Errors ERR_RTC         = MountState::ERR_RTC;
 
   static constexpr Mount MOUNT_UNDEFINED   = MountState::MOUNT_UNDEFINED;
   static constexpr Mount MOUNT_TYPE_GEM    = MountState::MOUNT_TYPE_GEM;

@@ -5,7 +5,7 @@ enum CmdReply { none, short_, shortBool, long_, invalid }
 enum GotoError {
   none, belowHorizon, noObjectSelected, sameSide, parked, slewing,
   limits, guidingBusy, aboveOverhead, motor, unknown10, motorFault,
-  alt, limitSense, axis1, axis2, underPole, meridian, pierSide
+  alt, limitSense, axis1, axis2, underPole, meridian, pierSide, rtc
 }
 
 /// Goto error in a one-character reply. The mount sends `'0' + code`, so codes
@@ -55,6 +55,8 @@ String gotoErrorCause(GotoError e) {
       return 'Meridian limit (flip or reposition)';
     case GotoError.pierSide:
       return 'Mount type does not support this pier side';
+    case GotoError.rtc:
+      return 'RTC battery is empty; set the time';
     case GotoError.unknown10:
       return 'Goto rejected by mount';
   }

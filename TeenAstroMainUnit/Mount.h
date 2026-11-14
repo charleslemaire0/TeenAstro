@@ -84,6 +84,8 @@ public:
   bool hasTracking() const;
   bool hasGuiding() const;
   ErrorsTraking lastError() const;
+  /// Tracking error, or the latched RTC fault when the tracking slot is clear.
+  ErrorsTraking reportedError() const;
   void setError(ErrorsTraking e);
   void clearError();
   bool isAltAZ() const;

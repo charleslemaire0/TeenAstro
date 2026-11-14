@@ -1,5 +1,6 @@
 /** Push-to: PushToEqu, PushToHor (encoder delta for alignment). */
 #include "MainUnit.h"
+#include "TelTimer.hpp"
 
 byte PushToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat, float* deltaA1, float* deltaA2)
 {
@@ -8,6 +9,9 @@ byte PushToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat, float* delt
 
 byte PushToHor(Coord_HO HO_T, PoleSide preferedPoleSide, float* deltaA1, float* deltaA2)
 {
+  if (rtk.rtcLost())
+    return ERRGOTO_RTC;
+
   double Axis1_target = 0.0, Axis2_target = 0.0;
   long axis1_target, axis2_target = 0;
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
