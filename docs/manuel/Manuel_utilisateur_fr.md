@@ -587,11 +587,14 @@ La liste dépend de la version de firmware chargée dans la raquette. On y trouv
 | Ligne | Ce qu'elle garde |
 |-------|------------------|
 | Above Horizon | La hauteur minimale. **Filtre Horizon** propose **> Horizon**, puis **> 10 deg.**, **> 20 deg.**, et ainsi de suite jusqu'à **> 70 deg.** |
+| Below Zenith | La hauteur maximale, sur les mêmes pas que **Above Horizon**. **Filtre Zénith** propose **< Zénith**, puis **< 70 deg.**, **< 60 deg.**, et ainsi de suite jusqu'à **< 10 deg.** Le plafond reste au-dessus du plancher. |
 | Constellation | Une seule constellation. **Filtre par Const.** commence par **Toutes**, puis les abréviations : Her pour Hercule, Lyr pour la Lyre, And pour Andromède, Ori pour Orion |
 | Type | Un type d'objet du ciel profond. **Filtre par Type** commence par **Toutes**. Les noms restent ceux de la base : Galaxy, Globular Clstr, Planetary Nebula, Open Cluster, Nebula |
 | Magnitude | La magnitude la plus faible encore affichée. **Filtre Magnitude** propose **Toutes**, puis 10, 11, 12, 13, 14, 15 et 16 |
 
 Les objets déjà sous l'horizon n'apparaissent pas. Choisir **> Horizon** change donc peu de chose. **> 30 deg.** ne garde que ce qui est assez haut pour un oculaire confortable, loin des arbres et de la turbulence.
+
+**< Zénith** ne change rien, car la hauteur ne dépasse pas 90°. **< 70 deg.** retire ce qui est au-dessus, sur les mêmes pas de 10° que **Above Horizon** (de 10° à 70°). Les deux filtres se combinent, et le minimum reste sous le maximum : **> 20 deg.** et **< 70 deg.** ne gardent que la bande entre les deux. Choisir **> 70 deg.** alors que **< 70 deg.** est actif est refusé, et l'écran affiche **Min Alt must** / **be < Max Alt.** Dans l'autre sens : **Max Alt must** / **be > Min Alt.** **Reset Filtres** retire le filtre zénith.
 
 La magnitude se lit à l'envers de l'intuition : un petit nombre est un objet brillant. **10** retire tout ce qui est de magnitude 10 ou plus faible. **Toutes** ne coupe rien. Sous un ciel clair avec un petit instrument, 10 ou 11 suffit. La limite 16 ne sert que si le catalogue et le ciel suivent.
 

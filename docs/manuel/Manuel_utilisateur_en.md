@@ -589,11 +589,14 @@ The list depends on the firmware build loaded in the hand controller. In practic
 | Line | What it keeps |
 |------|----------------|
 | Above Horizon | The minimum altitude. **Filter Horizon** offers **Above Horizon**, then **Above 10 deg.**, **Above 20 deg.**, and so on up to **Above 70 deg.** |
+| Below Zenith | The maximum altitude, on the same steps as **Above Horizon**. **Filter Zenith** offers **Below Zenith**, then **Below 70 deg.**, **Below 60 deg.**, and so on down to **Below 10 deg.** The ceiling stays above the floor. |
 | Constellation | One constellation. **Filter by Con** starts with **All**, then the abbreviations: Her for Hercules, Lyr for Lyra, And for Andromeda, Ori for Orion |
 | Type | One deep-sky type. **Filter by Type** starts with **All**. The names are those of the database: Galaxy, Globular Clstr, Planetary Nebula, Open Cluster, Nebula |
 | Magnitude | The faintest magnitude still shown. **Filter Magnitude** offers **All**, then 10, 11, 12, 13, 14, 15, and 16 |
 
 Objects already below the horizon are omitted. **Above Horizon** therefore changes little. **Above 30 deg.** keeps only targets high enough for a comfortable eyepiece, clear of trees and poor seeing.
+
+**Below Zenith** changes nothing, because altitude never exceeds 90°. **Below 70 deg.** hides targets above that, on the same 10° steps as **Above Horizon** (10° through 70°). The two filters combine, and the minimum must stay below the maximum: **Above 20 deg.** and **Below 70 deg.** keep the band between them. Choosing **Above 70 deg.** while **Below 70 deg.** is set is refused, and the screen says **Min Alt must** / **be < Max Alt.** The other way around says **Max Alt must** / **be > Min Alt.** **Reset Filters** turns the zenith filter off.
 
 Magnitude runs opposite to intuition: a small number is a bright object. **10** drops everything of magnitude 10 and fainter. **All** cuts nothing. Under a bright sky with a small telescope, 10 or 11 is enough. 16 is only useful if the catalog and the sky support it.
 

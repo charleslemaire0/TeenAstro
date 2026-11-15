@@ -114,6 +114,7 @@ private:
   uint8_t current_selection_filter = 1;
   uint8_t current_selection_filter_con = 1;
   uint8_t current_selection_filter_horizon = 1;
+  uint8_t current_selection_filter_zenith = 0;
   uint8_t current_selection_filter_type = 1;
   uint8_t current_selection_filter_byMag = 1;
   uint8_t current_selection_filter_nearby = 1;
@@ -144,6 +145,7 @@ private:
   void setCatMgrFilters();
   MENU_RESULT menuFilterCon();
   MENU_RESULT menuFilterHorizon();
+  MENU_RESULT menuFilterZenith();
   MENU_RESULT menuFilterType();
   MENU_RESULT menuFilterByMag();
   MENU_RESULT menuFilterNearby();

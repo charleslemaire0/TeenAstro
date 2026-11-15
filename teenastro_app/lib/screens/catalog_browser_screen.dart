@@ -78,9 +78,10 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
       if (filter.filterConstellation != null && o.constellation != filter.filterConstellation) return false;
       if (filter.filterType != null && o.objType != filter.filterType) return false;
       if (filter.filterMaxMag != null && o.mag != null && o.mag! > filter.filterMaxMag!) return false;
-      if (filter.filterMinAlt != null && lst != null) {
+      if ((filter.filterMinAlt != null || filter.filterMaxAlt != null) && lst != null) {
         final alt = objectAltitude(lat, lst, o.ra, o.dec);
-        if (alt < filter.filterMinAlt!) return false;
+        if (filter.filterMinAlt != null && alt < filter.filterMinAlt!) return false;
+        if (filter.filterMaxAlt != null && alt > filter.filterMaxAlt!) return false;
       }
       if (filter.filterHasName && o.name.isEmpty) return false;
       // Double-star separation filters
@@ -182,6 +183,15 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
                     icon: Icons.terrain,
                     active: filter.filterMinAlt != null,
                     onTap: () => _showHorizonFilter(filterNotifier, filter),
+                  ),
+                  // Below Zenith
+                  _filterChip(
+                    label: filter.filterMaxAlt != null
+                        ? 'Alt ≤ ${filter.filterMaxAlt!.toStringAsFixed(0)}°'
+                        : 'Zenith',
+                    icon: Icons.vertical_align_top,
+                    active: filter.filterMaxAlt != null,
+                    onTap: () => _showZenithFilter(filterNotifier, filter),
                   ),
                   // Magnitude
                   _filterChip(
@@ -305,13 +315,33 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
   // Filter pickers (bottom sheets)
   // ---------------------------------------------------------------------------
 
+  static const _horizonSteps = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0];
+
   void _showHorizonFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+    final maxAlt = filter.filterMaxAlt;
     _showChoiceSheet(
       title: 'Above Horizon',
-      options: [null, 0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0],
+      options: <double?>[
+        null,
+        ..._horizonSteps.where((v) => maxAlt == null || v < maxAlt),
+      ],
       labelOf: (v) => v == null ? 'All' : '≥ ${v.toStringAsFixed(0)}°',
       selected: filter.filterMinAlt,
       onSelected: (v) => notifier.setFilterMinAlt(v),
+    );
+  }
+
+  void _showZenithFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+    final minAlt = filter.filterMinAlt;
+    _showChoiceSheet(
+      title: 'Below Zenith',
+      options: <double?>[
+        null,
+        ..._horizonSteps.reversed.where((v) => v > 0 && (minAlt == null || v > minAlt)),
+      ],
+      labelOf: (v) => v == null ? 'All' : '≤ ${v.toStringAsFixed(0)}°',
+      selected: filter.filterMaxAlt,
+      onSelected: (v) => notifier.setFilterMaxAlt(v),
     );
   }
 

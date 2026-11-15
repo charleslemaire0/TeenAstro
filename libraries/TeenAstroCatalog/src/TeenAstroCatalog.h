@@ -15,6 +15,7 @@ const unsigned int FM_NEARBY         = 64;
 const unsigned int FM_DBL_MIN_SEP    = 128;
 const unsigned int FM_DBL_MAX_SEP    = 256;
 const unsigned int FM_VAR_MAX_PER    = 512;
+const unsigned int FM_BELOW_ZENITH   = 1024;
 
 
 enum CAT_TYPES {CAT_NONE, CAT_GEN_STAR, CAT_GEN_STAR_VCOMP, CAT_DBL_STAR, CAT_DBL_STAR_COMP, CAT_VAR_STAR, CAT_VAR_STAR_COMP, CAT_DSO, CAT_DSO_COMP, CAT_DSO_VCOMP};
@@ -134,6 +135,7 @@ private:
     double _fm_mag_limit=100.0;
     double _fm_nearby_dist=10000.0;
     double _fm_horizon_limit=0;
+    double _fm_zenith_limit=90;
     double _fm_dbl_min=0.0;
     double _fm_dbl_max=100000.0;
     double _fm_var_max=100000.0;

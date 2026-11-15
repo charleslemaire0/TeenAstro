@@ -21,7 +21,7 @@ Astronomical object catalog library for the TeenAstro telescope controller. Prov
 A singleton catalog manager (`cat_mgr`) that provides:
 
 - **Catalog selection** — `select(index)` switches the active catalog
-- **Filtering** — combine bit flags: above-horizon, constellation, object type, magnitude, nearby, named, double-star separation, variable-star period
+- **Filtering** — combine bit flags: above-horizon, below-zenith, constellation, object type, magnitude, nearby, named, double-star separation, variable-star period
 - **Alignment rank** — `buildAlignRank()` scores candidates for multi-star sessions; after the first accepted star it omits the wrong pier side (opposite side after a 3+3 flip)
 - **Navigation** — `setIndex()`, `incIndex()`, `decIndex()` iterate through records respecting active filters
 - **Coordinates** — `ra()`, `dec()`, `ha()`, `alt()`, `azm()` in degrees; HMS/DMS accessors for display

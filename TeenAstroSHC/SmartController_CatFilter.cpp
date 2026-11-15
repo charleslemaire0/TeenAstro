@@ -10,6 +10,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
     char s[8];
     if (current_selection_filter_horizon) strcpy(s, "+"); else strcpy(s, "");
     strcat(string_list_Filters, "\n"); strcat(string_list_Filters, s); strcat(string_list_Filters, "Above Horizon"); strcat(string_list_Filters, s);
+    if (current_selection_filter_zenith) strcpy(s, "+"); else strcpy(s, "");
+    strcat(string_list_Filters, "\n"); strcat(string_list_Filters, s); strcat(string_list_Filters, "Below Zenith"); strcat(string_list_Filters, s);
     if (current_selection_filter_con > 1) strcpy(s, "+"); else strcpy(s, "");
     strcat(string_list_Filters, "\n"); strcat(string_list_Filters, s); strcat(string_list_Filters, "Constellation"); strcat(string_list_Filters, s);
     if (current_selection_filter_type > 1) strcpy(s, "+"); else strcpy(s, "");
@@ -38,6 +40,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
     case 1:
       current_selection_filter_con = 1;
       current_selection_filter_horizon = 1;
+      current_selection_filter_zenith = 0;
       current_selection_filter_type = 1;
       current_selection_filter_byMag = 1;
       current_selection_filter_nearby = 1;
@@ -50,24 +53,27 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
       menuFilterHorizon();
       break;
     case 3:
-      menuFilterCon();
+      menuFilterZenith();
       break;
     case 4:
-      menuFilterType();
+      menuFilterCon();
       break;
     case 5:
+      menuFilterType();
+      break;
+    case 6:
       menuFilterByMag();
       break;
-      //case 6:
+      //case 7:
       //  return menuFilterNearby();
       //break;
-    case 6:
+    case 7:
       if (cat_mgr.hasVarStarCatalog()) menuFilterVarMaxPer(); else
       {
         if (cat_mgr.hasDblStarCatalog()) menuFilterDblMinSep();
       }
       break;
-    case 7:
+    case 8:
       if (cat_mgr.hasVarStarCatalog())
       {
         if (cat_mgr.hasDblStarCatalog()) menuFilterDblMinSep();
@@ -77,7 +83,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
         if (cat_mgr.hasDblStarCatalog()) menuFilterDblMaxSep();
       }
       break;
-    case 8:
+    case 9:
       if (cat_mgr.hasVarStarCatalog())
       {
         if (cat_mgr.hasDblStarCatalog()) menuFilterDblMaxSep();
@@ -92,6 +98,7 @@ void SmartHandController::setCatMgrFilters()
   cat_mgr.filtersClear();
 
   if (current_selection_filter_horizon > 0)   cat_mgr.filterAdd(FM_ABOVE_HORIZON, current_selection_filter_horizon - 1);
+  if (current_selection_filter_zenith > 0)    cat_mgr.filterAdd(FM_BELOW_ZENITH, current_selection_filter_zenith - 1);
   if (current_selection_filter_con > 1)   cat_mgr.filterAdd(FM_CONSTELLATION, current_selection_filter_con - 2);
   if (current_selection_filter_type > 1)  cat_mgr.filterAdd(FM_OBJ_TYPE, current_selection_filter_type - 2);
   if (current_selection_filter_byMag > 1) cat_mgr.filterAdd(FM_BY_MAG, current_selection_filter_byMag - 2);
@@ -143,16 +150,77 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterType()
   return MR_OK;
 }
 
+// Above Horizon steps, selection 1..8. Shared with the zenith ceiling.
+static int horizonLimitDeg(int selection) {
+  if (selection < 1) return 0;
+  if (selection > 8) return 70;
+  return (selection - 1) * 10;
+}
+
+// Below Zenith steps, selection 1..8: no cap, then 70° down to 10°.
+static int zenithLimitDeg(int selection) {
+  if (selection <= 1) return 90;
+  if (selection > 8) return 10;
+  return 80 - (selection - 1) * 10;
+}
+
+static int highestHorizonSelectionBelow(int maxDeg) {
+  int best = 1;
+  for (int s = 1; s <= 8; s++) {
+    if (horizonLimitDeg(s) < maxDeg) best = s;
+  }
+  return best;
+}
+
+static int tightestZenithSelectionAbove(int minDeg) {
+  int best = 1;
+  for (int s = 2; s <= 8; s++) {
+    if (zenithLimitDeg(s) > minDeg) best = s;
+  }
+  return best;
+}
+
 SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
 {
   const char* string_list_fHorizon = T_ABOVE " " T_HORIZON "\n" T_ABOVE " 10 " T_DEG "\n" T_ABOVE " 20 " T_DEG "\n"
     T_ABOVE " 30 " T_DEG "\n" T_ABOVE " 40 " T_DEG"\n" T_ABOVE " 50 " T_DEG "\n"
     T_ABOVE " 60 " T_DEG "\n" T_ABOVE " 70 " T_DEG;
   int last_selection_filter_horizon = current_selection_filter_horizon;
-  current_selection_filter_horizon = display->UserInterfaceSelectionList(&buttonPad, T_FILTER " " T_HORIZON, current_selection_filter_horizon, string_list_fHorizon);
-  if (current_selection_filter_horizon == 0)
+  while (true)
   {
-    current_selection_filter_horizon = last_selection_filter_horizon; return MR_CANCEL;
+    current_selection_filter_horizon = display->UserInterfaceSelectionList(&buttonPad, T_FILTER " " T_HORIZON, current_selection_filter_horizon, string_list_fHorizon);
+    if (current_selection_filter_horizon == 0)
+    {
+      current_selection_filter_horizon = last_selection_filter_horizon; return MR_CANCEL;
+    }
+    if (current_selection_filter_zenith <= 1) break;
+    if (horizonLimitDeg(current_selection_filter_horizon) < zenithLimitDeg(current_selection_filter_zenith)) break;
+    DisplayMessage("Min Alt must", "be < Max Alt.", 2000);
+    current_selection_filter_horizon = highestHorizonSelectionBelow(zenithLimitDeg(current_selection_filter_zenith));
+  }
+  return MR_OK;
+}
+
+SmartHandController::MENU_RESULT SmartHandController::menuFilterZenith()
+{
+  const char* string_list_fZenith = T_BELOW_ZENITH "\n" T_BELOW " 70 " T_DEG "\n" T_BELOW " 60 " T_DEG "\n"
+    T_BELOW " 50 " T_DEG "\n" T_BELOW " 40 " T_DEG "\n" T_BELOW " 30 " T_DEG "\n"
+    T_BELOW " 20 " T_DEG "\n" T_BELOW " 10 " T_DEG;
+  int last_selection_filter_zenith = current_selection_filter_zenith;
+  int cursor = last_selection_filter_zenith > 0 ? last_selection_filter_zenith : 1;
+  while (true)
+  {
+    current_selection_filter_zenith = display->UserInterfaceSelectionList(&buttonPad, T_FILTER " " T_ZENITH, cursor, string_list_fZenith);
+    if (current_selection_filter_zenith == 0)
+    {
+      current_selection_filter_zenith = last_selection_filter_zenith; return MR_CANCEL;
+    }
+    cursor = current_selection_filter_zenith;
+    if (current_selection_filter_zenith <= 1) break;
+    if (zenithLimitDeg(current_selection_filter_zenith) > horizonLimitDeg(current_selection_filter_horizon)) break;
+    DisplayMessage("Max Alt must", "be > Min Alt.", 2000);
+    current_selection_filter_zenith = tightestZenithSelectionAbove(horizonLimitDeg(current_selection_filter_horizon));
+    cursor = current_selection_filter_zenith;
   }
   return MR_OK;
 }

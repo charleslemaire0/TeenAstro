@@ -514,6 +514,18 @@ void CatMgr::filterAdd(int fm, int param) {
     if (param==6) _fm_horizon_limit=60.0; else
     if (param==7) _fm_horizon_limit=70.0; else  _fm_horizon_limit=0;
   }
+  if (fm&FM_BELOW_ZENITH) {
+    // Same 10° steps as Above Horizon. 0 is no cap (below zenith);
+    // 1..7 are 70° down to 10°, so a ceiling can stay above the floor.
+    if (param==0) _fm_zenith_limit=90.0; else
+    if (param==1) _fm_zenith_limit=70.0; else
+    if (param==2) _fm_zenith_limit=60.0; else
+    if (param==3) _fm_zenith_limit=50.0; else
+    if (param==4) _fm_zenith_limit=40.0; else
+    if (param==5) _fm_zenith_limit=30.0; else
+    if (param==6) _fm_zenith_limit=20.0; else
+    if (param==7) _fm_zenith_limit=10.0; else _fm_zenith_limit=90.0;
+  }
   if (fm&FM_NEARBY) {
     if (param==0) _fm_nearby_dist=1.0; else
     if (param==1) _fm_nearby_dist=5.0; else
@@ -561,6 +573,7 @@ bool CatMgr::hasActiveFilter() {
   if (!isInitialized()) return false;
   if (_fm==FM_NONE) return false;
   if (_fm_horizon_limit != 0) return true; // doesn't apply to this indication
+  if ((_fm & FM_BELOW_ZENITH) && _fm_zenith_limit < 90.0) return true;
   if (_fm & FM_CONSTELLATION) return true;
   if (isBrightStarCatalog() && _fm & FM_OBJ_HAS_NAME) return true;
   if (isDsoCatalog() && _fm & FM_OBJ_TYPE) return true;
@@ -603,6 +616,7 @@ bool CatMgr::isFiltered() {
   }
   current_alt = alt();
   if (current_alt < _fm_horizon_limit) return true;
+  if ((_fm & FM_BELOW_ZENITH) && current_alt > _fm_zenith_limit) return true;
   if (_fm == FM_NONE) return false;
   if (_fm & FM_ALIGN_ALL_SKY) {
     if (current_alt < 10.0) return true;      // minimum 10 degrees altitude

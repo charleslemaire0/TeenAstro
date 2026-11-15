@@ -589,11 +589,14 @@ Die Liste hängt von der im Handkontroller geladenen Firmware ab. In der Praxis 
 | Zeile | Was sie behält |
 |-------|----------------|
 | Above Horizon | Die Mindesthöhe. **Filter Horizont** bietet **Über Horizont**, dann **Über 10 deg.**, **Über 20 deg.**, und so weiter bis **Über 70 deg.** |
+| Below Zenith | Die Höchsthöhe, in denselben Schritten wie **Above Horizon**. **Filter Zenit** bietet **Unter Zenit**, dann **Unter 70 deg.**, **Unter 60 deg.**, und so weiter bis **Unter 10 deg.** Die Obergrenze bleibt über der Untergrenze. |
 | Constellation | Ein Sternbild. **Filter bei Kon** beginnt mit **Alle**, dann die Abkürzungen: Her für Herkules, Lyr für Leier, And für Andromeda, Ori für Orion |
 | Type | Ein Typ des tiefen Himmels. **Filter bei Typ** beginnt mit **Alle**. Die Namen sind die der Datenbank: Galaxy, Globular Clstr, Planetary Nebula, Open Cluster, Nebula |
 | Magnitude | Die schwächste noch gezeigte Helligkeit. **Filter Magnitude** bietet **Alle**, dann 10, 11, 12, 13, 14, 15 und 16 |
 
 Objekte unter dem Horizont fehlen schon. **Über Horizont** ändert daher wenig. **Über 30 deg.** behält nur, was hoch genug für ein bequemes Okular steht, weg von Bäumen und schlechtem Seeing.
+
+**Unter Zenit** ändert nichts, denn die Höhe geht nicht über 90°. **Unter 70 deg.** blendet aus, was darüber steht, in denselben 10°-Schritten wie **Above Horizon** (10° bis 70°). Beide Filter gelten zusammen, und die Untergrenze bleibt unter der Obergrenze: **Über 20 deg.** und **Unter 70 deg.** behalten nur das Band dazwischen. **Über 70 deg.** bei gesetztem **Unter 70 deg.** wird abgelehnt, der Bildschirm sagt **Min Alt must** / **be < Max Alt.** Umgekehrt heißt es **Max Alt must** / **be > Min Alt.** **Grundstellung Filters** schaltet den Zenitfilter aus.
 
 Die Magnitude läuft entgegen der Intuition: eine kleine Zahl ist ein helles Objekt. **10** lässt alles weg, was Magnitude 10 oder schwächer ist. **Alle** schneidet nichts. Unter hellem Himmel mit einem kleinen Fernrohr genügen 10 oder 11. 16 lohnt nur, wenn Katalog und Himmel mitgehen.
 

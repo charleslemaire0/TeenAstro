@@ -9,6 +9,8 @@ class CatalogFilterState {
   final double? filterMaxMag;
   /// null = All (no horizon filter), 0.0 = default (above horizon), 10.0 = ≥10°, etc.
   final double? filterMinAlt;
+  /// null = All (no zenith filter). Ceilings use the Above Horizon steps: 70, 60, … 10.
+  final double? filterMaxAlt;
   final bool filterHasName;
   // Double-star filters (arcsec)
   final double? filterDblMinSep;
@@ -23,6 +25,7 @@ class CatalogFilterState {
     this.filterType,
     this.filterMaxMag,
     this.filterMinAlt = 0.0,
+    this.filterMaxAlt,
     this.filterHasName = false,
     this.filterDblMinSep,
     this.filterDblMaxSep,
@@ -36,11 +39,13 @@ class CatalogFilterState {
     int? filterType,
     double? filterMaxMag,
     double? filterMinAlt,
+    double? filterMaxAlt,
     bool? filterHasName,
     double? filterDblMinSep,
     double? filterDblMaxSep,
     double? filterVarMaxPer,
     bool clearFilterMinAlt = false,
+    bool clearFilterMaxAlt = false,
     bool clearConstellation = false,
     bool clearType = false,
     bool clearMaxMag = false,
@@ -55,6 +60,7 @@ class CatalogFilterState {
       filterType: clearType ? null : (filterType ?? this.filterType),
       filterMaxMag: clearMaxMag ? null : (filterMaxMag ?? this.filterMaxMag),
       filterMinAlt: clearFilterMinAlt ? null : (filterMinAlt ?? this.filterMinAlt),
+      filterMaxAlt: clearFilterMaxAlt ? null : (filterMaxAlt ?? this.filterMaxAlt),
       filterHasName: filterHasName ?? this.filterHasName,
       filterDblMinSep: clearDblMinSep ? null : (filterDblMinSep ?? this.filterDblMinSep),
       filterDblMaxSep: clearDblMaxSep ? null : (filterDblMaxSep ?? this.filterDblMaxSep),
@@ -96,6 +102,12 @@ class CatalogFilterNotifier extends StateNotifier<CatalogFilterState> {
     state = v == null
         ? state.copyWith(clearFilterMinAlt: true)
         : state.copyWith(filterMinAlt: v);
+  }
+
+  void setFilterMaxAlt(double? v) {
+    state = v == null
+        ? state.copyWith(clearFilterMaxAlt: true)
+        : state.copyWith(filterMaxAlt: v);
   }
 
   void setFilterHasName(bool v) {

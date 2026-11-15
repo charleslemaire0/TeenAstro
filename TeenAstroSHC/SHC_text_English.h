@@ -309,6 +309,7 @@
 
 #define T_SITEELEVATION "Site Elevation"
 #define T_HORIZON "Horizon"
+#define T_ZENITH "Zenith"
 #define T_HORIZONLIMIT "Horizon Limit"
 #define T_OVERHEAD "Overhead"
 
@@ -384,11 +385,13 @@
 #define T_FILTERS "Filters"
 #define T_ALLOW "Allow"
 #define T_ABOVE "Above"
+#define T_BELOW "Below"
 #define T_DEG "deg."
 #define T_ALL "All"
 #define T_FILTERBYCON "Filter by Con"
 #define T_FILTERBYTYPE "Filter by Type"
 #define T_ABOVE_HORIZON "Above Horizon"
+#define T_BELOW_ZENITH "Below Zenith"
 
 #define T_RETICULE "Reticule"
 #define T_BRIGHTER "Brighter"
