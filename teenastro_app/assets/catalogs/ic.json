@@ -6,7 +6,7 @@
  "objects": [
   {
    "id": 10,
-   "name": "",
+   "name": "Starburst Galaxy",
    "ra": 0.338013,
    "dec": 59.303262,
    "mag": 9.5,
@@ -303,7 +303,7 @@
   },
   {
    "id": 418,
-   "name": "",
+   "name": "Spirograph Nebula",
    "ra": 5.458008,
    "dec": -12.697836,
    "mag": 9.4,
@@ -816,7 +816,7 @@
   },
   {
    "id": 1318,
-   "name": "",
+   "name": "Gam Cyg Nebula",
    "ra": 20.370483,
    "dec": 40.257881,
    "mag": 2.2,
@@ -988,7 +988,7 @@
   },
   {
    "id": 1613,
-   "name": "",
+   "name": "Scarecrow Galaxy",
    "ra": 1.079956,
    "dec": 2.117679,
    "mag": 10.0,
@@ -1214,7 +1214,7 @@
   },
   {
    "id": 1805,
-   "name": "",
+   "name": "Heart Nebula",
    "ra": 2.5448,
    "dec": 61.456648,
    "mag": 6.5,
@@ -1250,7 +1250,7 @@
   },
   {
    "id": 1848,
-   "name": "",
+   "name": "Soul Nebula",
    "ra": 2.852783,
    "dec": 60.401929,
    "mag": 6.5,
@@ -1817,7 +1817,7 @@
   },
   {
    "id": 2574,
-   "name": "",
+   "name": "Coddington's Nebula",
    "ra": 10.473267,
    "dec": 68.411206,
    "mag": 10.9,
@@ -2511,7 +2511,7 @@
   },
   {
    "id": 3568,
-   "name": "",
+   "name": "Lemon slice Nebula",
    "ra": 12.55188,
    "dec": 82.564776,
    "mag": 10.6,
@@ -3168,7 +3168,7 @@
   },
   {
    "id": 4406,
-   "name": "",
+   "name": "Retina Nebula",
    "ra": 14.374146,
    "dec": -44.149907,
    "mag": 10.2,
@@ -3258,7 +3258,7 @@
   },
   {
    "id": 4593,
-   "name": "",
+   "name": "White-eyed Pea Nebula",
    "ra": 16.195679,
    "dec": 12.071596,
    "mag": 10.7,
@@ -3339,7 +3339,7 @@
   },
   {
    "id": 4665,
-   "name": "",
+   "name": "Poseidon's Trident Cluster",
    "ra": 17.774048,
    "dec": 5.649892,
    "mag": 4.2,
@@ -3393,7 +3393,7 @@
   },
   {
    "id": 4703,
-   "name": "",
+   "name": "Eagle Nebula",
    "ra": 18.315674,
    "dec": -13.845943,
    "mag": 6.0,
@@ -3492,7 +3492,7 @@
   },
   {
    "id": 4756,
-   "name": "",
+   "name": "Tweedledee Cluster",
    "ra": 18.647461,
    "dec": 5.463118,
    "mag": 4.6,
@@ -3798,7 +3798,7 @@
   },
   {
    "id": 4946,
-   "name": "",
+   "name": "Shapley-Ames 5",
    "ra": 20.399414,
    "dec": -43.996094,
    "mag": 11.8,
@@ -3861,7 +3861,7 @@
   },
   {
    "id": 4996,
-   "name": "",
+   "name": "P Cyg Cluster",
    "ra": 20.276001,
    "dec": 37.555162,
    "mag": 7.3,
@@ -3988,7 +3988,7 @@
   },
   {
    "id": 5146,
-   "name": "",
+   "name": "Cocoon Nebula",
    "ra": 21.891357,
    "dec": 47.267373,
    "mag": 7.2,
@@ -3997,7 +3997,7 @@
   },
   {
    "id": 5148,
-   "name": "",
+   "name": "Spare Tyre Nebula",
    "ra": 21.993164,
    "dec": -39.387188,
    "mag": 11.0,

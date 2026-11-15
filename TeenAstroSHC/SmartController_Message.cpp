@@ -3,7 +3,7 @@
 
 void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int duration, int settleMs)
 {
-  display->setFont(u8g2_font_helvR12_tf);
+  display->setFont(u8g2_font_helvR12_te);
   uint8_t x;
   uint8_t y = 40;
   display->firstPage();

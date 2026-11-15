@@ -34,7 +34,8 @@ typedef struct {
   const float          RA;
   const float          DE;
 } dso_t; 
-typedef struct {
+// Packed: the byte after Mag would otherwise pad the record to 14 bytes.
+typedef struct __attribute__((packed)) {
   const unsigned short It_name;
   const unsigned char  Cons;
   const unsigned char  Obj_type;
@@ -67,7 +68,7 @@ typedef struct {
 } gen_star_t; 
 
 
-typedef struct {
+typedef struct __attribute__((packed)) {
   const unsigned short It_name;
   const unsigned char  Cons;
   const unsigned char  BayerFlam; // 0 to 23 are coded Bayer, 24=Invalid, 25 to 127 are the Flamsteed# (for 1 to 103.)

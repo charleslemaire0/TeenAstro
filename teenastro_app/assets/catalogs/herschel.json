@@ -6,7 +6,7 @@
  "objects": [
   {
    "id": 40,
-   "name": "",
+   "name": "Bow-Tie Nebula",
    "ra": 0.217163,
    "dec": 72.522965,
    "mag": 11.9,
@@ -60,7 +60,7 @@
   },
   {
    "id": 225,
-   "name": "",
+   "name": "Sailboat Cluster",
    "ra": 0.726929,
    "dec": 61.767022,
    "mag": 7.0,
@@ -69,7 +69,7 @@
   },
   {
    "id": 246,
-   "name": "",
+   "name": "Skull Nebula",
    "ra": 0.784424,
    "dec": -11.87109,
    "mag": 10.9,
@@ -78,7 +78,7 @@
   },
   {
    "id": 247,
-   "name": "",
+   "name": "Needle's Eye Galaxy",
    "ra": 0.785522,
    "dec": -20.759301,
    "mag": 9.1,
@@ -87,7 +87,7 @@
   },
   {
    "id": 253,
-   "name": "",
+   "name": "Sculptor Galaxy",
    "ra": 0.79248,
    "dec": -25.288553,
    "mag": 14.0,
@@ -123,7 +123,7 @@
   },
   {
    "id": 404,
-   "name": "",
+   "name": "Mirach's Ghost",
    "ra": 1.157593,
    "dec": 35.717643,
    "mag": 11.7,
@@ -141,7 +141,7 @@
   },
   {
    "id": 457,
-   "name": "",
+   "name": "Owl Cluster",
    "ra": 1.325684,
    "dec": 58.289743,
    "mag": 6.4,
@@ -150,7 +150,7 @@
   },
   {
    "id": 488,
-   "name": "",
+   "name": "Whirligig Galaxy",
    "ra": 1.363037,
    "dec": 5.257118,
    "mag": null,
@@ -168,7 +168,7 @@
   },
   {
    "id": 559,
-   "name": "",
+   "name": "Ghost's Goblet",
    "ra": 1.492676,
    "dec": 63.302408,
    "mag": 9.5,
@@ -177,7 +177,7 @@
   },
   {
    "id": 584,
-   "name": "",
+   "name": "Little Spindle Galaxy",
    "ra": 1.522339,
    "dec": -6.869411,
    "mag": 10.5,
@@ -195,7 +195,7 @@
   },
   {
    "id": 598,
-   "name": "",
+   "name": "Triangulum Gxy",
    "ra": 1.564087,
    "dec": 30.661031,
    "mag": 5.7,
@@ -231,7 +231,7 @@
   },
   {
    "id": 650,
-   "name": "",
+   "name": "Little Dumbbell Nbla",
    "ra": 1.705444,
    "dec": 51.574145,
    "mag": 10.1,
@@ -240,7 +240,7 @@
   },
   {
    "id": 654,
-   "name": "",
+   "name": "Fuzzy Butterfly Cluster",
    "ra": 1.733276,
    "dec": 61.882382,
    "mag": 6.5,
@@ -249,7 +249,7 @@
   },
   {
    "id": 659,
-   "name": "",
+   "name": "Yin-Yang Cluster",
    "ra": 1.739868,
    "dec": 60.668355,
    "mag": 7.9,
@@ -258,7 +258,7 @@
   },
   {
    "id": 663,
-   "name": "",
+   "name": "Horseshoe Cluster",
    "ra": 1.770996,
    "dec": 61.217689,
    "mag": 7.1,
@@ -285,7 +285,7 @@
   },
   {
    "id": 772,
-   "name": "",
+   "name": "Fiddlehead Galaxy",
    "ra": 1.988892,
    "dec": 19.006928,
    "mag": 10.3,
@@ -303,7 +303,7 @@
   },
   {
    "id": 869,
-   "name": "",
+   "name": "Double Cluster",
    "ra": 2.316284,
    "dec": 57.116916,
    "mag": 3.7,
@@ -312,7 +312,7 @@
   },
   {
    "id": 884,
-   "name": "",
+   "name": "Double Cluster",
    "ra": 2.37561,
    "dec": 57.144383,
    "mag": 3.8,
@@ -321,7 +321,7 @@
   },
   {
    "id": 891,
-   "name": "",
+   "name": "The Silver Sliver Galaxy",
    "ra": 2.375977,
    "dec": 42.348094,
    "mag": 9.9,
@@ -339,7 +339,7 @@
   },
   {
    "id": 936,
-   "name": "",
+   "name": "Darth Vader's Starfighter",
    "ra": 2.460571,
    "dec": -1.156346,
    "mag": null,
@@ -357,7 +357,7 @@
   },
   {
    "id": 1023,
-   "name": "",
+   "name": "Perseus Lenticular Galaxy",
    "ra": 2.67334,
    "dec": 39.063082,
    "mag": 9.4,
@@ -402,7 +402,7 @@
   },
   {
    "id": 1245,
-   "name": "",
+   "name": "Patrick Starfish Cluster",
    "ra": 3.244995,
    "dec": 47.239906,
    "mag": 8.4,
@@ -411,7 +411,7 @@
   },
   {
    "id": 1342,
-   "name": "",
+   "name": "Stingray Cluster",
    "ra": 3.52771,
    "dec": 37.379376,
    "mag": 6.7,
@@ -420,7 +420,7 @@
   },
   {
    "id": 1407,
-   "name": "",
+   "name": "Eridanus A Group",
    "ra": 3.670166,
    "dec": -18.581194,
    "mag": 9.7,
@@ -438,7 +438,7 @@
   },
   {
    "id": 1501,
-   "name": "",
+   "name": "Oyster Nebula",
    "ra": 4.116577,
    "dec": 60.921049,
    "mag": 11.5,
@@ -447,7 +447,7 @@
   },
   {
    "id": 1502,
-   "name": "",
+   "name": "Jolly Roger Cluster",
    "ra": 4.130493,
    "dec": 62.332835,
    "mag": 6.9,
@@ -465,7 +465,7 @@
   },
   {
    "id": 1528,
-   "name": "",
+   "name": "m & m Double Cluster",
    "ra": 4.255371,
    "dec": 51.211585,
    "mag": 6.4,
@@ -474,7 +474,7 @@
   },
   {
    "id": 1535,
-   "name": "",
+   "name": "Cleopatra's Eye Nebula",
    "ra": 4.237793,
    "dec": -12.739036,
    "mag": 9.6,
@@ -483,7 +483,7 @@
   },
   {
    "id": 1545,
-   "name": "",
+   "name": "m & m Double Cluster",
    "ra": 4.349121,
    "dec": 50.255745,
    "mag": 6.2,
@@ -492,7 +492,7 @@
   },
   {
    "id": 1647,
-   "name": "",
+   "name": "Pirate Moon Cluster",
    "ra": 4.765503,
    "dec": 19.094821,
    "mag": 6.4,
@@ -501,7 +501,7 @@
   },
   {
    "id": 1664,
-   "name": "",
+   "name": "Kite Cluster",
    "ra": 4.851562,
    "dec": 43.67748,
    "mag": 7.6,
@@ -510,7 +510,7 @@
   },
   {
    "id": 1788,
-   "name": "",
+   "name": "Cosmic Bat Nebula",
    "ra": 5.114868,
    "dec": -3.339946,
    "mag": null,
@@ -519,7 +519,7 @@
   },
   {
    "id": 1817,
-   "name": "",
+   "name": "Poor Man's Double Cluster",
    "ra": 5.207153,
    "dec": 16.683248,
    "mag": 7.7,
@@ -546,7 +546,7 @@
   },
   {
    "id": 1931,
-   "name": "",
+   "name": "The Fly Nebula",
    "ra": 5.52356,
    "dec": 34.24543,
    "mag": 10.1,
@@ -573,7 +573,7 @@
   },
   {
    "id": 1980,
-   "name": "",
+   "name": "The Lost Jewel of Orion",
    "ra": 5.590576,
    "dec": -5.910825,
    "mag": 2.5,
@@ -582,7 +582,7 @@
   },
   {
    "id": 1999,
-   "name": "",
+   "name": "13th Pearl Nebula",
    "ra": 5.607056,
    "dec": -6.715598,
    "mag": null,
@@ -591,7 +591,7 @@
   },
   {
    "id": 2022,
-   "name": "",
+   "name": "Kissing Crescents Nebula",
    "ra": 5.701538,
    "dec": 9.085971,
    "mag": 11.6,
@@ -600,7 +600,7 @@
   },
   {
    "id": 2024,
-   "name": "",
+   "name": "Flame Nebula",
    "ra": 5.695312,
    "dec": -1.856746,
    "mag": null,
@@ -636,7 +636,7 @@
   },
   {
    "id": 2169,
-   "name": "",
+   "name": "The 37 Cluster",
    "ra": 6.140259,
    "dec": 13.964049,
    "mag": 5.9,
@@ -690,7 +690,7 @@
   },
   {
    "id": 2232,
-   "name": "",
+   "name": "Double Wedge Cluster",
    "ra": 6.466919,
    "dec": -4.847865,
    "mag": 3.9,
@@ -717,7 +717,7 @@
   },
   {
    "id": 2264,
-   "name": "",
+   "name": "Christmas Tree Cluster",
    "ra": 6.682617,
    "dec": 9.896237,
    "mag": 3.9,
@@ -735,7 +735,7 @@
   },
   {
    "id": 2281,
-   "name": "",
+   "name": "Broken Heart Cluster",
    "ra": 6.804932,
    "dec": 41.079134,
    "mag": 5.4,
@@ -753,7 +753,7 @@
   },
   {
    "id": 2301,
-   "name": "",
+   "name": "Great Bird Cluster",
    "ra": 6.862427,
    "dec": 0.458693,
    "mag": 6.0,
@@ -798,7 +798,7 @@
   },
   {
    "id": 2343,
-   "name": "",
+   "name": "Doublemint Cluster",
    "ra": 7.135254,
    "dec": -10.615864,
    "mag": 6.7,
@@ -807,7 +807,7 @@
   },
   {
    "id": 2353,
-   "name": "",
+   "name": "Avery's Island",
    "ra": 7.241821,
    "dec": -10.267037,
    "mag": 7.1,
@@ -834,7 +834,7 @@
   },
   {
    "id": 2360,
-   "name": "",
+   "name": "Caroline's Cluster",
    "ra": 7.295288,
    "dec": -15.642262,
    "mag": 7.2,
@@ -843,7 +843,7 @@
   },
   {
    "id": 2362,
-   "name": "",
+   "name": "Tau CMa Cluster",
    "ra": 7.311401,
    "dec": -24.953459,
    "mag": 4.1,
@@ -852,7 +852,7 @@
   },
   {
    "id": 2371,
-   "name": "",
+   "name": "Double Bubble Nebula",
    "ra": 7.426392,
    "dec": 29.490951,
    "mag": 11.2,
@@ -861,7 +861,7 @@
   },
   {
    "id": 2392,
-   "name": "",
+   "name": "Eskimo Nebula",
    "ra": 7.48645,
    "dec": 20.913114,
    "mag": 9.6,
@@ -888,7 +888,7 @@
   },
   {
    "id": 2419,
-   "name": "",
+   "name": "Intergalactic Wanderer",
    "ra": 7.635498,
    "dec": 38.879055,
    "mag": 10.1,
@@ -897,7 +897,7 @@
   },
   {
    "id": 2420,
-   "name": "",
+   "name": "Twinkling Comet Cluster",
    "ra": 7.639893,
    "dec": 21.57506,
    "mag": 8.3,
@@ -942,7 +942,7 @@
   },
   {
    "id": 2440,
-   "name": "",
+   "name": "Albino Butterfly Nebula",
    "ra": 7.698853,
    "dec": -18.207648,
    "mag": 9.4,
@@ -1005,7 +1005,7 @@
   },
   {
    "id": 2539,
-   "name": "",
+   "name": "The Dish Cluster",
    "ra": 8.176758,
    "dec": -12.821436,
    "mag": 6.5,
@@ -1077,7 +1077,7 @@
   },
   {
    "id": 2683,
-   "name": "",
+   "name": "UFO Galaxy",
    "ra": 8.878052,
    "dec": 33.42143,
    "mag": 9.8,
@@ -1140,7 +1140,7 @@
   },
   {
    "id": 2841,
-   "name": "",
+   "name": "Tiger's Eye Galaxy",
    "ra": 9.36731,
    "dec": 50.975372,
    "mag": 9.2,
@@ -1212,7 +1212,7 @@
   },
   {
    "id": 3034,
-   "name": "",
+   "name": "Cigar Gxy",
    "ra": 9.931274,
    "dec": 69.680166,
    "mag": 8.4,
@@ -1221,7 +1221,7 @@
   },
   {
    "id": 3077,
-   "name": "",
+   "name": "The Garland Galaxy",
    "ra": 10.05542,
    "dec": 68.732566,
    "mag": 10.1,
@@ -1230,7 +1230,7 @@
   },
   {
    "id": 3079,
-   "name": "",
+   "name": "The Phantom Frisbee Galaxy",
    "ra": 10.032715,
    "dec": 55.68041,
    "mag": 10.9,
@@ -1239,7 +1239,7 @@
   },
   {
    "id": 3115,
-   "name": "",
+   "name": "Spindle Galaxy",
    "ra": 10.08728,
    "dec": -7.718131,
    "mag": null,
@@ -1284,7 +1284,7 @@
   },
   {
    "id": 3189,
-   "name": "",
+   "name": "NGC 3190 Group",
    "ra": 10.301514,
    "dec": 21.833247,
    "mag": 11.1,
@@ -1293,7 +1293,7 @@
   },
   {
    "id": 3193,
-   "name": "",
+   "name": "Hickson 44",
    "ra": 10.307007,
    "dec": 21.893674,
    "mag": 10.9,
@@ -1329,7 +1329,7 @@
   },
   {
    "id": 3242,
-   "name": "",
+   "name": "Ghost of Jupiter",
    "ra": 10.412842,
    "dec": -18.641621,
    "mag": 7.7,
@@ -1365,7 +1365,7 @@
   },
   {
    "id": 3310,
-   "name": "",
+   "name": "Bow and Arrow Galaxy",
    "ra": 10.646118,
    "dec": 53.502304,
    "mag": 12.1,
@@ -1374,7 +1374,7 @@
   },
   {
    "id": 3344,
-   "name": "",
+   "name": "Sliced Onion Galaxy",
    "ra": 10.72522,
    "dec": 24.923246,
    "mag": 9.9,
@@ -1437,7 +1437,7 @@
   },
   {
    "id": 3432,
-   "name": "",
+   "name": "Knitting Needle Galaxy",
    "ra": 10.875366,
    "dec": 36.618549,
    "mag": 11.7,
@@ -1473,7 +1473,7 @@
   },
   {
    "id": 3521,
-   "name": "",
+   "name": "Bubble Galaxy",
    "ra": 11.096924,
    "dec": -0.035707,
    "mag": 9.0,
@@ -1482,7 +1482,7 @@
   },
   {
    "id": 3556,
-   "name": "",
+   "name": "Surfboard Galaxy",
    "ra": 11.191772,
    "dec": 55.674917,
    "mag": 10.1,
@@ -1545,7 +1545,7 @@
   },
   {
    "id": 3621,
-   "name": "",
+   "name": "Frame Galaxy",
    "ra": 11.304565,
    "dec": -32.814417,
    "mag": 9.6,
@@ -1563,7 +1563,7 @@
   },
   {
    "id": 3628,
-   "name": "",
+   "name": "Hamburger Gxy",
    "ra": 11.337891,
    "dec": 13.590503,
    "mag": 9.5,
@@ -1770,7 +1770,7 @@
   },
   {
    "id": 3992,
-   "name": "",
+   "name": "Vacuum Cleaner Galaxy",
    "ra": 11.960083,
    "dec": 53.373211,
    "mag": 9.9,
@@ -1824,7 +1824,7 @@
   },
   {
    "id": 4038,
-   "name": "",
+   "name": "Antennae Glx.s",
    "ra": 12.031494,
    "dec": -18.866848,
    "mag": null,
@@ -1896,7 +1896,7 @@
   },
   {
    "id": 4147,
-   "name": "",
+   "name": "Kick the Can Cluster",
    "ra": 12.168457,
    "dec": 18.542741,
    "mag": 10.7,
@@ -1914,7 +1914,7 @@
   },
   {
    "id": 4151,
-   "name": "",
+   "name": "Eye of Sauron",
    "ra": 12.175781,
    "dec": 39.406415,
    "mag": 11.5,
@@ -1950,7 +1950,7 @@
   },
   {
    "id": 4216,
-   "name": "",
+   "name": "Silver Streak Galaxy",
    "ra": 12.265137,
    "dec": 13.148289,
    "mag": 10.0,
@@ -2040,7 +2040,7 @@
   },
   {
    "id": 4303,
-   "name": "",
+   "name": "Swelling Spiral Galaxy",
    "ra": 12.365112,
    "dec": 4.474319,
    "mag": 9.6,
@@ -2076,7 +2076,7 @@
   },
   {
    "id": 4361,
-   "name": "",
+   "name": "Lawn Sprinkler Nebula",
    "ra": 12.408325,
    "dec": -18.784448,
    "mag": 10.9,
@@ -2139,7 +2139,7 @@
   },
   {
    "id": 4435,
-   "name": "",
+   "name": "Eyes Galaxies",
    "ra": 12.46106,
    "dec": 13.079623,
    "mag": 10.8,
@@ -2148,7 +2148,7 @@
   },
   {
    "id": 4438,
-   "name": "",
+   "name": "Eyes Galaxies",
    "ra": 12.462524,
    "dec": 13.008209,
    "mag": 10.2,
@@ -2175,7 +2175,7 @@
   },
   {
    "id": 4449,
-   "name": "",
+   "name": "The Box Galaxy",
    "ra": 12.469849,
    "dec": 44.094974,
    "mag": 9.6,
@@ -2202,7 +2202,7 @@
   },
   {
    "id": 4473,
-   "name": "",
+   "name": "Markarian's Chain",
    "ra": 12.496948,
    "dec": 13.428449,
    "mag": 10.2,
@@ -2211,7 +2211,7 @@
   },
   {
    "id": 4477,
-   "name": "",
+   "name": "Markarian's Chain",
    "ra": 12.50061,
    "dec": 13.637196,
    "mag": 10.4,
@@ -2238,7 +2238,7 @@
   },
   {
    "id": 4490,
-   "name": "",
+   "name": "Cocoon Galaxy",
    "ra": 12.510132,
    "dec": 41.644948,
    "mag": 9.8,
@@ -2256,7 +2256,7 @@
   },
   {
    "id": 4526,
-   "name": "",
+   "name": "Hairy Eyebrow Galaxy",
    "ra": 12.567627,
    "dec": 7.698904,
    "mag": null,
@@ -2274,7 +2274,7 @@
   },
   {
    "id": 4535,
-   "name": "",
+   "name": "The Lost Galaxy of Copeland",
    "ra": 12.572388,
    "dec": 8.198798,
    "mag": null,
@@ -2319,7 +2319,7 @@
   },
   {
    "id": 4559,
-   "name": "",
+   "name": "Koi Fish Galaxy",
    "ra": 12.599121,
    "dec": 27.961058,
    "mag": 10.0,
@@ -2328,7 +2328,7 @@
   },
   {
    "id": 4565,
-   "name": "",
+   "name": "Needle Galaxy",
    "ra": 12.605713,
    "dec": 25.988952,
    "mag": 12.4,
@@ -2346,7 +2346,7 @@
   },
   {
    "id": 4594,
-   "name": "",
+   "name": "Sombrero Gxy",
    "ra": 12.666504,
    "dec": -11.62389,
    "mag": 8.0,
@@ -2382,7 +2382,7 @@
   },
   {
    "id": 4631,
-   "name": "",
+   "name": "Whale Galaxy",
    "ra": 12.702026,
    "dec": 32.542497,
    "mag": 9.2,
@@ -2418,7 +2418,7 @@
   },
   {
    "id": 4656,
-   "name": "",
+   "name": "Hockey Stick Galaxy",
    "ra": 12.732788,
    "dec": 32.16895,
    "mag": null,
@@ -2436,7 +2436,7 @@
   },
   {
    "id": 4666,
-   "name": "",
+   "name": "Superwind-Galaxy",
    "ra": 12.752563,
    "dec": -0.46144,
    "mag": null,
@@ -2472,7 +2472,7 @@
   },
   {
    "id": 4699,
-   "name": "",
+   "name": "Vinyl LP Galaxy",
    "ra": 12.817383,
    "dec": -8.665731,
    "mag": null,
@@ -2490,7 +2490,7 @@
   },
   {
    "id": 4753,
-   "name": "",
+   "name": "Dust Devil Galaxy",
    "ra": 12.872681,
    "dec": -1.200293,
    "mag": 9.9,
@@ -2508,7 +2508,7 @@
   },
   {
    "id": 4762,
-   "name": "",
+   "name": "Paper-Kite Galaxy",
    "ra": 12.882202,
    "dec": 11.231117,
    "mag": null,
@@ -2598,7 +2598,7 @@
   },
   {
    "id": 5033,
-   "name": "",
+   "name": "Waterbug Galaxy",
    "ra": 13.224243,
    "dec": 36.593829,
    "mag": 12.0,
@@ -2616,7 +2616,7 @@
   },
   {
    "id": 5195,
-   "name": "",
+   "name": "M51B",
    "ra": 13.5,
    "dec": 47.267373,
    "mag": 9.6,
@@ -2670,7 +2670,7 @@
   },
   {
    "id": 5466,
-   "name": "",
+   "name": "Snowglobe Cluster",
    "ra": 14.091064,
    "dec": 28.535112,
    "mag": 9.7,
@@ -2769,7 +2769,7 @@
   },
   {
    "id": 5746,
-   "name": "",
+   "name": "Blade and Pearl Galaxy",
    "ra": 14.748779,
    "dec": 1.955626,
    "mag": null,
@@ -2787,7 +2787,7 @@
   },
   {
    "id": 5866,
-   "name": "",
+   "name": "Spindle Galaxy",
    "ra": 15.108032,
    "dec": 55.76281,
    "mag": 9.9,
@@ -2796,7 +2796,7 @@
   },
   {
    "id": 5897,
-   "name": "",
+   "name": "Ghost Globular Cluster",
    "ra": 15.290039,
    "dec": -21.009247,
    "mag": 8.5,
@@ -2805,7 +2805,7 @@
   },
   {
    "id": 5906,
-   "name": "",
+   "name": "Splinter Galaxy",
    "ra": 15.264771,
    "dec": 56.328623,
    "mag": null,
@@ -2823,7 +2823,7 @@
   },
   {
    "id": 6118,
-   "name": "",
+   "name": "Blinking Galaxy",
    "ra": 16.363403,
    "dec": -2.282479,
    "mag": null,
@@ -2841,7 +2841,7 @@
   },
   {
    "id": 6171,
-   "name": "",
+   "name": "The Crucifix Cluster",
    "ra": 16.542114,
    "dec": -13.054903,
    "mag": 8.9,
@@ -2868,7 +2868,7 @@
   },
   {
    "id": 6229,
-   "name": "",
+   "name": "Prize Comet Globular Cluster",
    "ra": 16.783081,
    "dec": 47.528306,
    "mag": 9.9,
@@ -2958,7 +2958,7 @@
   },
   {
    "id": 6369,
-   "name": "",
+   "name": "Little Ghost Nebula",
    "ra": 17.489136,
    "dec": -23.75866,
    "mag": 11.4,
@@ -2994,7 +2994,7 @@
   },
   {
    "id": 6445,
-   "name": "",
+   "name": "Box Nebula",
    "ra": 17.820923,
    "dec": -20.009461,
    "mag": 11.2,
@@ -3003,7 +3003,7 @@
   },
   {
    "id": 6451,
-   "name": "",
+   "name": "Tom Thumb Cluster",
    "ra": 17.844727,
    "dec": -30.210578,
    "mag": 8.2,
@@ -3012,7 +3012,7 @@
   },
   {
    "id": 6514,
-   "name": "",
+   "name": "Trifid Nebula",
    "ra": 18.045044,
    "dec": -22.973113,
    "mag": 8.5,
@@ -3030,7 +3030,7 @@
   },
   {
    "id": 6520,
-   "name": "",
+   "name": "Dead Man's Chest Cluster",
    "ra": 18.056763,
    "dec": -27.886898,
    "mag": 7.6,
@@ -3066,7 +3066,7 @@
   },
   {
    "id": 6543,
-   "name": "",
+   "name": "Cat's Eye Nebula",
    "ra": 17.97583,
    "dec": 66.634114,
    "mag": 9.0,
@@ -3075,7 +3075,7 @@
   },
   {
    "id": 6544,
-   "name": "",
+   "name": "Starfish Cluster",
    "ra": 18.122314,
    "dec": -24.997406,
    "mag": 9.9,
@@ -3138,7 +3138,7 @@
   },
   {
    "id": 6633,
-   "name": "",
+   "name": "Tweedledum Cluster",
    "ra": 18.454102,
    "dec": 6.506851,
    "mag": 4.6,
@@ -3156,7 +3156,7 @@
   },
   {
    "id": 6642,
-   "name": "",
+   "name": "Tadpole Cluster",
    "ra": 18.531738,
    "dec": -23.475753,
    "mag": 10.2,
@@ -3174,7 +3174,7 @@
   },
   {
    "id": 6664,
-   "name": "",
+   "name": "Santa's Sleigh Cluster",
    "ra": 18.609375,
    "dec": -8.220771,
    "mag": 7.8,
@@ -3192,7 +3192,7 @@
   },
   {
    "id": 6755,
-   "name": "",
+   "name": "Possible Binary Cluster",
    "ra": 19.130127,
    "dec": 4.265572,
    "mag": 7.5,
@@ -3201,7 +3201,7 @@
   },
   {
    "id": 6756,
-   "name": "",
+   "name": "Possible Binary Cluster",
    "ra": 19.145142,
    "dec": 4.705039,
    "mag": 10.6,
@@ -3210,7 +3210,7 @@
   },
   {
    "id": 6781,
-   "name": "",
+   "name": "Snowglobe Nebula",
    "ra": 19.307739,
    "dec": 6.539811,
    "mag": 11.4,
@@ -3228,7 +3228,7 @@
   },
   {
    "id": 6818,
-   "name": "",
+   "name": "Little Gem Nebula",
    "ra": 19.732544,
    "dec": -14.153569,
    "mag": 9.3,
@@ -3237,7 +3237,7 @@
   },
   {
    "id": 6823,
-   "name": "",
+   "name": "Cloud Sculpting Star Cluster",
    "ra": 19.71936,
    "dec": 23.299966,
    "mag": 7.1,
@@ -3246,7 +3246,7 @@
   },
   {
    "id": 6826,
-   "name": "",
+   "name": "Blinking Planetary",
    "ra": 19.746826,
    "dec": 50.524918,
    "mag": 9.4,
@@ -3255,7 +3255,7 @@
   },
   {
    "id": 6830,
-   "name": "",
+   "name": "Poodle Cluster",
    "ra": 19.849731,
    "dec": 23.09946,
    "mag": 7.9,
@@ -3273,7 +3273,7 @@
   },
   {
    "id": 6866,
-   "name": "",
+   "name": "Kite Cluster",
    "ra": 20.06543,
    "dec": 44.158147,
    "mag": 7.6,
@@ -3291,7 +3291,7 @@
   },
   {
    "id": 6905,
-   "name": "",
+   "name": "Blue Flash Nebula",
    "ra": 20.373047,
    "dec": 20.105594,
    "mag": 11.1,
@@ -3300,7 +3300,7 @@
   },
   {
    "id": 6910,
-   "name": "",
+   "name": "The Inchworm Cluster",
    "ra": 20.386597,
    "dec": 40.779748,
    "mag": 7.4,
@@ -3318,7 +3318,7 @@
   },
   {
    "id": 6939,
-   "name": "",
+   "name": "Flying Geese Cluster",
    "ra": 20.525024,
    "dec": 60.662862,
    "mag": 7.8,
@@ -3327,7 +3327,7 @@
   },
   {
    "id": 6940,
-   "name": "",
+   "name": "Mothra Cluster",
    "ra": 20.574097,
    "dec": 28.282418,
    "mag": 6.3,
@@ -3336,7 +3336,7 @@
   },
   {
    "id": 6946,
-   "name": "",
+   "name": "Fireworks Galaxy",
    "ra": 20.581055,
    "dec": 60.154729,
    "mag": null,
@@ -3345,7 +3345,7 @@
   },
   {
    "id": 7000,
-   "name": "",
+   "name": "North America Neb",
    "ra": 20.988281,
    "dec": 44.528947,
    "mag": null,
@@ -3363,7 +3363,7 @@
   },
   {
    "id": 7008,
-   "name": "",
+   "name": "Fetus Nebula",
    "ra": 21.009155,
    "dec": 54.543291,
    "mag": 10.7,
@@ -3372,7 +3372,7 @@
   },
   {
    "id": 7009,
-   "name": "",
+   "name": "Saturn Nebula",
    "ra": 21.06958,
    "dec": -11.362957,
    "mag": 8.0,
@@ -3426,7 +3426,7 @@
   },
   {
    "id": 7160,
-   "name": "",
+   "name": "Bruce Lee Cluster",
    "ra": 21.894653,
    "dec": 62.602008,
    "mag": 6.1,
@@ -3435,7 +3435,7 @@
   },
   {
    "id": 7209,
-   "name": "",
+   "name": "Star Lizard Cluster",
    "ra": 22.085449,
    "dec": 46.484573,
    "mag": 7.7,
@@ -3471,7 +3471,7 @@
   },
   {
    "id": 7331,
-   "name": "",
+   "name": "Deer Lick Group",
    "ra": 22.61792,
    "dec": 34.415723,
    "mag": 9.5,
@@ -3480,7 +3480,7 @@
   },
   {
    "id": 7380,
-   "name": "",
+   "name": "Harry Potter and the Golden Snitch",
    "ra": 22.789307,
    "dec": 58.133183,
    "mag": 7.2,
@@ -3498,7 +3498,7 @@
   },
   {
    "id": 7479,
-   "name": "",
+   "name": "Propeller Galaxy",
    "ra": 23.082275,
    "dec": 12.321543,
    "mag": 10.9,
@@ -3507,7 +3507,7 @@
   },
   {
    "id": 7510,
-   "name": "",
+   "name": "The Dormouse Cluster",
    "ra": 23.184448,
    "dec": 60.572222,
    "mag": 7.9,
@@ -3525,7 +3525,7 @@
   },
   {
    "id": 7662,
-   "name": "",
+   "name": "Blue Snowball",
    "ra": 23.431641,
    "dec": 42.534867,
    "mag": 8.3,
@@ -3561,7 +3561,7 @@
   },
   {
    "id": 7789,
-   "name": "",
+   "name": "Caroline's Rose Cluster",
    "ra": 23.956787,
    "dec": 56.707663,
    "mag": 6.7,
@@ -3570,7 +3570,7 @@
   },
   {
    "id": 7790,
-   "name": "",
+   "name": "The Widow's Web Cluster",
    "ra": 23.973267,
    "dec": 61.209449,
    "mag": 8.5,
@@ -3579,7 +3579,7 @@
   },
   {
    "id": 7814,
-   "name": "",
+   "name": "Electric Arc Galaxy",
    "ra": 0.054199,
    "dec": 16.144902,
    "mag": null,

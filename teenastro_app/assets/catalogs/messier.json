@@ -36,7 +36,7 @@
   },
   {
    "id": 4,
-   "name": "",
+   "name": "Crab Globular Cluster",
    "ra": 16.393066,
    "dec": -26.524552,
    "mag": 5.4,
@@ -46,7 +46,7 @@
   },
   {
    "id": 5,
-   "name": "",
+   "name": "Rose Cluster",
    "ra": 15.309448,
    "dec": 2.081973,
    "mag": 5.9,
@@ -116,7 +116,7 @@
   },
   {
    "id": 12,
-   "name": "",
+   "name": "Gumball Globular Cluster",
    "ra": 16.787476,
    "dec": -1.947386,
    "mag": 6.1,
@@ -176,7 +176,7 @@
   },
   {
    "id": 18,
-   "name": "",
+   "name": "Black Swan Cluster",
    "ra": 18.332886,
    "dec": -17.100742,
    "mag": 6.9,
@@ -206,7 +206,7 @@
   },
   {
    "id": 21,
-   "name": "",
+   "name": "Webb's Cross",
    "ra": 18.070312,
    "dec": -22.4897,
    "mag": 5.9,
@@ -286,7 +286,7 @@
   },
   {
    "id": 29,
-   "name": "",
+   "name": "Cooling Tower Cluster",
    "ra": 20.399414,
    "dec": 38.508255,
    "mag": 6.6,
@@ -296,7 +296,7 @@
   },
   {
    "id": 30,
-   "name": "",
+   "name": "Jellyfish Cluster",
    "ra": 21.672729,
    "dec": -23.179113,
    "mag": 7.1,
@@ -336,7 +336,7 @@
   },
   {
    "id": 34,
-   "name": "",
+   "name": "Spiral Cluster",
    "ra": 2.702271,
    "dec": 42.746361,
    "mag": 5.2,
@@ -346,7 +346,7 @@
   },
   {
    "id": 35,
-   "name": "",
+   "name": "Shoe-Buckle Cluster",
    "ra": 6.151245,
    "dec": 24.338206,
    "mag": 5.1,
@@ -366,7 +366,7 @@
   },
   {
    "id": 37,
-   "name": "",
+   "name": "Auriga Salt and Pepper Cluster",
    "ra": 5.871826,
    "dec": 32.553484,
    "mag": 5.6,
@@ -406,7 +406,7 @@
   },
   {
    "id": 41,
-   "name": "",
+   "name": "Little Beehive Cluster",
    "ra": 6.766846,
    "dec": -20.753807,
    "mag": 4.5,
@@ -496,7 +496,7 @@
   },
   {
    "id": 50,
-   "name": "",
+   "name": "Heart-Shaped Cluster",
    "ra": 7.044434,
    "dec": -8.363598,
    "mag": 5.9,
@@ -516,7 +516,7 @@
   },
   {
    "id": 52,
-   "name": "",
+   "name": "The Scorpion Cluster",
    "ra": 23.41333,
    "dec": 61.593982,
    "mag": 6.9,
@@ -546,7 +546,7 @@
   },
   {
    "id": 55,
-   "name": "",
+   "name": "The Summer Rose Star",
    "ra": 19.666626,
    "dec": -30.963164,
    "mag": 6.5,
@@ -606,7 +606,7 @@
   },
   {
    "id": 61,
-   "name": "",
+   "name": "Swelling Spiral Galaxy",
    "ra": 12.365112,
    "dec": 4.474319,
    "mag": 9.6,
@@ -616,7 +616,7 @@
   },
   {
    "id": 62,
-   "name": "",
+   "name": "Flickering Globular Cluster",
    "ra": 17.02002,
    "dec": -30.111698,
    "mag": 7.4,
@@ -666,7 +666,7 @@
   },
   {
    "id": 67,
-   "name": "",
+   "name": "King Cobra Cluster",
    "ra": 8.855713,
    "dec": 11.810663,
    "mag": 6.9,
@@ -706,7 +706,7 @@
   },
   {
    "id": 71,
-   "name": "",
+   "name": "Angelfish Cluster",
    "ra": 19.89624,
    "dec": 18.778954,
    "mag": 6.1,
@@ -736,7 +736,7 @@
   },
   {
    "id": 74,
-   "name": "",
+   "name": "Phantom Galaxy",
    "ra": 1.611694,
    "dec": 15.782342,
    "mag": 9.5,
@@ -776,7 +776,7 @@
   },
   {
    "id": 78,
-   "name": "",
+   "name": "Casper the Friendly Ghost Nebula",
    "ra": 5.779541,
    "dec": 0.079653,
    "mag": 8.0,
@@ -836,7 +836,7 @@
   },
   {
    "id": 84,
-   "name": "",
+   "name": "Markarian's Chain",
    "ra": 12.417847,
    "dec": 12.887356,
    "mag": 10.5,
@@ -856,7 +856,7 @@
   },
   {
    "id": 86,
-   "name": "",
+   "name": "Markarian's Chain",
    "ra": 12.436523,
    "dec": 12.945036,
    "mag": 8.9,
@@ -926,7 +926,7 @@
   },
   {
    "id": 93,
-   "name": "",
+   "name": "Butterfly Cluster",
    "ra": 7.741333,
    "dec": -23.852046,
    "mag": 6.2,
@@ -936,7 +936,7 @@
   },
   {
    "id": 94,
-   "name": "",
+   "name": "Croc's Eye Galaxy",
    "ra": 12.848145,
    "dec": 41.120334,
    "mag": 8.2,
@@ -986,7 +986,7 @@
   },
   {
    "id": 99,
-   "name": "",
+   "name": "Coma Pinwheel Galaxy",
    "ra": 12.313843,
    "dec": 14.417249,
    "mag": 9.9,
@@ -996,7 +996,7 @@
   },
   {
    "id": 100,
-   "name": "",
+   "name": "Mirror Galaxy",
    "ra": 12.381958,
    "dec": 15.820795,
    "mag": 9.4,
@@ -1056,7 +1056,7 @@
   },
   {
    "id": 107,
-   "name": "",
+   "name": "The Crucifix Cluster",
    "ra": 16.542114,
    "dec": -13.054903,
    "mag": 8.9,
@@ -1066,7 +1066,7 @@
   },
   {
    "id": 108,
-   "name": "",
+   "name": "Surfboard Galaxy",
    "ra": 11.191772,
    "dec": 55.674917,
    "mag": 10.1,
@@ -1076,7 +1076,7 @@
   },
   {
    "id": 109,
-   "name": "",
+   "name": "Vacuum Cleaner Galaxy",
    "ra": 11.960083,
    "dec": 53.373211,
    "mag": 9.9,

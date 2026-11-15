@@ -6,7 +6,7 @@
  "objects": [
   {
    "id": 1,
-   "name": "",
+   "name": "Polarissima Cluster",
    "ra": 0.791016,
    "dec": 85.270241,
    "mag": 8.1,
@@ -46,7 +46,7 @@
   },
   {
    "id": 5,
-   "name": "",
+   "name": "Maffei 1 Group",
    "ra": 3.780029,
    "dec": 68.09534,
    "mag": null,
@@ -76,7 +76,7 @@
   },
   {
    "id": 8,
-   "name": "",
+   "name": "Ghost's Goblet",
    "ra": 1.492676,
    "dec": 63.302408,
    "mag": 9.5,
@@ -96,7 +96,7 @@
   },
   {
    "id": 10,
-   "name": "",
+   "name": "Horseshoe Cluster",
    "ra": 1.770996,
    "dec": 61.217689,
    "mag": 7.1,
@@ -206,7 +206,7 @@
   },
   {
    "id": 21,
-   "name": "",
+   "name": "The Box Galaxy",
    "ra": 12.469849,
    "dec": 44.094974,
    "mag": 9.6,
@@ -226,7 +226,7 @@
   },
   {
    "id": 23,
-   "name": "",
+   "name": "The Silver Sliver Galaxy",
    "ra": 2.375977,
    "dec": 42.348094,
    "mag": 9.9,
@@ -246,7 +246,7 @@
   },
   {
    "id": 25,
-   "name": "",
+   "name": "Intergalactic Wanderer",
    "ra": 7.635498,
    "dec": 38.879055,
    "mag": 10.1,
@@ -256,7 +256,7 @@
   },
   {
    "id": 26,
-   "name": "",
+   "name": "Silver Needle Galaxy",
    "ra": 12.291504,
    "dec": 37.807855,
    "mag": null,
@@ -296,7 +296,7 @@
   },
   {
    "id": 30,
-   "name": "",
+   "name": "Deer Lick Group",
    "ra": 22.61792,
    "dec": 34.415723,
    "mag": 9.5,
@@ -346,7 +346,7 @@
   },
   {
    "id": 35,
-   "name": "",
+   "name": "Coma B",
    "ra": 13.002319,
    "dec": 27.977538,
    "mag": 11.3,
@@ -356,7 +356,7 @@
   },
   {
    "id": 36,
-   "name": "",
+   "name": "Koi Fish Galaxy",
    "ra": 12.599121,
    "dec": 27.961058,
    "mag": 10.0,
@@ -366,7 +366,7 @@
   },
   {
    "id": 37,
-   "name": "",
+   "name": "20 Vulpeculae Cluster",
    "ra": 20.19873,
    "dec": 26.488845,
    "mag": 14.1,
@@ -426,7 +426,7 @@
   },
   {
    "id": 43,
-   "name": "",
+   "name": "Electric Arc Galaxy",
    "ra": 0.054199,
    "dec": 16.144902,
    "mag": null,
@@ -436,7 +436,7 @@
   },
   {
    "id": 44,
-   "name": "",
+   "name": "Propeller Galaxy",
    "ra": 23.082275,
    "dec": 12.321543,
    "mag": 10.9,
@@ -496,7 +496,7 @@
   },
   {
    "id": 50,
-   "name": "",
+   "name": "Rosette Nebula",
    "ra": 6.532104,
    "dec": 4.943999,
    "mag": 4.8,
@@ -506,7 +506,7 @@
   },
   {
    "id": 51,
-   "name": "",
+   "name": "Scarecrow Galaxy",
    "ra": 1.079956,
    "dec": 2.117679,
    "mag": 10.0,
@@ -556,7 +556,7 @@
   },
   {
    "id": 56,
-   "name": "",
+   "name": "Skull Nebula",
    "ra": 0.784424,
    "dec": -11.87109,
    "mag": 10.9,
@@ -576,7 +576,7 @@
   },
   {
    "id": 58,
-   "name": "",
+   "name": "Caroline's Cluster",
    "ra": 7.295288,
    "dec": -15.642262,
    "mag": 7.2,
@@ -616,7 +616,7 @@
   },
   {
    "id": 62,
-   "name": "",
+   "name": "Needle's Eye Galaxy",
    "ra": 0.785522,
    "dec": -20.759301,
    "mag": 9.1,
@@ -636,7 +636,7 @@
   },
   {
    "id": 64,
-   "name": "",
+   "name": "Tau CMa Cluster",
    "ra": 7.311401,
    "dec": -24.953459,
    "mag": 4.1,
@@ -676,7 +676,7 @@
   },
   {
    "id": 68,
-   "name": "",
+   "name": "R CrA Nebula",
    "ra": 19.031982,
    "dec": -36.956389,
    "mag": null,
@@ -696,7 +696,7 @@
   },
   {
    "id": 70,
-   "name": "",
+   "name": "Sculptor Pinwheel Galaxy",
    "ra": 0.914795,
    "dec": -37.684256,
    "mag": 8.1,
@@ -706,7 +706,7 @@
   },
   {
    "id": 71,
-   "name": "",
+   "name": "Termite Hole Cluster",
    "ra": 7.869507,
    "dec": -38.532975,
    "mag": 5.8,
@@ -716,7 +716,7 @@
   },
   {
    "id": 72,
-   "name": "",
+   "name": "String of Pearls",
    "ra": 0.248291,
    "dec": -39.197668,
    "mag": 7.9,
@@ -756,7 +756,7 @@
   },
   {
    "id": 76,
-   "name": "",
+   "name": "False Comet Nebula",
    "ra": 16.902832,
    "dec": -41.823481,
    "mag": 2.6,
@@ -776,7 +776,7 @@
   },
   {
    "id": 78,
-   "name": "",
+   "name": "Cacciatore Cluster",
    "ra": 18.134033,
    "dec": -43.715934,
    "mag": 7.3,
@@ -826,7 +826,7 @@
   },
   {
    "id": 83,
-   "name": "",
+   "name": "The Tweezers Galaxy",
    "ra": 13.090942,
    "dec": -49.467452,
    "mag": 14.4,
@@ -856,7 +856,7 @@
   },
   {
    "id": 86,
-   "name": "",
+   "name": "Ara Globular Cluster",
    "ra": 17.678101,
    "dec": -53.672597,
    "mag": 8.5,
@@ -926,7 +926,7 @@
   },
   {
    "id": 93,
-   "name": "",
+   "name": "The Starfish",
    "ra": 19.18103,
    "dec": -59.981689,
    "mag": 6.3,
@@ -956,7 +956,7 @@
   },
   {
    "id": 96,
-   "name": "",
+   "name": "Southern Beehive",
    "ra": 7.96875,
    "dec": -60.753502,
    "mag": 7.6,
@@ -976,7 +976,7 @@
   },
   {
    "id": 98,
-   "name": "",
+   "name": "Coalsack Cluster",
    "ra": 12.70459,
    "dec": -62.994781,
    "mag": 6.9,
@@ -1036,7 +1036,7 @@
   },
   {
    "id": 104,
-   "name": "",
+   "name": "75 Tucanae",
    "ra": 1.053955,
    "dec": -70.847499,
    "mag": 6.6,
@@ -1046,7 +1046,7 @@
   },
   {
    "id": 105,
-   "name": "",
+   "name": "The Southern Butterfly",
    "ra": 12.993164,
    "dec": -70.874966,
    "mag": 7.8,

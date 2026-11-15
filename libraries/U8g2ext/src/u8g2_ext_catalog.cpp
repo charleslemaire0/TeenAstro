@@ -133,7 +133,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
         u8g2_SetFont(u8g2, myfont);
       }
       else {
-        u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+        u8g2_SetFont(u8g2, u8g2_font_6x13_tr);
         x += u8g2_DrawUTF8(u8g2, x, y, line);
         u8g2_SetFont(u8g2, myfont);
       }
@@ -141,7 +141,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
       if (!cat_mgr.hasPrimaryIdInPrefix()) {
         long id = cat_mgr.primaryId();
         if (id > 0) snprintf(line, sizeof(line), "%ld", id); else snprintf(line, sizeof(line), "?");
-        u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+        u8g2_SetFont(u8g2, u8g2_font_6x13_tr);
         x += u8g2_DrawUTF8(u8g2, x, y, line);
         u8g2_SetFont(u8g2, myfont);
       }
@@ -149,7 +149,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
 
     // Star SubId
     snprintf(line, sizeof(line), "%s", cat_mgr.subIdStr());
-    u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+    u8g2_SetFont(u8g2, u8g2_font_6x13_tr);
     x += u8g2_DrawUTF8(u8g2, x, y, line);
     u8g2_SetFont(u8g2, myfont);
 
@@ -166,7 +166,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     }
     else if (bf > 24) {
       snprintf(line, sizeof(line), "%d", bf - 24);
-      u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+      u8g2_SetFont(u8g2, u8g2_font_6x13_tr);
       x += u8g2_DrawUTF8(u8g2, x, y, line);
       u8g2_SetFont(u8g2, myfont);
     }
@@ -268,7 +268,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     }
 
     // Object SubId
-    u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+    u8g2_SetFont(u8g2, u8g2_font_6x13_tr);
     x += u8g2_DrawUTF8(u8g2, x, y, cat_mgr.subIdStr());
     u8g2_SetFont(u8g2, myfont);
     u8g2_SetMaxClipWindow(u8g2);
@@ -381,7 +381,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     cat_mgr.raHMS(vr1, vr2, vr3);
     sprintf(line, " %02d:%02d:%02d", vr1, vr2, vr3);
     y += line_height;
-    x = u8g2_DrawUTF8(u8g2, 0, y, "RA"); u8g2_SetFont(u8g2, u8g2_font_6x13_tf); u8g2_DrawUTF8(u8g2, x, y, epoch); u8g2_SetFont(u8g2, myfont);
+    x = u8g2_DrawUTF8(u8g2, 0, y, "RA"); u8g2_SetFont(u8g2, u8g2_font_6x13_tr); u8g2_DrawUTF8(u8g2, x, y, epoch); u8g2_SetFont(u8g2, myfont);
     ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
 
     // Declination. decDMS drops the sign when the degree field is 0, so -0°..-1°
@@ -389,7 +389,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     cat_mgr.decDMS(vd1, vd2, vd3);
     sprintf(line, "%s%02d\xb0%02d'%02d", cat_mgr.dec() < 0 ? "-" : "+", abs(vd1), vd2, vd3);
     y += line_height;
-    x = u8g2_DrawUTF8(u8g2, 0, y, "DE"); u8g2_SetFont(u8g2, u8g2_font_6x13_tf); u8g2_DrawUTF8(u8g2, x, y, epoch); u8g2_SetFont(u8g2, myfont);
+    x = u8g2_DrawUTF8(u8g2, 0, y, "DE"); u8g2_SetFont(u8g2, u8g2_font_6x13_tr); u8g2_DrawUTF8(u8g2, x, y, epoch); u8g2_SetFont(u8g2, myfont);
     ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
   }
 
@@ -435,7 +435,7 @@ u8g2_SetFontPosBaseline(u8g2);
 */
 bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
 {
-  u8g2_SetFont(u8g2, u8g2_font_helvR10_tf);
+  u8g2_SetFont(u8g2, u8g2_font_helvR10_te);
   u8g2_uint_t yy;
   int incr = 0;
   uint8_t event;
