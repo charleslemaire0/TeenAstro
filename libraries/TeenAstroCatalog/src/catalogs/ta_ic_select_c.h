@@ -3,6 +3,8 @@
 // Contains all NGC objects except for those designated NEDSxx and those
 // with a visual magnitude > 16.0 AND with a surface brightness >= 22.5m/arc-sec^2.
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.
+// Galaxy Pair, Galaxy Triplet and Galaxy Group indexes follow the English Wikipedia description of each object.
+// Members of Arp 311-332 (groups and chains of galaxies) are indexed as Galaxy Triplet or Galaxy Group.
 #define Cat_IC_Title "IC"
 #define Cat_IC_Prefix "IC"
 #define NUM_IC 489
@@ -169,7 +171,7 @@ const dso_comp_t Cat_IC[NUM_IC] PROGMEM = {
    { 0, 80,  0, 0, 1784, 165,   6199,   11887 }, 
    { 0, 36,  0, 0, 1788, 155,   6181,   -11359 }, 
    { 0, 63,  0, 0, 1796, 167,   6498,   -15062 }, 
-   { 0, 6,  0, 0, 1801, 172,   6745,   7129 }, 
+   { 0, 6,  5, 0, 1801, 172,   6745,   7129 }, 
    { 0, 6,  0, 0, 1802, 170,   6791,   8404 }, 
    { 0, 16,  12, 0, 1805, 95,   6949,   22375 }, 
    { 0, 35,  0, 0, 1812, 157,   6805,   -15586 }, 
@@ -231,7 +233,7 @@ const dso_comp_t Cat_IC[NUM_IC] PROGMEM = {
    { 0, 37,  1, 0, 2157, 114,   16601,   8763 }, 
    { 0, 52,  0, 0, 2160, 163,   16177,   -28005 }, 
    { 0, 52,  8, 0, 2161, 174,   16266,   -27357 }, 
-   { 0, 9,  0, 0, 2163, 142,   17133,   -7782 }, 
+   { 0, 9,  5, 0, 2163, 142,   17133,   -7782 }, 
    { 0, 9,  9, 0, 2165, 154,   17371,   -4728 }, 
    { 0, 50,  0, 0, 2166, 158,   17609,   21510 }, 
    { 0, 13,  0, 0, 2174, 168,   19528,   27434 }, 
@@ -252,7 +254,7 @@ const dso_comp_t Cat_IC[NUM_IC] PROGMEM = {
    { 0, 13,  0, 0, 2389, 164,   24027,   26774 }, 
    { 0, 22,  2, 0, 2417, 175,   24172,   6781 }, 
    { 0, 22,  0, 0, 2421, 164,   24318,   11898 }, 
-   { 0, 22,  0, 0, 2431, 171,   24784,   5314 }, 
+   { 0, 22,  7, 0, 2431, 171,   24784,   5314 }, 
    { 0, 41,  0, 0, 2437, 164,   24828,   -6992 }, 
    { 0, 22,  0, 0, 2443, 174,   25099,   10495 }, 
    { 0, 22,  0, 0, 2446, 171,   25191,   10540 }, 
