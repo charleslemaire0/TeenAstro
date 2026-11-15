@@ -382,6 +382,7 @@
 
 #define T_FILTER "Filtre"
 #define T_FILTERS "Filtres"
+#define T_DEEPSKY "Ciel profond"
 #define T_ALLOW "Autoriser"
 #define T_ABOVE ">"
 #define T_BELOW "<"

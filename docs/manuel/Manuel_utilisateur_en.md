@@ -584,19 +584,19 @@ The list depends on the firmware build loaded in the hand controller. In practic
 
 ### Filters
 
-**Goto → Catalogs → Filters**. The screen title is **FiltersAllow**. A **+** on both sides of a line means that filter is selected. **Reset Filters** clears them all.
+**Goto → Catalogs → Filters** keeps one set of filters for the session. The screen title is **FiltersAllow**. **Above Horizon** and **Below Zenith** apply to every catalog. **Stars** holds the star magnitude, and, when that build has them, double-star separation and variable period. **Deep Sky** holds the deep-sky magnitude and type. A **+** on both sides of a line means that choice is selected. **Constellation** is not part of that set: it is the only temporary line. It lists **All** and the constellations that still have an object inside the other filters, in the catalog last opened. Before a catalog has been opened, the full list is offered. **Reset Filters** returns every line, including the constellation, to its default.
 
 | Line | What it keeps |
 |------|----------------|
 | Above Horizon | The minimum altitude. **Filter Horizon** offers **Above Horizon**, then **Above 10 deg.**, **Above 20 deg.**, and so on up to **Above 70 deg.** |
-| Below Zenith | The maximum altitude, on the same steps as **Above Horizon**. **Filter Zenith** offers **Below Zenith**, then **Below 70 deg.**, **Below 60 deg.**, and so on down to **Below 10 deg.** The ceiling stays above the floor. |
-| Constellation | One constellation. **Filter by Con** starts with **All**, then the abbreviations: Her for Hercules, Lyr for Lyra, And for Andromeda, Ori for Orion |
+| Below Zenith | The maximum altitude. **Filter Zenith** offers **Below Zenith**, then **Below 85 deg.**, **Below 80 deg.**, **Below 75 deg.**, **Below 70 deg.**, and **Below 65 deg.** The ceiling stays above the floor. |
+| Constellation | Not kept with the other filters. One constellation. **Filter by Con** starts with **All**, then the abbreviations that still have an object inside the other filters: Her for Hercules, Lyr for Lyra, And for Andromeda, Ori for Orion |
 | Type | One deep-sky type. **Filter by Type** starts with **All**. The names are those of the database: Galaxy, Globular Clstr, Planetary Nebula, Open Cluster, Nebula |
-| Magnitude | The faintest magnitude still shown. **Filter Magnitude** offers **All**, then 10, 11, 12, 13, 14, 15, and 16 |
+| Magnitude | The faintest magnitude still shown. **Stars** and **Deep Sky** each keep their own. **Filter Magnitude** offers **All**, then 10, 11, 12, 13, 14, 15, and 16 |
 
 Objects already below the horizon are omitted. **Above Horizon** therefore changes little. **Above 30 deg.** keeps only targets high enough for a comfortable eyepiece, clear of trees and poor seeing.
 
-**Below Zenith** changes nothing, because altitude never exceeds 90°. **Below 70 deg.** hides targets above that, on the same 10° steps as **Above Horizon** (10° through 70°). The two filters combine, and the minimum must stay below the maximum: **Above 20 deg.** and **Below 70 deg.** keep the band between them. Choosing **Above 70 deg.** while **Below 70 deg.** is set is refused, and the screen says **Min Alt must** / **be < Max Alt.** The other way around says **Max Alt must** / **be > Min Alt.** **Reset Filters** turns the zenith filter off.
+**Below Zenith** leaves the zenith open. **Below 85 deg.** hides targets above 85°, and the tighter steps are 80°, 75°, 70°, and 65°. The two filters combine, and the list only offers a floor that stays below the ceiling: **Above 20 deg.** and **Below 70 deg.** keep the band between them. **Above 70 deg.** is not offered while **Below 70 deg.** or **Below 65 deg.** is set. **Reset Filters** returns **Below Zenith** to the open step.
 
 Magnitude runs opposite to intuition: a small number is a bright object. **10** drops everything of magnitude 10 and fainter. **All** cuts nothing. Under a bright sky with a small telescope, 10 or 11 is enough. 16 is only useful if the catalog and the sky support it.
 
@@ -1125,7 +1125,7 @@ M13 is the Hercules globular cluster, easy in a finder once the model is in plac
 1. **Goto → Catalogs → Filters**.
 2. **Above Horizon**, then **Above 30 deg.** M13 should be well up; if the filter removes it, that is the right outcome.
 3. **Constellation**, then **Her**.
-4. **Type**, then **Globular Clstr**.
+4. **Deep Sky → Type**, then **Globular Clstr**.
 5. Back to the catalogs, open Messier. The title becomes **!Goto Messier!**: the filters are working. Scroll to M13. F starts the goto.
 6. On arrival, **Slow** in the finder, **Guiding** in the eyepiece. Sync only if you are sure the cluster is centered. A sync on the wrong object shifts the whole sky.
 
@@ -1135,12 +1135,12 @@ If the screen says **No Object**, M13 is below 30° or the type does not match. 
 
 M31, the Andromeda galaxy, is not in Hercules. Leave the constellation filter unchanged and it will not appear.
 
-1. **Filters → Constellation → And**.
-2. **Type → Galaxy**. Leave the altitude at 30° if Andromeda is already up, otherwise drop to **Above 10 deg.**
+1. **Filters → Constellation → And**. Andromeda is listed only if the other filters still leave an object there.
+2. **Deep Sky → Type → Galaxy**. Leave the altitude at 30° if Andromeda is already up, otherwise drop to **Above 10 deg.**
 3. Messier, M31, F.
 4. The field is wide: slow speed, and the finder rather than high power, to pick it up.
 
-For a planetary nebula in the same part of the sky as Vega: **Constellation → Lyr**, **Type → Planetary Nebula**, then M57.
+For a planetary nebula in the same part of the sky as Vega: **Constellation → Lyr**, **Deep Sky → Type → Planetary Nebula**, then M57.
 
 The Moon, Jupiter, or Saturn go through **Goto → Solar System**, with no filter. The Sun only with a full-aperture filter on the tube. The controller does not check that.
 

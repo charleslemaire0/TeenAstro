@@ -1,21 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Persisted catalog filter state. Survives navigation away from the catalog screen.
+/// Catalog filters for this app session. Nothing is written to disk.
+///
+/// Horizon, zenith, star magnitude, deep-sky magnitude, type, separation,
+/// and variable period are the kept filters. Constellation is separate:
+/// it is not part of that set.
 class CatalogFilterState {
   final int selectedCatalog;
   final String search;
   final int? filterConstellation;
   final int? filterType;
-  final double? filterMaxMag;
-  /// null = All (no horizon filter), 0.0 = default (above horizon), 10.0 = ≥10°, etc.
+  final double? filterStarMaxMag;
+  final double? filterDsoMaxMag;
+  /// null = All (no horizon filter), 0.0 = above horizon, 10.0 = ≥10°, etc.
   final double? filterMinAlt;
-  /// null = All (no zenith filter). Ceilings use the Above Horizon steps: 70, 60, … 10.
+  /// null = no zenith filter. Ceilings are 85, 80, 75, 70, 65.
   final double? filterMaxAlt;
   final bool filterHasName;
-  // Double-star filters (arcsec)
   final double? filterDblMinSep;
   final double? filterDblMaxSep;
-  // Variable-star filter (days)
   final double? filterVarMaxPer;
 
   const CatalogFilterState({
@@ -23,7 +26,8 @@ class CatalogFilterState {
     this.search = '',
     this.filterConstellation,
     this.filterType,
-    this.filterMaxMag,
+    this.filterStarMaxMag,
+    this.filterDsoMaxMag,
     this.filterMinAlt = 0.0,
     this.filterMaxAlt,
     this.filterHasName = false,
@@ -37,7 +41,8 @@ class CatalogFilterState {
     String? search,
     int? filterConstellation,
     int? filterType,
-    double? filterMaxMag,
+    double? filterStarMaxMag,
+    double? filterDsoMaxMag,
     double? filterMinAlt,
     double? filterMaxAlt,
     bool? filterHasName,
@@ -48,7 +53,8 @@ class CatalogFilterState {
     bool clearFilterMaxAlt = false,
     bool clearConstellation = false,
     bool clearType = false,
-    bool clearMaxMag = false,
+    bool clearStarMaxMag = false,
+    bool clearDsoMaxMag = false,
     bool clearDblMinSep = false,
     bool clearDblMaxSep = false,
     bool clearVarMaxPer = false,
@@ -58,7 +64,8 @@ class CatalogFilterState {
       search: search ?? this.search,
       filterConstellation: clearConstellation ? null : (filterConstellation ?? this.filterConstellation),
       filterType: clearType ? null : (filterType ?? this.filterType),
-      filterMaxMag: clearMaxMag ? null : (filterMaxMag ?? this.filterMaxMag),
+      filterStarMaxMag: clearStarMaxMag ? null : (filterStarMaxMag ?? this.filterStarMaxMag),
+      filterDsoMaxMag: clearDsoMaxMag ? null : (filterDsoMaxMag ?? this.filterDsoMaxMag),
       filterMinAlt: clearFilterMinAlt ? null : (filterMinAlt ?? this.filterMinAlt),
       filterMaxAlt: clearFilterMaxAlt ? null : (filterMaxAlt ?? this.filterMaxAlt),
       filterHasName: filterHasName ?? this.filterHasName,
@@ -92,10 +99,16 @@ class CatalogFilterNotifier extends StateNotifier<CatalogFilterState> {
         : state.copyWith(filterType: v);
   }
 
-  void setFilterMaxMag(double? v) {
+  void setFilterStarMaxMag(double? v) {
     state = v == null
-        ? state.copyWith(clearMaxMag: true)
-        : state.copyWith(filterMaxMag: v);
+        ? state.copyWith(clearStarMaxMag: true)
+        : state.copyWith(filterStarMaxMag: v);
+  }
+
+  void setFilterDsoMaxMag(double? v) {
+    state = v == null
+        ? state.copyWith(clearDsoMaxMag: true)
+        : state.copyWith(filterDsoMaxMag: v);
   }
 
   void setFilterMinAlt(double? v) {

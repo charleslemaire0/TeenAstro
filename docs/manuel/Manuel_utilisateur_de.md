@@ -584,19 +584,19 @@ Die Liste hängt von der im Handkontroller geladenen Firmware ab. In der Praxis 
 
 ### Filter
 
-**Goto → Kataloge → Filters**. Der Titel des Bildschirms ist **FiltersElaub**, so wie die Firmware ihn schreibt. Die Zeilennamen bleiben auf Englisch. Ein **+** auf beiden Seiten einer Zeile bedeutet, dass dieser Filter gilt. **Grundstellung Filters** hebt alle auf.
+**Goto → Kataloge → Filters** hält einen Filtersatz für die Sitzung. Der Titel des Bildschirms ist **FiltersElaub**, so wie die Firmware ihn schreibt. **Above Horizon** und **Below Zenith** gelten für jeden Katalog. **Sterne** enthält die Sternhelligkeit und, wenn die Fassung sie hat, den Abstand der Doppelsterne und die Periode der Veränderlichen. **Deep-Sky** enthält die Helligkeit und den Typ der Deep-Sky-Objekte. Ein **+** auf beiden Seiten einer Zeile bedeutet, dass diese Wahl gilt. **Constellation** gehört nicht zu diesem Satz: es ist die einzige vorübergehende Zeile. Sie listet **Alle** und die Sternbilder, die innerhalb der anderen Filter noch ein Objekt haben, im zuletzt geöffneten Katalog. Bevor ein Katalog geöffnet wurde, erscheint die volle Liste. **Grundstellung Filters** setzt jede Zeile, das Sternbild eingeschlossen, auf den Anfang zurück. Die Zeilennamen bleiben auf Englisch.
 
 | Zeile | Was sie behält |
 |-------|----------------|
 | Above Horizon | Die Mindesthöhe. **Filter Horizont** bietet **Über Horizont**, dann **Über 10 deg.**, **Über 20 deg.**, und so weiter bis **Über 70 deg.** |
-| Below Zenith | Die Höchsthöhe, in denselben Schritten wie **Above Horizon**. **Filter Zenit** bietet **Unter Zenit**, dann **Unter 70 deg.**, **Unter 60 deg.**, und so weiter bis **Unter 10 deg.** Die Obergrenze bleibt über der Untergrenze. |
-| Constellation | Ein Sternbild. **Filter bei Kon** beginnt mit **Alle**, dann die Abkürzungen: Her für Herkules, Lyr für Leier, And für Andromeda, Ori für Orion |
+| Below Zenith | Die Höchsthöhe. **Filter Zenit** bietet **Unter Zenit**, dann **Unter 85 deg.**, **Unter 80 deg.**, **Unter 75 deg.**, **Unter 70 deg.** und **Unter 65 deg.** Die Obergrenze bleibt über der Untergrenze. |
+| Constellation | Nicht mit den anderen Filtern gespeichert. Ein Sternbild. **Filter bei Kon** beginnt mit **Alle**, dann die Abkürzungen, die innerhalb der anderen Filter noch ein Objekt haben: Her für Herkules, Lyr für Leier, And für Andromeda, Ori für Orion |
 | Type | Ein Typ des tiefen Himmels. **Filter bei Typ** beginnt mit **Alle**. Die Namen sind die der Datenbank: Galaxy, Globular Clstr, Planetary Nebula, Open Cluster, Nebula |
 | Magnitude | Die schwächste noch gezeigte Helligkeit. **Filter Magnitude** bietet **Alle**, dann 10, 11, 12, 13, 14, 15 und 16 |
 
 Objekte unter dem Horizont fehlen schon. **Über Horizont** ändert daher wenig. **Über 30 deg.** behält nur, was hoch genug für ein bequemes Okular steht, weg von Bäumen und schlechtem Seeing.
 
-**Unter Zenit** ändert nichts, denn die Höhe geht nicht über 90°. **Unter 70 deg.** blendet aus, was darüber steht, in denselben 10°-Schritten wie **Above Horizon** (10° bis 70°). Beide Filter gelten zusammen, und die Untergrenze bleibt unter der Obergrenze: **Über 20 deg.** und **Unter 70 deg.** behalten nur das Band dazwischen. **Über 70 deg.** bei gesetztem **Unter 70 deg.** wird abgelehnt, der Bildschirm sagt **Min Alt must** / **be < Max Alt.** Umgekehrt heißt es **Max Alt must** / **be > Min Alt.** **Grundstellung Filters** schaltet den Zenitfilter aus.
+**Unter Zenit** lässt den Zenit offen. **Unter 85 deg.** blendet aus, was über 85° steht, und die engeren Stufen sind 80°, 75°, 70° und 65°. Beide Filter gelten zusammen, und die Liste bietet nur eine Untergrenze unter der Obergrenze: **Über 20 deg.** und **Unter 70 deg.** behalten nur das Band dazwischen. **Über 70 deg.** wird nicht angeboten, solange **Unter 70 deg.** oder **Unter 65 deg.** gilt. **Grundstellung Filters** setzt **Unter Zenit** auf die offene Stufe zurück.
 
 Die Magnitude läuft entgegen der Intuition: eine kleine Zahl ist ein helles Objekt. **10** lässt alles weg, was Magnitude 10 oder schwächer ist. **Alle** schneidet nichts. Unter hellem Himmel mit einem kleinen Fernrohr genügen 10 oder 11. 16 lohnt nur, wenn Katalog und Himmel mitgehen.
 
@@ -1125,7 +1125,7 @@ M13 ist der Kugelsternhaufen im Herkules, im Sucher leicht zu finden, sobald das
 1. **Goto → Kataloge → Filters**.
 2. **Above Horizon**, dann **Über 30 deg.** M13 soll hoch genug stehen; filtert die Zeile ihn weg, ist das richtig so.
 3. **Constellation**, dann **Her**.
-4. **Type**, dann **Globular Clstr**.
+4. **Deep-Sky → Type**, dann **Globular Clstr**.
 5. Zurück zu den Katalogen, Messier öffnen. Der Titel wird **!Goto Messier!**: die Filter arbeiten. Bis M13 blättern. F startet das Goto.
 6. Bei der Ankunft **Langsam** im Sucher, **Guiding** im Okular. Nur synchronisieren, wenn der Haufen sicher in der Mitte steht. Eine Synchronisierung auf das falsche Objekt verschiebt den ganzen Himmel.
 
@@ -1135,12 +1135,12 @@ Sagt die Anzeige **No Object**, steht M13 unter 30° oder der Typ passt nicht. *
 
 M31, die Andromedagalaxie, liegt nicht im Herkules. Bleibt der Sternbildfilter, erscheint sie nicht.
 
-1. **Filters → Constellation → And**.
-2. **Type → Galaxy**. Die Höhe bei 30° lassen, wenn Andromeda schon oben ist, sonst auf **Über 10 deg.** senken.
+1. **Filters → Constellation → And**. Andromeda steht nur in der Liste, wenn die anderen Filter dort noch ein Objekt lassen.
+2. **Deep-Sky → Type → Galaxy**. Die Höhe bei 30° lassen, wenn Andromeda schon oben ist, sonst auf **Über 10 deg.** senken.
 3. Messier, M31, F.
 4. Das Feld ist weit: langsame Geschwindigkeit, und der Sucher statt starker Vergrößerung, um sie zu finden.
 
-Für einen Planetarischen Nebel in derselben Himmelsgegend wie Wega: **Constellation → Lyr**, **Type → Planetary Nebula**, dann M57.
+Für einen Planetarischen Nebel in derselben Himmelsgegend wie Wega: **Constellation → Lyr**, **Deep-Sky → Type → Planetary Nebula**, dann M57.
 
 Mond, Jupiter oder Saturn gehen über **Goto → Sonnensystem**, ohne Filter. Die Sonne nur mit einem Filter über die volle Öffnung. Die Steuerung prüft das nicht.
 

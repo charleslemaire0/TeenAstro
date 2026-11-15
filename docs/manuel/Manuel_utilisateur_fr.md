@@ -582,19 +582,19 @@ La liste dépend de la version de firmware chargée dans la raquette. On y trouv
 
 ### Filtres
 
-**Goto → Catalogues → Filtres**. Le titre de l'écran est **FiltresAutoriser**. Les noms de lignes restent en anglais, même sur la raquette française. Un signe **+** de chaque côté d'une ligne veut dire que ce filtre est retenu. **Reset Filtres** les enlève tous.
+**Goto → Catalogues → Filtres** garde un seul jeu de filtres pour la séance. Le titre de l'écran est **FiltresAutoriser**. **Above Horizon** et **Below Zenith** valent pour chaque catalogue. **Étoiles** contient la magnitude des étoiles et, si la version les a, la séparation des doubles et la période des variables. **Ciel profond** contient la magnitude du ciel profond et le type. Un signe **+** de chaque côté d'une ligne veut dire que ce choix est retenu. **Constellation** n'appartient pas à ce jeu : c'est la seule ligne temporaire. Elle liste **Toutes** et les constellations qui ont encore un objet dans les autres filtres, dans le catalogue ouvert en dernier. Avant d'avoir ouvert un catalogue, la liste complète est proposée. **Reset Filtres** ramène chaque ligne, constellation comprise, à sa valeur de départ. Les noms de lignes restent en anglais, même sur la raquette française.
 
 | Ligne | Ce qu'elle garde |
 |-------|------------------|
 | Above Horizon | La hauteur minimale. **Filtre Horizon** propose **> Horizon**, puis **> 10 deg.**, **> 20 deg.**, et ainsi de suite jusqu'à **> 70 deg.** |
-| Below Zenith | La hauteur maximale, sur les mêmes pas que **Above Horizon**. **Filtre Zénith** propose **< Zénith**, puis **< 70 deg.**, **< 60 deg.**, et ainsi de suite jusqu'à **< 10 deg.** Le plafond reste au-dessus du plancher. |
-| Constellation | Une seule constellation. **Filtre par Const.** commence par **Toutes**, puis les abréviations : Her pour Hercule, Lyr pour la Lyre, And pour Andromède, Ori pour Orion |
+| Below Zenith | La hauteur maximale. **Filtre Zénith** propose **< Zénith**, puis **< 85 deg.**, **< 80 deg.**, **< 75 deg.**, **< 70 deg.** et **< 65 deg.** Le plafond reste au-dessus du plancher. |
+| Constellation | Pas conservée avec les autres filtres. Une seule constellation. **Filtre par Const.** commence par **Toutes**, puis les abréviations qui ont encore un objet dans les autres filtres : Her pour Hercule, Lyr pour la Lyre, And pour Andromède, Ori pour Orion |
 | Type | Un type d'objet du ciel profond. **Filtre par Type** commence par **Toutes**. Les noms restent ceux de la base : Galaxy, Globular Clstr, Planetary Nebula, Open Cluster, Nebula |
 | Magnitude | La magnitude la plus faible encore affichée. **Filtre Magnitude** propose **Toutes**, puis 10, 11, 12, 13, 14, 15 et 16 |
 
 Les objets déjà sous l'horizon n'apparaissent pas. Choisir **> Horizon** change donc peu de chose. **> 30 deg.** ne garde que ce qui est assez haut pour un oculaire confortable, loin des arbres et de la turbulence.
 
-**< Zénith** ne change rien, car la hauteur ne dépasse pas 90°. **< 70 deg.** retire ce qui est au-dessus, sur les mêmes pas de 10° que **Above Horizon** (de 10° à 70°). Les deux filtres se combinent, et le minimum reste sous le maximum : **> 20 deg.** et **< 70 deg.** ne gardent que la bande entre les deux. Choisir **> 70 deg.** alors que **< 70 deg.** est actif est refusé, et l'écran affiche **Min Alt must** / **be < Max Alt.** Dans l'autre sens : **Max Alt must** / **be > Min Alt.** **Reset Filtres** retire le filtre zénith.
+**< Zénith** laisse le zénith ouvert. **< 85 deg.** retire ce qui est au-dessus de 85°, et les pas plus serrés sont 80°, 75°, 70° et 65°. Les deux filtres se combinent, et la liste ne propose qu'un plancher qui reste sous le plafond : **> 20 deg.** et **< 70 deg.** ne gardent que la bande entre les deux. **> 70 deg.** n'est pas proposé tant que **< 70 deg.** ou **< 65 deg.** est actif. **Reset Filtres** ramène **< Zénith** au pas ouvert.
 
 La magnitude se lit à l'envers de l'intuition : un petit nombre est un objet brillant. **10** retire tout ce qui est de magnitude 10 ou plus faible. **Toutes** ne coupe rien. Sous un ciel clair avec un petit instrument, 10 ou 11 suffit. La limite 16 ne sert que si le catalogue et le ciel suivent.
 
@@ -1123,7 +1123,7 @@ M13 est l'amas globulaire d'Hercule, facile dans un chercheur une fois le modèl
 1. **Goto → Catalogues → Filtres**.
 2. **Above Horizon**, puis **> 30 deg.** M13 doit être assez haut ; sinon le filtre le retirera, et c'est tant mieux.
 3. **Constellation**, puis **Her**.
-4. **Type**, puis **Globular Clstr**.
+4. **Ciel profond → Type**, puis **Globular Clstr**.
 5. Revenez aux catalogues, ouvrez Messier. Le titre devient **!Goto Messier!** : les filtres travaillent. Faites défiler jusqu'à M13. F lance le goto.
 6. À l'arrivée, vitesse **Lente** dans le chercheur, **Guidage** dans l'oculaire. Ne synchronisez que si vous êtes certain que l'amas est au centre. Une synchro sur le mauvais objet décale tout le ciel.
 
@@ -1133,12 +1133,12 @@ S'il n'y a **No Object**, M13 est sous 30° ou le type ne correspond pas. **Rese
 
 M31, la galaxie d'Andromède, n'est pas dans Hercule. Sans changer le filtre de constellation, elle n'apparaît pas.
 
-1. **Filtres → Constellation → And**.
-2. **Type → Galaxy**. Laissez la hauteur à 30° si Andromède est déjà levée, sinon descendez à **> 10 deg.**
+1. **Filtres → Constellation → And**. Andromède n'est proposée que si les autres filtres y laissent encore un objet.
+2. **Ciel profond → Type → Galaxy**. Laissez la hauteur à 30° si Andromède est déjà levée, sinon descendez à **> 10 deg.**
 3. Messier, M31, F.
 4. Le champ est large : vitesse lente, et le chercheur plutôt que le fort grossissement pour la trouver.
 
-Pour une nébuleuse planétaire dans le même coin du ciel que Véga : **Constellation → Lyr**, **Type → Planetary Nebula**, puis M57.
+Pour une nébuleuse planétaire dans le même coin du ciel que Véga : **Constellation → Lyr**, **Ciel profond → Type → Planetary Nebula**, puis M57.
 
 La Lune, Jupiter ou Saturne passent par **Goto → Système Solaire**, sans filtre. Le Soleil uniquement avec un filtre plein ouvert sur le tube. Le contrôleur ne le vérifie pas.
 

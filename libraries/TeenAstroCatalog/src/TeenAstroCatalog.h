@@ -57,6 +57,8 @@ class CatMgr {
 
 // select catalog record
     bool        setIndex(long index);
+    /// Put the record cursor back without applying filters.
+    void        setIndexRaw(long index);
     long        getIndex();
     long        getMaxIndex();
     bool        incIndex();

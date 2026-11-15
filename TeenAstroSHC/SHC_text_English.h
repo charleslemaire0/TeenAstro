@@ -383,6 +383,7 @@
 
 #define T_FILTER "Filter"
 #define T_FILTERS "Filters"
+#define T_DEEPSKY "Deep Sky"
 #define T_ALLOW "Allow"
 #define T_ABOVE "Above"
 #define T_BELOW "Below"

@@ -75,19 +75,22 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
           return false;
         }
       }
+      final minAlt = filter.filterMinAlt;
+      final maxAlt = filter.filterMaxAlt;
+      final maxMag = cat.type == CatalogType.dso
+          ? filter.filterDsoMaxMag
+          : filter.filterStarMaxMag;
       if (filter.filterConstellation != null && o.constellation != filter.filterConstellation) return false;
-      if (filter.filterType != null && o.objType != filter.filterType) return false;
-      if (filter.filterMaxMag != null && o.mag != null && o.mag! > filter.filterMaxMag!) return false;
-      if ((filter.filterMinAlt != null || filter.filterMaxAlt != null) && lst != null) {
+      if (cat.type == CatalogType.dso && filter.filterType != null && o.objType != filter.filterType) return false;
+      if (maxMag != null && o.mag != null && o.mag! > maxMag) return false;
+      if ((minAlt != null || maxAlt != null) && lst != null) {
         final alt = objectAltitude(lat, lst, o.ra, o.dec);
-        if (filter.filterMinAlt != null && alt < filter.filterMinAlt!) return false;
-        if (filter.filterMaxAlt != null && alt > filter.filterMaxAlt!) return false;
+        if (minAlt != null && alt < minAlt) return false;
+        if (maxAlt != null && alt > maxAlt) return false;
       }
       if (filter.filterHasName && o.name.isEmpty) return false;
-      // Double-star separation filters
       if (filter.filterDblMinSep != null && o.separation != null && o.separation! < filter.filterDblMinSep!) return false;
       if (filter.filterDblMaxSep != null && o.separation != null && o.separation! > filter.filterDblMaxSep!) return false;
-      // Variable-star period filter
       if (filter.filterVarMaxPer != null && o.period != null && o.period! >= 0 && o.period! > filter.filterVarMaxPer!) return false;
       return true;
     }).toList();
@@ -168,101 +171,85 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
             ),
           ),
 
-          // Filter chips (context-dependent on catalog type)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  // Above Horizon
-                  _filterChip(
-                    label: filter.filterMinAlt != null
-                        ? 'Alt ≥ ${filter.filterMinAlt!.toStringAsFixed(0)}°'
-                        : 'Horizon',
-                    icon: Icons.terrain,
-                    active: filter.filterMinAlt != null,
-                    onTap: () => _showHorizonFilter(filterNotifier, filter),
-                  ),
-                  // Below Zenith
-                  _filterChip(
-                    label: filter.filterMaxAlt != null
-                        ? 'Alt ≤ ${filter.filterMaxAlt!.toStringAsFixed(0)}°'
-                        : 'Zenith',
-                    icon: Icons.vertical_align_top,
-                    active: filter.filterMaxAlt != null,
-                    onTap: () => _showZenithFilter(filterNotifier, filter),
-                  ),
-                  // Magnitude
-                  _filterChip(
-                    label: filter.filterMaxMag != null
-                        ? 'Mag ≤ ${filter.filterMaxMag!.toStringAsFixed(0)}'
-                        : 'Magnitude',
-                    active: filter.filterMaxMag != null,
-                    onTap: () => _showMagFilter(filterNotifier, filter),
-                  ),
-                  // Constellation
-                  _filterChip(
-                    label: filter.filterConstellation != null
-                        ? constellationAbbr[filter.filterConstellation!]
-                        : 'Constellation',
-                    active: filter.filterConstellation != null,
-                    onTap: () => _showConstellationFilter(filterNotifier, filter),
-                  ),
-                  // DSO type (only for DSO catalogs)
-                  if (catType == CatalogType.dso)
-                    _filterChip(
-                      label: filter.filterType != null
-                          ? dsoTypeNames[filter.filterType!]
-                          : 'Type',
-                      active: filter.filterType != null,
-                      onTap: () => _showTypeFilter(filterNotifier, filter),
-                    ),
-                  // Double-star: min separation
-                  if (catType == CatalogType.doubleStar)
-                    _filterChip(
-                      label: filter.filterDblMinSep != null
-                          ? 'Sep ≥ ${_fmtSep(filter.filterDblMinSep!)}'
-                          : 'Min Sep',
-                      active: filter.filterDblMinSep != null,
-                      onTap: () => _showDblMinSepFilter(filterNotifier, filter),
-                    ),
-                  // Double-star: max separation
-                  if (catType == CatalogType.doubleStar)
-                    _filterChip(
-                      label: filter.filterDblMaxSep != null
-                          ? 'Sep ≤ ${_fmtSep(filter.filterDblMaxSep!)}'
-                          : 'Max Sep',
-                      active: filter.filterDblMaxSep != null,
-                      onTap: () => _showDblMaxSepFilter(filterNotifier, filter),
-                    ),
-                  // Variable-star: max period
-                  if (catType == CatalogType.variableStar)
-                    _filterChip(
-                      label: filter.filterVarMaxPer != null
-                          ? 'Per ≤ ${_fmtPer(filter.filterVarMaxPer!)}d'
-                          : 'Max Period',
-                      active: filter.filterVarMaxPer != null,
-                      onTap: () => _showVarMaxPerFilter(filterNotifier, filter),
-                    ),
-                  // Named-only toggle
-                  _filterChip(
-                    label: 'Named',
-                    icon: Icons.label_outline,
-                    active: filter.filterHasName,
-                    onTap: () => filterNotifier.setFilterHasName(!filter.filterHasName),
-                  ),
-                  // Count badge
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Chip(
-                      label: Text('${items.length}'),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-                ],
+          _filterBand(
+            title: catType == CatalogType.dso ? 'Deep Sky' : 'Stars',
+            chips: [
+              _filterChip(
+                label: filter.filterMinAlt != null
+                    ? 'Alt ≥ ${filter.filterMinAlt!.toStringAsFixed(0)}°'
+                    : 'Horizon',
+                icon: Icons.terrain,
+                active: filter.filterMinAlt != null,
+                onTap: () => _showHorizonFilter(filterNotifier, filter),
               ),
-            ),
+              _filterChip(
+                label: filter.filterMaxAlt != null
+                    ? 'Alt ≤ ${filter.filterMaxAlt!.toStringAsFixed(0)}°'
+                    : 'Zenith',
+                icon: Icons.vertical_align_top,
+                active: filter.filterMaxAlt != null,
+                onTap: () => _showZenithFilter(filterNotifier, filter),
+              ),
+              _filterChip(
+                label: _magLimit(filter, catType) != null
+                    ? 'Mag ≤ ${_magLimit(filter, catType)!.toStringAsFixed(0)}'
+                    : 'Magnitude',
+                active: _magLimit(filter, catType) != null,
+                onTap: () => _showMagFilter(filterNotifier, filter, catType),
+              ),
+              if (catType == CatalogType.dso)
+                _filterChip(
+                  label: filter.filterType != null
+                      ? dsoTypeNames[filter.filterType!]
+                      : 'Type',
+                  active: filter.filterType != null,
+                  onTap: () => _showTypeFilter(filterNotifier, filter),
+                ),
+              _filterChip(
+                label: filter.filterConstellation != null
+                    ? constellationAbbr[filter.filterConstellation!]
+                    : 'Constellation',
+                active: filter.filterConstellation != null,
+                onTap: () => _showConstellationFilter(filterNotifier, filter),
+              ),
+              if (catType == CatalogType.doubleStar) ...[
+                _filterChip(
+                  label: filter.filterDblMinSep != null
+                      ? 'Sep ≥ ${_fmtSep(filter.filterDblMinSep!)}'
+                      : 'Min Sep',
+                  active: filter.filterDblMinSep != null,
+                  onTap: () => _showDblMinSepFilter(filterNotifier, filter),
+                ),
+                _filterChip(
+                  label: filter.filterDblMaxSep != null
+                      ? 'Sep ≤ ${_fmtSep(filter.filterDblMaxSep!)}'
+                      : 'Max Sep',
+                  active: filter.filterDblMaxSep != null,
+                  onTap: () => _showDblMaxSepFilter(filterNotifier, filter),
+                ),
+              ],
+              if (catType == CatalogType.variableStar)
+                _filterChip(
+                  label: filter.filterVarMaxPer != null
+                      ? 'Per ≤ ${_fmtPer(filter.filterVarMaxPer!)}d'
+                      : 'Max Period',
+                  active: filter.filterVarMaxPer != null,
+                  onTap: () => _showVarMaxPerFilter(filterNotifier, filter),
+                ),
+              _filterChip(
+                label: 'Named',
+                icon: Icons.label_outline,
+                active: filter.filterHasName,
+                onTap: () => filterNotifier.setFilterHasName(!filter.filterHasName),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Chip(
+                  label: Text('${items.length}'),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ],
           ),
 
           // Object list
@@ -291,6 +278,26 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
     title: const Text('Catalogs'),
   );
 
+  Widget _filterBand({required String title, required List<Widget> chips}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 92,
+            child: Text(title, style: TextStyle(color: TA.textSecondary, fontSize: 12)),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: chips),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _filterChip({
     required String label,
     IconData? icon,
@@ -310,20 +317,27 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
 
   static String _fmtSep(double v) => v < 1 ? '${v.toStringAsFixed(1)}″' : '${v.toStringAsFixed(0)}″';
   static String _fmtPer(double v) => v < 10 ? v.toStringAsFixed(1) : v.toStringAsFixed(0);
+  static double? _magLimit(CatalogFilterState filter, CatalogType type) =>
+      type == CatalogType.dso ? filter.filterDsoMaxMag : filter.filterStarMaxMag;
 
   // ---------------------------------------------------------------------------
   // Filter pickers (bottom sheets)
   // ---------------------------------------------------------------------------
 
   static const _horizonSteps = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0];
+  static const _zenithSteps = [85.0, 80.0, 75.0, 70.0, 65.0];
+  static const _magSteps = [6.0, 8.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0];
+  static const _dblMinSteps = [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 50.0];
+  static const _dblMaxSteps = [0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0];
+  static const _varSteps = [0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0];
 
   void _showHorizonFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
-    final maxAlt = filter.filterMaxAlt;
+    final cap = filter.filterMaxAlt;
     _showChoiceSheet(
       title: 'Above Horizon',
       options: <double?>[
         null,
-        ..._horizonSteps.where((v) => maxAlt == null || v < maxAlt),
+        ..._horizonSteps.where((v) => cap == null || v < cap),
       ],
       labelOf: (v) => v == null ? 'All' : '≥ ${v.toStringAsFixed(0)}°',
       selected: filter.filterMinAlt,
@@ -332,12 +346,12 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
   }
 
   void _showZenithFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
-    final minAlt = filter.filterMinAlt;
+    final floor = filter.filterMinAlt;
     _showChoiceSheet(
       title: 'Below Zenith',
       options: <double?>[
         null,
-        ..._horizonSteps.reversed.where((v) => v > 0 && (minAlt == null || v > minAlt)),
+        ..._zenithSteps.where((v) => floor == null || v > floor),
       ],
       labelOf: (v) => v == null ? 'All' : '≤ ${v.toStringAsFixed(0)}°',
       selected: filter.filterMaxAlt,
@@ -345,17 +359,51 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
     );
   }
 
-  void _showMagFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+  void _showMagFilter(
+    CatalogFilterNotifier notifier,
+    CatalogFilterState filter,
+    CatalogType type,
+  ) {
+    final dso = type == CatalogType.dso;
     _showChoiceSheet(
       title: 'Maximum Magnitude',
-      options: [null, 6.0, 8.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0],
+      options: <double?>[null, ..._magSteps],
       labelOf: (v) => v == null ? 'All' : '≤ ${v.toStringAsFixed(0)}',
-      selected: filter.filterMaxMag,
-      onSelected: (v) => notifier.setFilterMaxMag(v),
+      selected: dso ? filter.filterDsoMaxMag : filter.filterStarMaxMag,
+      onSelected: (v) => dso ? notifier.setFilterDsoMaxMag(v) : notifier.setFilterStarMaxMag(v),
     );
   }
 
+  bool _passesStored(CatalogEntry o, CatalogFilterState filter, CatalogType type) {
+    final maxMag = _magLimit(filter, type);
+    if (type == CatalogType.dso && filter.filterType != null && o.objType != filter.filterType) return false;
+    if (maxMag != null && o.mag != null && o.mag! > maxMag) return false;
+    final mountState = ref.read(mountStateProvider);
+    final lst = parseSiderealTime(mountState.siderealTime);
+    if (lst != null && (filter.filterMinAlt != null || filter.filterMaxAlt != null)) {
+      final alt = objectAltitude(mountState.latitude, lst, o.ra, o.dec);
+      if (filter.filterMinAlt != null && alt < filter.filterMinAlt!) return false;
+      if (filter.filterMaxAlt != null && alt > filter.filterMaxAlt!) return false;
+    }
+    if (filter.filterDblMinSep != null && o.separation != null && o.separation! < filter.filterDblMinSep!) return false;
+    if (filter.filterDblMaxSep != null && o.separation != null && o.separation! > filter.filterDblMaxSep!) return false;
+    if (filter.filterVarMaxPer != null && o.period != null && o.period! >= 0 && o.period! > filter.filterVarMaxPer!) {
+      return false;
+    }
+    return true;
+  }
+
   void _showConstellationFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+    final allowed = <int>{};
+    if (_catalogs.isNotEmpty) {
+      for (final o in _catalogs[filter.selectedCatalog].objects) {
+        if (_passesStored(o, filter, _catalogs[filter.selectedCatalog].type)) allowed.add(o.constellation);
+      }
+    }
+    final codes = <int>[
+      for (var i = 0; i < constellationAbbr.length; i++)
+        if (_catalogs.isEmpty || allowed.contains(i)) i,
+    ];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -372,7 +420,7 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
             Expanded(
               child: ListView.builder(
                 controller: scrollCtrl,
-                itemCount: constellationAbbr.length + 1,
+                itemCount: codes.length + 1,
                 itemBuilder: (_, i) {
                   if (i == 0) {
                     return ListTile(
@@ -381,7 +429,7 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
                       onTap: () { notifier.setFilterConstellation(null); Navigator.pop(context); },
                     );
                   }
-                  final idx = i - 1;
+                  final idx = codes[i - 1];
                   return ListTile(
                     title: Text(constellationAbbr[idx]),
                     selected: filter.filterConstellation == idx,
@@ -396,7 +444,19 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
     );
   }
 
-  void _showTypeFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+  void _showTypeSheet({
+    required String title,
+    required int? selected,
+    required bool limitTo,
+    required int? only,
+    required void Function(int?) onSelected,
+  }) {
+    final indexes = <int?>[
+      if (!limitTo) null,
+      if (limitTo && only != null) only,
+      if (!limitTo)
+        for (var i = 0; i < dsoTypeNames.length; i++) i,
+    ];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -408,25 +468,18 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Object Type', style: Theme.of(ctx).textTheme.titleMedium),
+              child: Text(title, style: Theme.of(ctx).textTheme.titleMedium),
             ),
             Expanded(
               child: ListView.builder(
                 controller: scrollCtrl,
-                itemCount: dsoTypeNames.length + 1,
+                itemCount: indexes.length,
                 itemBuilder: (_, i) {
-                  if (i == 0) {
-                    return ListTile(
-                      title: const Text('All'),
-                      selected: filter.filterType == null,
-                      onTap: () { notifier.setFilterType(null); Navigator.pop(context); },
-                    );
-                  }
-                  final idx = i - 1;
+                  final idx = indexes[i];
                   return ListTile(
-                    title: Text(dsoTypeNames[idx]),
-                    selected: filter.filterType == idx,
-                    onTap: () { notifier.setFilterType(idx); Navigator.pop(context); },
+                    title: Text(idx == null ? 'All' : dsoTypeNames[idx]),
+                    selected: selected == idx,
+                    onTap: () { onSelected(idx); Navigator.pop(context); },
                   );
                 },
               ),
@@ -437,10 +490,24 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
     );
   }
 
+  void _showTypeFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+    _showTypeSheet(
+      title: 'Object Type',
+      selected: filter.filterType,
+      limitTo: false,
+      only: null,
+      onSelected: notifier.setFilterType,
+    );
+  }
+
   void _showDblMinSepFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+    final cap = filter.filterDblMaxSep;
     _showChoiceSheet(
       title: 'Min Separation',
-      options: [null, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 50.0],
+      options: <double?>[
+        null,
+        ..._dblMinSteps.where((v) => cap == null || v < cap),
+      ],
       labelOf: (v) => v == null ? 'Off' : '≥ ${_fmtSep(v)}',
       selected: filter.filterDblMinSep,
       onSelected: (v) => notifier.setFilterDblMinSep(v),
@@ -448,9 +515,13 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
   }
 
   void _showDblMaxSepFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
+    final floor = filter.filterDblMinSep;
     _showChoiceSheet(
       title: 'Max Separation',
-      options: [null, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0],
+      options: <double?>[
+        null,
+        ..._dblMaxSteps.where((v) => floor == null || v > floor),
+      ],
       labelOf: (v) => v == null ? 'Off' : '≤ ${_fmtSep(v)}',
       selected: filter.filterDblMaxSep,
       onSelected: (v) => notifier.setFilterDblMaxSep(v),
@@ -460,7 +531,7 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
   void _showVarMaxPerFilter(CatalogFilterNotifier notifier, CatalogFilterState filter) {
     _showChoiceSheet(
       title: 'Max Period',
-      options: [null, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0],
+      options: <double?>[null, ..._varSteps],
       labelOf: (v) => v == null ? 'Off' : '≤ ${_fmtPer(v)} d',
       selected: filter.filterVarMaxPer,
       onSelected: (v) => notifier.setFilterVarMaxPer(v),

@@ -515,16 +515,12 @@ void CatMgr::filterAdd(int fm, int param) {
     if (param==7) _fm_horizon_limit=70.0; else  _fm_horizon_limit=0;
   }
   if (fm&FM_BELOW_ZENITH) {
-    // Same 10° steps as Above Horizon. 0 is no cap (below zenith);
-    // 1..7 are 70° down to 10°, so a ceiling can stay above the floor.
-    if (param==0) _fm_zenith_limit=90.0; else
-    if (param==1) _fm_zenith_limit=70.0; else
-    if (param==2) _fm_zenith_limit=60.0; else
-    if (param==3) _fm_zenith_limit=50.0; else
-    if (param==4) _fm_zenith_limit=40.0; else
-    if (param==5) _fm_zenith_limit=30.0; else
-    if (param==6) _fm_zenith_limit=20.0; else
-    if (param==7) _fm_zenith_limit=10.0; else _fm_zenith_limit=90.0;
+    // 0..4 are 85° down to 65°. Anything else is no cap.
+    if (param==0) _fm_zenith_limit=85.0; else
+    if (param==1) _fm_zenith_limit=80.0; else
+    if (param==2) _fm_zenith_limit=75.0; else
+    if (param==3) _fm_zenith_limit=70.0; else
+    if (param==4) _fm_zenith_limit=65.0; else _fm_zenith_limit=90.0;
   }
   if (fm&FM_NEARBY) {
     if (param==0) _fm_nearby_dist=1.0; else
@@ -648,6 +644,11 @@ bool CatMgr::setIndex(long index) {
   read();
   decIndex();
   return incIndex();
+}
+
+void CatMgr::setIndexRaw(long index) {
+  if (_selected < 0) return;
+  catalog[_selected].Index = index;
 }
 
 long CatMgr::getIndex() {

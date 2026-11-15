@@ -249,6 +249,7 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(NAV mode, 
 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalog(NAV mode, int number)
 {
+  m_filterCatalog = (int8_t)number;
   cat_mgr.select(number);
   char title[40] = "";
   setCatMgrFilters();
@@ -381,7 +382,6 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogs(NAV mode)
         if (strlen(thisSubmenu) == 0) catalog_index[catalog_index_count++] = i; else catalog_index[catalog_index_count++] = -i;
       }
     }
-    // add the normal filtering, solarsys, etc. items
     strcat(string_list_gotoL1, T_FILTERS);
     putText(mode, menu, T_SYNC " " T_CATALOGS, T_GOTO " " T_CATALOGS, T_PUSHTO " " T_CATALOGS);
     int selection = display->UserInterfaceSelectionList(&buttonPad, menu, current_selection, string_list_gotoL1);

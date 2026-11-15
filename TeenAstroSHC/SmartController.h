@@ -114,13 +114,19 @@ private:
   uint8_t current_selection_filter = 1;
   uint8_t current_selection_filter_con = 1;
   uint8_t current_selection_filter_horizon = 1;
-  uint8_t current_selection_filter_zenith = 0;
+  uint8_t current_selection_filter_zenith = 1;
   uint8_t current_selection_filter_type = 1;
   uint8_t current_selection_filter_byMag = 1;
+  uint8_t current_selection_filter_dsoMag = 1;
   uint8_t current_selection_filter_nearby = 1;
   uint8_t current_selection_filter_dblmin = 1;
   uint8_t current_selection_filter_dblmax = 1;
   uint8_t current_selection_filter_varmax = 1;
+  uint8_t current_selection_filter_stars = 1;
+  uint8_t current_selection_filter_deep = 1;
+  // Catalog last opened. Constellation is not kept with the other filters:
+  // its list is the constellations still present under those filters.
+  int8_t m_filterCatalog = -1;
 
 
 
@@ -142,11 +148,16 @@ private:
   MENU_RESULT menuCatalogs(NAV mode);
   MENU_RESULT menuSolarSys(NAV mode);
   MENU_RESULT menuFilters();
+  MENU_RESULT menuFilterStars();
+  MENU_RESULT menuFilterDeepSky();
+  int runMappedList(const char* title, int currentOrig, const char* list, const int* map, int n);
+  void addStoredFilters(bool withCon);
   void setCatMgrFilters();
   MENU_RESULT menuFilterCon();
   MENU_RESULT menuFilterHorizon();
   MENU_RESULT menuFilterZenith();
   MENU_RESULT menuFilterType();
+  MENU_RESULT menuFilterMag(uint8_t& sel);
   MENU_RESULT menuFilterByMag();
   MENU_RESULT menuFilterNearby();
   MENU_RESULT menuFilterDblMinSep();
