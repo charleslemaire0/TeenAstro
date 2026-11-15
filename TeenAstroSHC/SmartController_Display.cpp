@@ -1092,11 +1092,22 @@ void SmartHandController::updateMainDisplay(PAGES page)
         }
         else
         {
-          u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-          u8g2_DrawGlyph(u8g2, 0, y, 945 + cat_mgr.bayerFlam());
-          const uint8_t* myfont = u8g2->font;
-          u8g2_SetFont(u8g2, myfont);
-          u8g2_DrawUTF8(u8g2, 16, y, cat_mgr.constellationStr());
+          const uint8_t* savedFont = u8g2->font;
+          int bf = cat_mgr.bayerFlam();
+          u8g2_uint_t cx = 0;
+          if ((bf >= 0) && (bf < 24))
+          {
+            u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+            cx = u8g2_DrawGlyph(u8g2, 0, y, 945 + bf);
+          }
+          else if (bf > 24)
+          {
+            char bfNum[8];
+            sprintf(bfNum, "%d", bf - 24);
+            cx = u8g2_DrawUTF8(u8g2, 0, y, bfNum);
+          }
+          u8g2_SetFont(u8g2, savedFont);
+          u8g2_DrawUTF8(u8g2, cx, y, cat_mgr.constellationStr());
         }
       }
     }
