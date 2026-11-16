@@ -39,6 +39,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <TeenAstroCatalog.h>
 #include "u8g2_ext_value.h"
 #include "u8g2_ext_event.h"
+#include "constellation_lines_data.h"
+#include <math.h>
 
 #define OC_width 18
 #define OC_height 10
@@ -81,6 +83,252 @@ static unsigned char GX_bits[] U8X8_PROGMEM = {
 
 enum CATALOG_DISPLAY_MODES { DM_INFO, DM_EQ_COORDS, DM_HOR_COORDS };
 
+// Local sky chart: north is up, east (increasing RA) is to the left.
+struct ConsVec {
+  float x, y, z;
+  ConsVec() : x(0), y(0), z(0) {}
+  ConsVec(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+};
+static ConsVec vadd(ConsVec a, ConsVec b) { return ConsVec(a.x + b.x, a.y + b.y, a.z + b.z); }
+static float vdot(ConsVec a, ConsVec b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+static ConsVec vcross(ConsVec a, ConsVec b)
+{
+  return ConsVec(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+}
+static ConsVec vscale(ConsVec a, float s) { return ConsVec(a.x * s, a.y * s, a.z * s); }
+static ConsVec vnorm(ConsVec a)
+{
+  float n = sqrtf(vdot(a, a));
+  if (n < 1e-6f) return ConsVec(0, 0, 1);
+  return vscale(a, 1.0f / n);
+}
+static ConsVec toVec(float raHours, float decDeg)
+{
+  float ra = raHours * 3.14159265f / 12.0f;
+  float dec = decDeg * 3.14159265f / 180.0f;
+  float cd = cosf(dec);
+  return ConsVec(cd * cosf(ra), cd * sinf(ra), sinf(dec));
+}
+static uint16_t consBegin(uint8_t code)
+{
+  uint16_t v;
+  memcpy_P(&v, &kConsBegin[code], sizeof(v));
+  return v;
+}
+static void readSeg(uint16_t index, float& ra1, float& de1, float& ra2, float& de2)
+{
+  int16_t raw[4];
+  memcpy_P(raw, &kConsSeg[(size_t)index * 4], sizeof(raw));
+  ra1 = raw[0] * 0.001f;
+  de1 = raw[1] * 0.01f;
+  ra2 = raw[2] * 0.001f;
+  de2 = raw[3] * 0.01f;
+}
+static void projectStar(ConsVec east, ConsVec north, float ra, float dec, float& ox, float& oy)
+{
+  ConsVec p = toVec(ra, dec);
+  ox = -vdot(p, east);
+  oy = vdot(p, north);
+}
+static int iroundf(float v)
+{
+  return (int)(v + (v >= 0.0f ? 0.5f : -0.5f));
+}
+
+// Every constellation is drawn so its long side is kChartLong pixels.
+// A figure that would not fit beside the designation is shrunk.
+static const float kChartLong = 40.0f;
+static const int kChartPad = 4;
+
+struct ConsView {
+  uint16_t begin, end;
+  float starRa, starDe;
+  ConsVec east, north;
+  float minX, minY, maxX, maxY;
+};
+
+static bool buildConsView(ConsView& v)
+{
+  if (!cat_mgr.isBrightStarCatalog() || cat_mgr.isAlignRanked()) return false;
+  uint8_t code = cat_mgr.constellation();
+  if (code > 87) return false;
+  v.begin = consBegin(code);
+  v.end = consBegin((uint8_t)(code + 1));
+  if (v.end <= v.begin) return false;
+
+  v.starRa = (float)cat_mgr.rah();
+  v.starDe = (float)cat_mgr.dec();
+  ConsVec sum = toVec(v.starRa, v.starDe);
+  for (uint16_t i = v.begin; i < v.end; i++)
+  {
+    float ra1, de1, ra2, de2;
+    readSeg(i, ra1, de1, ra2, de2);
+    sum = vadd(sum, vadd(toVec(ra1, de1), toVec(ra2, de2)));
+  }
+  ConsVec center = vnorm(sum);
+  v.east = vcross(ConsVec(0, 0, 1), center);
+  if (vdot(v.east, v.east) < 1e-10f) v.east = ConsVec(0, 1, 0);
+  else v.east = vnorm(v.east);
+  v.north = vnorm(vcross(center, v.east));
+
+  projectStar(v.east, v.north, v.starRa, v.starDe, v.minX, v.minY);
+  v.maxX = v.minX;
+  v.maxY = v.minY;
+  for (uint16_t i = v.begin; i < v.end; i++)
+  {
+    float ra1, de1, ra2, de2, px, py;
+    readSeg(i, ra1, de1, ra2, de2);
+    projectStar(v.east, v.north, ra1, de1, px, py);
+    if (px < v.minX) v.minX = px;
+    if (px > v.maxX) v.maxX = px;
+    if (py < v.minY) v.minY = py;
+    if (py > v.maxY) v.maxY = py;
+    projectStar(v.east, v.north, ra2, de2, px, py);
+    if (px < v.minX) v.minX = px;
+    if (px > v.maxX) v.maxX = px;
+    if (py < v.minY) v.minY = py;
+    if (py > v.maxY) v.maxY = py;
+  }
+  return true;
+}
+
+// Rectangle the figure occupies, right-aligned in the free area, with the
+// same long-side size for every constellation. Hidden while an alignment
+// rank is showing, so the suitability marks keep the right edge.
+static bool consChartGeom(u8g2_t* u8g2, u8g2_uint_t line1Baseline,
+  u8g2_uint_t textRight,
+  u8g2_uint_t* x, u8g2_uint_t* y, u8g2_uint_t* w, u8g2_uint_t* h)
+{
+  ConsView v;
+  if (!buildConsView(v)) return false;
+
+  int ascent = u8g2_GetAscent(u8g2);
+  if (ascent < 1) ascent = 1;
+  int top = (int)line1Baseline - ascent;
+  if (top < 0) top = 0;
+  int left = (int)textRight + 4;
+  int magW = (int)u8g2_GetUTF8Width(u8g2, "12.3") + 4;
+  if (magW > left) left = magW;
+  int dw = (int)u8g2_GetDisplayWidth(u8g2);
+  int dh = (int)u8g2_GetDisplayHeight(u8g2);
+  int maxW = dw - left;
+  int maxH = dh - top;
+  if (maxW < 16 || maxH < 16) return false;
+
+  float spanX = v.maxX - v.minX;
+  float spanY = v.maxY - v.minY;
+  if (spanX < 1e-4f) spanX = 1e-4f;
+  if (spanY < 1e-4f) spanY = 1e-4f;
+  float fit = (float)(maxW - 2 * kChartPad) / spanX;
+  float fitY = (float)(maxH - 2 * kChartPad) / spanY;
+  if (fitY < fit) fit = fitY;
+  if (fit < 8.0f) return false;
+  float longSpan = spanX > spanY ? spanX : spanY;
+  float scale = kChartLong / longSpan;
+  if (scale > fit) scale = fit;
+  int pw = iroundf(spanX * scale) + 2 * kChartPad;
+  int ph = iroundf(spanY * scale) + 2 * kChartPad;
+  if (pw < 2 * kChartPad + 2) pw = 2 * kChartPad + 2;
+  if (ph < 2 * kChartPad + 2) ph = 2 * kChartPad + 2;
+  if (pw > maxW) pw = maxW;
+  if (ph > maxH) ph = maxH;
+  *x = (u8g2_uint_t)(dw - pw);
+  *y = (u8g2_uint_t)(top + (maxH - ph) / 2);
+  *w = (u8g2_uint_t)pw;
+  *h = (u8g2_uint_t)ph;
+  return true;
+}
+
+// Draw the proper name in the strip left of the chart. A name that does not
+// fit is cut from the end; a stub shorter than four letters is left off.
+static void drawNameBesideChart(u8g2_t* u8g2, u8g2_uint_t baseline, int limit)
+{
+  const char* name = cat_mgr.objectNameStr();
+  if (name[0] == 0 || limit < 4) return;
+  char buf[32];
+  size_t n = 0;
+  while (name[n] != 0 && n + 1 < sizeof(buf)) {
+    buf[n] = name[n];
+    n++;
+  }
+  buf[n] = 0;
+  const bool fullFits = (int)u8g2_GetUTF8Width(u8g2, buf) <= limit;
+  while (n > 0 && (int)u8g2_GetUTF8Width(u8g2, buf) > limit) {
+    n--;
+    buf[n] = 0;
+  }
+  while (n > 0 && buf[n - 1] == ' ') {
+    n--;
+    buf[n] = 0;
+  }
+  if (n == 0 || (!fullFits && n < 4)) return;
+  u8g2_DrawUTF8(u8g2, 0, baseline, buf);
+}
+
+static void drawConsChart(u8g2_t* u8g2, u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h)
+{
+  ConsView v;
+  if (!buildConsView(v) || w < 8 || h < 8) return;
+  const uint16_t begin = v.begin;
+  const uint16_t end = v.end;
+  const float starRa = v.starRa;
+  const float starDe = v.starDe;
+  const ConsVec east = v.east;
+  const ConsVec north = v.north;
+  const float minX = v.minX, minY = v.minY, maxX = v.maxX, maxY = v.maxY;
+
+  const float cx = (minX + maxX) * 0.5f;
+  const float cy = (minY + maxY) * 0.5f;
+  const float halfW = (maxX - minX) * 0.5f > 1e-4f ? (maxX - minX) * 0.5f : 1e-4f;
+  const float halfH = (maxY - minY) * 0.5f > 1e-4f ? (maxY - minY) * 0.5f : 1e-4f;
+  const float availW = (float)w - 2.0f * kChartPad;
+  const float availH = (float)h - 2.0f * kChartPad;
+  const float scale = (availW / (2.0f * halfW) < availH / (2.0f * halfH))
+    ? availW / (2.0f * halfW) : availH / (2.0f * halfH);
+  const float ox = (float)x + (float)w * 0.5f;
+  const float oy = (float)y + (float)h * 0.5f;
+  const int x0 = (int)x;
+  const int y0 = (int)y;
+  const int x1 = (int)x + (int)w - 1;
+  const int y1 = (int)y + (int)h - 1;
+
+  u8g2_SetClipWindow(u8g2, (u8g2_uint_t)x0, (u8g2_uint_t)y0, (u8g2_uint_t)(x1 + 1), (u8g2_uint_t)(y1 + 1));
+
+  for (uint16_t i = begin; i < end; i++)
+  {
+    float ra1, de1, ra2, de2, sx, sy;
+    int ax, ay, bx, by;
+    readSeg(i, ra1, de1, ra2, de2);
+    projectStar(east, north, ra1, de1, sx, sy);
+    ax = iroundf(ox + (sx - cx) * scale);
+    ay = iroundf(oy - (sy - cy) * scale);
+    projectStar(east, north, ra2, de2, sx, sy);
+    bx = iroundf(ox + (sx - cx) * scale);
+    by = iroundf(oy - (sy - cy) * scale);
+    if (ax < x0) ax = x0;
+    if (ax > x1) ax = x1;
+    if (ay < y0) ay = y0;
+    if (ay > y1) ay = y1;
+    if (bx < x0) bx = x0;
+    if (bx > x1) bx = x1;
+    if (by < y0) by = y0;
+    if (by > y1) by = y1;
+    u8g2_DrawLine(u8g2, (u8g2_uint_t)ax, (u8g2_uint_t)ay, (u8g2_uint_t)bx, (u8g2_uint_t)by);
+  }
+
+  float sx, sy;
+  projectStar(east, north, starRa, starDe, sx, sy);
+  int mx = iroundf(ox + (sx - cx) * scale);
+  int my = iroundf(oy - (sy - cy) * scale);
+  if (mx < x0) mx = x0;
+  if (mx > x1) mx = x1;
+  if (my < y0) my = y0;
+  if (my > y1) my = y1;
+  u8g2_DrawCircle(u8g2, (u8g2_uint_t)mx, (u8g2_uint_t)my, 3, U8G2_DRAW_ALL);
+  u8g2_DrawDisc(u8g2, (u8g2_uint_t)mx, (u8g2_uint_t)my, 1, U8G2_DRAW_ALL);
+  u8g2_SetMaxClipWindow(u8g2);
+}
+
 /*
 selection list with string line
 returns line height
@@ -100,10 +348,11 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
   int dx = u8g2_GetDisplayWidth(u8g2);
   if (cat_mgr.isStarCatalog())
   {
-    // Normal star mode
-    // |bAnd              15.2|
-    // |Alpheratz             |
-    // |                      |
+    // Bright star. Magnitude starts line 2. The chart uses the right
+    // side of all three lines; the name keeps whatever is left on line 3.
+    // |b And        [chart]|
+    // |2.1          [chart]|
+    // |Alpheratz    [chart]|
 
     // Double star mode
     // |Σ0060AB ηCas          |
@@ -116,6 +365,9 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     // |Per 2.5d              |
 
     x = 0;
+    const bool brightInfo = cat_mgr.isBrightStarCatalog() && displayMode == DM_INFO;
+    const u8g2_uint_t yLine1 = y;
+    u8g2_uint_t line1Right = 0;
 
     // Prefix. The bright-star catalog omits "Star "; STF/STT use Greek letters.
     snprintf(line, sizeof(line), "%s", cat_mgr.catalogPrefix());
@@ -162,6 +414,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     if ((bf >= 0) && (bf < 24)) {
       u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
       x += u8g2_DrawGlyph(u8g2, x, y, 945 + bf);
+      x += u8g2_DrawUTF8(u8g2, x, y, " ");
       u8g2_SetFont(u8g2, myfont);
     }
     else if (bf > 24) {
@@ -171,27 +424,31 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
       u8g2_SetFont(u8g2, myfont);
     }
 
-    u8g2_DrawUTF8(u8g2, x, y, cat_mgr.constellationStr());
+    x += u8g2_DrawUTF8(u8g2, x, y, cat_mgr.constellationStr());
+    line1Right = x;
 
 
-    // Magnitudes
+    // Magnitudes. A bright star on the info page keeps this for line 2,
+    // so the right of the first two lines stays free for the chart.
     float mf = cat_mgr.magnitude();
     float mf2 = cat_mgr.magnitude2();
-    if ((mf2 > 99) && (mf > 99)) {
-      sprintf(line, "?.?");
-    }
-    else  if (mf2 > 99) {
-      dtostrf(mf, 4, 1, line);
-      ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
-    }
-    else if (displayMode == DM_INFO) {
-      char mfs[8], mf2s[8];
-      dtostrf(mf, 4, 1, mfs);
-      dtostrf(mf2, 4, 1, mf2s);
-      sprintf(line, "%s", mf2s);
-      x = ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y + line_height, line);
-      sprintf(line, "%s", mfs);
-      ext_DrawFwNumeric(u8g2, dx - (ext_GetFwNumericWidth(u8g2, line) + x + 4), y + line_height, line);
+    if (!brightInfo) {
+      if ((mf2 > 99) && (mf > 99)) {
+        sprintf(line, "?.?");
+      }
+      else if (mf2 > 99) {
+        dtostrf(mf, 4, 1, line);
+        ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
+      }
+      else if (displayMode == DM_INFO) {
+        char mfs[8], mf2s[8];
+        dtostrf(mf, 4, 1, mfs);
+        dtostrf(mf2, 4, 1, mf2s);
+        sprintf(line, "%s", mf2s);
+        x = ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y + line_height, line);
+        sprintf(line, "%s", mfs);
+        ext_DrawFwNumeric(u8g2, dx - (ext_GetFwNumericWidth(u8g2, line) + x + 4), y + line_height, line);
+      }
     }
 
 
@@ -199,8 +456,22 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     x = 0;
     if (displayMode == DM_INFO) {
       y += line_height;
-      // Name on the left. Suitability (*…****) stays on the right, and the name is clipped before it.
-      {
+      if (brightInfo) {
+        if (mf > 99) strcpy(line, "?.?");
+        else dtostrf(mf, 1, 1, line);
+        char* mag = line;
+        while (*mag == ' ') mag++;
+        ext_DrawFwNumeric(u8g2, 0, y, mag);
+        if (cat_mgr.isAlignRanked()) {
+          const char* suit = cat_mgr.alignSuitabilityStr();
+          if (suit[0] != 0) {
+            u8g2_uint_t suitW = u8g2_GetUTF8Width(u8g2, suit);
+            u8g2_DrawUTF8(u8g2, dx - suitW, y, suit);
+          }
+        }
+      }
+      else {
+        // Name on the left. Suitability (*…****) stays on the right, and the name is clipped before it.
         const char* name = cat_mgr.objectNameStr();
         u8g2_uint_t nameLimit = (u8g2_uint_t)dx;
         if (cat_mgr.isAlignRanked()) {
@@ -220,7 +491,16 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
       // line 3
       x = 0;
       y += line_height;
-      if (cat_mgr.isDblStarCatalog()) {
+      if (brightInfo) {
+        u8g2_uint_t chartX, chartY, chartW, chartH;
+        if (consChartGeom(u8g2, yLine1, line1Right, &chartX, &chartY, &chartW, &chartH)) {
+          drawNameBesideChart(u8g2, y, (int)chartX - 2);
+          drawConsChart(u8g2, chartX, chartY, chartW, chartH);
+        }
+        else
+          u8g2_DrawUTF8(u8g2, 0, y, cat_mgr.objectNameStr());
+      }
+      else if (cat_mgr.isDblStarCatalog()) {
         // |Sep 2.5" PA 225       |
         char seps[16];
         float f = cat_mgr.separation();

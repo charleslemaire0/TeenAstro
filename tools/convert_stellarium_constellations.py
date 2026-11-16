@@ -13,6 +13,8 @@ Requires: stars_mag9.json (run generate_star_catalog.py first)
 """
 
 import json
+import subprocess
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -79,6 +81,8 @@ def main():
         json.dump({"constellations": constellations}, f, indent=2)
 
     print(f"Wrote {OUTPUT}")
+    shc = REPO_ROOT / "tools" / "gen_shc_constellation_lines.py"
+    subprocess.check_call([sys.executable, str(shc)])
 
 
 if __name__ == "__main__":
