@@ -71,6 +71,17 @@ void test_rtc_unset_epoch_matches_boot_seed_only(void) {
   TEST_ASSERT_FALSE(rtcTimeIsUnset(seed - 1, 0));
 }
 
+void test_rtc_vbat_file_marks_missing_cell(void) {
+  // cores/teensy3/mk20dx128.c writes this when RTC_SR_TIF shows VBAT powered up,
+  // after seeding the clock with the firmware build time.
+  const uint32_t buildTime = 1794858442u;
+  TEST_ASSERT_TRUE(rtcVbatFileIsStale(0x5A94C3A5u));
+  TEST_ASSERT_FALSE(rtcVbatFileIsStale(0));
+  TEST_ASSERT_FALSE(rtcTimeIsUnset(buildTime, 2000));
+  TEST_ASSERT_TRUE(rtcNeedsTime(buildTime, 2000, 0x5A94C3A5u));
+  TEST_ASSERT_FALSE(rtcNeedsTime(buildTime, 2000, 0));
+}
+
 void setUp() {}
 void tearDown() {}
 
@@ -86,5 +97,6 @@ int main(int argc, char** argv) {
   RUN_TEST(test_goto_code_maps_to_client_error);
   RUN_TEST(test_rtc_goto_is_its_own_code);
   RUN_TEST(test_rtc_unset_epoch_matches_boot_seed_only);
+  RUN_TEST(test_rtc_vbat_file_marks_missing_cell);
   return UNITY_END();
 }

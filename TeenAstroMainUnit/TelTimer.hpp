@@ -22,7 +22,7 @@ private:
   double                  m_LT = 0.0;//tmp variable  
   double                  m_JD = 0.0;//tmp variable                  
   double                  m_Sitelongitude;
-  bool                    m_rtcLost = false;            // boot found the Teensy unset epoch
+  bool                    m_rtcLost = false;            // boot found no coin cell, or the Teensy 4 unset epoch
 public:
 
   bool rtcLost() const { return m_rtcLost; }
@@ -30,7 +30,7 @@ public:
   // Once, from setup, before GNSS or a manual set can overwrite the RTC.
   void latchIfRtcUninitialized()
   {
-    m_rtcLost = rtcTimeIsUnset((uint32_t)getTime(), millis());
+    m_rtcLost = rtcNeedsTime((uint32_t)getTime(), millis(), rtcVbatFileWord());
   }
 
   double* getUT()
@@ -106,6 +106,7 @@ public:
     setTime(t);
     syncClock();
     m_rtcLost = false;
+    rtcVbatClearStale();
   }
 
   // Set RTC with give input
@@ -125,6 +126,7 @@ public:
     setTime(t);
     syncClock();
     m_rtcLost = false;
+    rtcVbatClearStale();
   }
 
   void resetLongitude(double Sitelongitude)
