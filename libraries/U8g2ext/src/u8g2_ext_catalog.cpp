@@ -135,10 +135,14 @@ static int iroundf(float v)
   return (int)(v + (v >= 0.0f ? 0.5f : -0.5f));
 }
 
-// Every constellation is drawn so its long side is kChartLong pixels.
-// A figure that would not fit beside the designation is shrunk.
-static const float kChartLong = 40.0f;
+// Goto keeps the figure mailed with the group note. Alignment uses a larger one.
+static const float kGotoChartLong = 40.0f;
+static const float kAlignChartLong = 56.0f;
 static const int kChartPad = 4;
+static const int kPageMargin = 4;
+static const int kTextX = 2;
+// Alignment block: first glyph starts this far below the top edge.
+static const int kTextTop = 6;
 
 struct ConsView {
   uint16_t begin, end;
@@ -149,7 +153,7 @@ struct ConsView {
 
 static bool buildConsView(ConsView& v)
 {
-  if (!cat_mgr.isBrightStarCatalog() || cat_mgr.isAlignRanked()) return false;
+  if (!cat_mgr.isBrightStarCatalog()) return false;
   uint8_t code = cat_mgr.constellation();
   if (code > 87) return false;
   v.begin = consBegin(code);
@@ -192,27 +196,39 @@ static bool buildConsView(ConsView& v)
   return true;
 }
 
-// Rectangle the figure occupies, right-aligned in the free area, with the
-// same long-side size for every constellation. Hidden while an alignment
-// rank is showing, so the suitability marks keep the right edge.
-static bool consChartGeom(u8g2_t* u8g2, u8g2_uint_t line1Baseline,
-  u8g2_uint_t textRight,
-  u8g2_uint_t* x, u8g2_uint_t* y, u8g2_uint_t* w, u8g2_uint_t* h)
+// Rectangle the figure occupies. Goto places the mailed 40px figure beside
+// the three text lines. Alignment centers the larger figure in the display.
+static bool consChartGeom(u8g2_t* u8g2, u8g2_uint_t textRight, u8g2_uint_t line1Baseline,
+  bool alignPage, u8g2_uint_t* x, u8g2_uint_t* y, u8g2_uint_t* w, u8g2_uint_t* h)
 {
   ConsView v;
   if (!buildConsView(v)) return false;
 
-  int ascent = u8g2_GetAscent(u8g2);
-  if (ascent < 1) ascent = 1;
-  int top = (int)line1Baseline - ascent;
-  if (top < 0) top = 0;
   int left = (int)textRight + 4;
   int magW = (int)u8g2_GetUTF8Width(u8g2, "12.3") + 4;
   if (magW > left) left = magW;
   int dw = (int)u8g2_GetDisplayWidth(u8g2);
   int dh = (int)u8g2_GetDisplayHeight(u8g2);
-  int maxW = dw - left;
-  int maxH = dh - top;
+  int bandTop;
+  int maxW;
+  int maxH;
+  int rightInset;
+  if (alignPage) {
+    rightInset = kPageMargin;
+    bandTop = kPageMargin;
+    maxW = dw - rightInset - left;
+    maxH = dh - 2 * kPageMargin;
+  }
+  else {
+    int ascent = (int)u8g2_GetAscent(u8g2);
+    if (ascent < 1) ascent = 1;
+    int top = (int)line1Baseline - ascent;
+    if (top < 0) top = 0;
+    rightInset = 0;
+    bandTop = top;
+    maxW = dw - left;
+    maxH = dh - top;
+  }
   if (maxW < 16 || maxH < 16) return false;
 
   float spanX = v.maxX - v.minX;
@@ -224,7 +240,8 @@ static bool consChartGeom(u8g2_t* u8g2, u8g2_uint_t line1Baseline,
   if (fitY < fit) fit = fitY;
   if (fit < 8.0f) return false;
   float longSpan = spanX > spanY ? spanX : spanY;
-  float scale = kChartLong / longSpan;
+  float target = alignPage ? kAlignChartLong : kGotoChartLong;
+  float scale = target / longSpan;
   if (scale > fit) scale = fit;
   int pw = iroundf(spanX * scale) + 2 * kChartPad;
   int ph = iroundf(spanY * scale) + 2 * kChartPad;
@@ -232,8 +249,8 @@ static bool consChartGeom(u8g2_t* u8g2, u8g2_uint_t line1Baseline,
   if (ph < 2 * kChartPad + 2) ph = 2 * kChartPad + 2;
   if (pw > maxW) pw = maxW;
   if (ph > maxH) ph = maxH;
-  *x = (u8g2_uint_t)(dw - pw);
-  *y = (u8g2_uint_t)(top + (maxH - ph) / 2);
+  *x = (u8g2_uint_t)(dw - rightInset - pw);
+  *y = (u8g2_uint_t)(bandTop + (maxH - ph) / 2);
   *w = (u8g2_uint_t)pw;
   *h = (u8g2_uint_t)ph;
   return true;
@@ -241,9 +258,10 @@ static bool consChartGeom(u8g2_t* u8g2, u8g2_uint_t line1Baseline,
 
 // Draw the proper name in the strip left of the chart. A name that does not
 // fit is cut from the end; a stub shorter than four letters is left off.
-static void drawNameBesideChart(u8g2_t* u8g2, u8g2_uint_t baseline, int limit)
+static void drawNameBesideChart(u8g2_t* u8g2, u8g2_uint_t x, u8g2_uint_t baseline, int right)
 {
   const char* name = cat_mgr.objectNameStr();
+  int limit = right - (int)x;
   if (name[0] == 0 || limit < 4) return;
   char buf[32];
   size_t n = 0;
@@ -262,7 +280,7 @@ static void drawNameBesideChart(u8g2_t* u8g2, u8g2_uint_t baseline, int limit)
     buf[n] = 0;
   }
   if (n == 0 || (!fullFits && n < 4)) return;
-  u8g2_DrawUTF8(u8g2, 0, baseline, buf);
+  u8g2_DrawUTF8(u8g2, x, baseline, buf);
 }
 
 static void drawConsChart(u8g2_t* u8g2, u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t w, u8g2_uint_t h)
@@ -348,11 +366,15 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
   int dx = u8g2_GetDisplayWidth(u8g2);
   if (cat_mgr.isStarCatalog())
   {
-    // Bright star. Magnitude starts line 2. The chart uses the right
-    // side of all three lines; the name keeps whatever is left on line 3.
+    // Goto bright star, under the catalog title, figure 40px:
     // |b And        [chart]|
     // |2.1          [chart]|
     // |Alpheratz    [chart]|
+    // Alignment, no title, figure 56px, marks on line 4:
+    // |b And        [chart]|
+    // |2.1          [chart]|
+    // |Alpheratz    [chart]|
+    // |****         [chart]|
 
     // Double star mode
     // |Σ0060AB ηCas          |
@@ -366,8 +388,22 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
 
     x = 0;
     const bool brightInfo = cat_mgr.isBrightStarCatalog() && displayMode == DM_INFO;
+    const bool alignInfo = brightInfo && cat_mgr.isAlignRanked();
+    int brightStep = (int)line_height;
+    int textOx = 0;
+    if (alignInfo) {
+      if (brightStep > 1) brightStep -= 1;
+      int textAscent = (int)u8g2_GetAscent(u8g2);
+      int y0 = kTextTop + textAscent;
+      if (y0 < 1) y0 = 1;
+      y = (uint8_t)y0;
+      x = (u8g2_uint_t)kTextX;
+      u8g2_GetGlyphWidth(u8g2, '0');
+      textOx = (int)u8g2->glyph_x_offset;
+    }
     const u8g2_uint_t yLine1 = y;
     u8g2_uint_t line1Right = 0;
+    const u8g2_uint_t xOrigin = x;
 
     // Prefix. The bright-star catalog omits "Star "; STF/STT use Greek letters.
     snprintf(line, sizeof(line), "%s", cat_mgr.catalogPrefix());
@@ -405,14 +441,24 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     x += u8g2_DrawUTF8(u8g2, x, y, line);
     u8g2_SetFont(u8g2, myfont);
 
-    if (x != 0) {
+    // A space only after a real prefix. The bright-star inset is not one.
+    if (x != xOrigin) {
       x += u8g2_DrawUTF8(u8g2, x, y, " ");
     }
 
     // Bayer letter or Flamsteed number, immediately before the constellation, drawn once.
+    // The Greek glyph's side bearing differs from Helvetica, so shift it until
+    // its ink starts on the same column as the lines below.
     int bf = cat_mgr.bayerFlam();
     if ((bf >= 0) && (bf < 24)) {
       u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+      if (alignInfo) {
+        u8g2_GetGlyphWidth(u8g2, (uint16_t)(945 + bf));
+        int gOx = (int)u8g2->glyph_x_offset;
+        int gx = (int)x + textOx - gOx;
+        if (gx < 0) gx = 0;
+        x = (u8g2_uint_t)gx;
+      }
       x += u8g2_DrawGlyph(u8g2, x, y, 945 + bf);
       x += u8g2_DrawUTF8(u8g2, x, y, " ");
       u8g2_SetFont(u8g2, myfont);
@@ -455,20 +501,19 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     // Display line 2 and 3
     x = 0;
     if (displayMode == DM_INFO) {
-      y += line_height;
+      y += alignInfo ? (uint8_t)brightStep : line_height;
       if (brightInfo) {
         if (mf > 99) strcpy(line, "?.?");
         else dtostrf(mf, 1, 1, line);
         char* mag = line;
         while (*mag == ' ') mag++;
-        ext_DrawFwNumeric(u8g2, 0, y, mag);
-        if (cat_mgr.isAlignRanked()) {
-          const char* suit = cat_mgr.alignSuitabilityStr();
-          if (suit[0] != 0) {
-            u8g2_uint_t suitW = u8g2_GetUTF8Width(u8g2, suit);
-            u8g2_DrawUTF8(u8g2, dx - suitW, y, suit);
-          }
+        int magX = 0;
+        if (alignInfo) {
+          u8g2_GetGlyphWidth(u8g2, (uint8_t)mag[0]);
+          magX = kTextX + textOx - (int)u8g2->glyph_x_offset;
+          if (magX < 0) magX = 0;
         }
+        ext_DrawFwNumeric(u8g2, (uint8_t)magX, y, mag);
       }
       else {
         // Name on the left. Suitability (*…****) stays on the right, and the name is clipped before it.
@@ -490,15 +535,36 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
 
       // line 3
       x = 0;
-      y += line_height;
+      y += alignInfo ? (uint8_t)brightStep : line_height;
       if (brightInfo) {
-        u8g2_uint_t chartX, chartY, chartW, chartH;
-        if (consChartGeom(u8g2, yLine1, line1Right, &chartX, &chartY, &chartW, &chartH)) {
-          drawNameBesideChart(u8g2, y, (int)chartX - 2);
+        u8g2_uint_t chartX = 0, chartY = 0, chartW = 0, chartH = 0;
+        const bool chart = consChartGeom(u8g2, line1Right, yLine1, alignInfo, &chartX, &chartY, &chartW, &chartH);
+        const char* starName = cat_mgr.objectNameStr();
+        int nameX = 0;
+        if (alignInfo && starName[0] != 0) {
+          u8g2_GetGlyphWidth(u8g2, (uint8_t)starName[0]);
+          nameX = kTextX + textOx - (int)u8g2->glyph_x_offset;
+          if (nameX < 0) nameX = 0;
+        }
+        if (chart) {
+          drawNameBesideChart(u8g2, (u8g2_uint_t)nameX, y, (int)chartX - 2);
           drawConsChart(u8g2, chartX, chartY, chartW, chartH);
         }
-        else
-          u8g2_DrawUTF8(u8g2, 0, y, cat_mgr.objectNameStr());
+        else if (starName[0] != 0)
+          u8g2_DrawUTF8(u8g2, (u8g2_uint_t)nameX, y, starName);
+        if (alignInfo) {
+          const char* suit = cat_mgr.alignSuitabilityStr();
+          if (suit[0] != 0) {
+            u8g2_GetGlyphWidth(u8g2, (uint8_t)suit[0]);
+            int suitX = kTextX + textOx - (int)u8g2->glyph_x_offset;
+            if (suitX < 0) suitX = 0;
+            int suitLimit = chart ? (int)chartX - 2 : dx;
+            if (suitLimit < 1) suitLimit = 1;
+            u8g2_SetClipWindow(u8g2, 0, 0, (u8g2_uint_t)suitLimit, u8g2_GetDisplayHeight(u8g2));
+            u8g2_DrawUTF8(u8g2, (u8g2_uint_t)suitX, y + brightStep, suit);
+            u8g2_SetMaxClipWindow(u8g2);
+          }
+        }
       }
       else if (cat_mgr.isDblStarCatalog()) {
         // |Sep 2.5" PA 225       |
@@ -722,7 +788,10 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
   CATALOG_DISPLAY_MODES thisDisplayMode = DM_INFO;
 
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
-  uint8_t title_lines = u8x8_GetStringLineCnt(title);
+  // Alignment gives the title line to the figure. Goto keeps "Goto Bright Stars".
+  const bool showTitle = !(cat_mgr.isBrightStarCatalog() && cat_mgr.isAlignRanked())
+    && title != NULL && title[0] != 0;
+  uint8_t title_lines = showTitle ? u8x8_GetStringLineCnt(title) : 0;
 
   u8g2_SetFontPosBaseline(u8g2);
 
