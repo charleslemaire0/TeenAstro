@@ -8,7 +8,7 @@ const char html_reticule_style[] PROGMEM = R"raw(
 <style>
 .ret-wrap{position:relative;background:#12141a;border-radius:8px}
 #cv{width:100%;height:78vh;display:block;background:#12141a;touch-action:none}
-.ret-panel{position:absolute;top:8px;left:8px;max-width:320px;max-height:calc(78vh - 16px);overflow:auto;
+.ret-panel{position:absolute;z-index:3;top:8px;left:8px;max-width:320px;max-height:calc(78vh - 16px);overflow:auto;
 background:rgba(8,10,14,.92);color:#e8eaed;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.4}
 .ret-panel .lt{font-size:1.5em;font-weight:700;margin:2px 0 4px;letter-spacing:.02em}
 .ret-panel select,.ret-panel input{width:100%;max-width:100%;box-sizing:border-box;margin:3px 0}
@@ -43,18 +43,34 @@ background:rgba(8,10,14,.92);color:#e8eaed;padding:10px 12px;border-radius:8px;f
 const char html_reticule_js[] PROGMEM = R"raw(
 var POL={ra:2.5301944,dec:89.2641667};
 var OCT={ra:21.146111,dec:-88.956389};
+var OCTC=[
+{ra:23.46772,dec:-87.48222},
+{ra:18.91306,dec:-87.60611},
+{ra:22.52709,dec:-85.96725}
+];
+var DIP=[
+{ra:11.0621,dec:61.751},{ra:11.0307,dec:56.3824},{ra:11.8972,dec:53.6947},
+{ra:12.2571,dec:57.0326},{ra:12.9005,dec:55.9598},{ra:13.3988,dec:54.9254},
+{ra:13.7923,dec:49.3133}
+];
+var DIPL=[[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]];
+var CAS=[
+{ra:0.6751,dec:56.5373},{ra:0.153,dec:59.15},{ra:0.9451,dec:60.7168},
+{ra:1.4303,dec:60.2353},{ra:1.9066,dec:63.6701}
+];
+var CASL=[[1,0],[0,2],[2,3],[3,4]];
 var PL=[
 {n:"Takahashi 2010-2050",d:0,y:[2010,2030,2050],dash:[2030],south:1},
 {n:"Takahashi 2000-2030",d:0,y:[2000,2010,2020,2030]},
 {n:"Konus 2000-2020",d:0,y:[2000,2010,2020]},
 {n:"Astro-Physics RAPAS",d:0,y:[2010,2020,2030,2040],south:1},
-{n:"Sky-Watcher / Orion 2012-2032",d:1,y:[2012,2020,2028],tick:[2016,2024,2032],north:1},
+{n:"Sky-Watcher / Orion 2012-2032",d:1,y:[2012,2020,2028],tick:[2016,2024,2032],north:1,oct:1},
 {n:"iOptron",d:2,a:[36,40,44],as:[60,65,70]},
 {n:"iOptron, older dial",d:3,a:[36,40,44],as:[60,65,70]},
 {n:"Arcminute scale 40-60",d:0,a:[40,45,50,55,60]},
 {n:"EXOS-2 / Explore Scientific",d:0,line:[40,45,50,55,60]},
-{n:"Classic, epoch 2000",d:0,a:[44]},
-{n:"Celestron #94221 / Vixen Polaris, 1995",d:0,a:[45.8]},
+{n:"Classic, epoch 2000",d:0,a:[44],fig:1,oct:1},
+{n:"Celestron #94221 / Vixen Polaris, 1995",d:0,a:[45.8],fig:1,oct:1},
 {n:"PASILL / Carton, 1995",d:0,a:[46]},
 {n:"Explore Scientific 8x50, epoch 2005",d:0,ey:2005},
 {n:"Custom circle",d:0,custom:1}
@@ -207,25 +223,34 @@ function render(){
   var v=view();
   var meta=document.getElementById("meta");
   var lt=document.getElementById("lt");
-  if(!v||v.lat===null||v.lat===undefined||v.lonE===null||v.lonE===undefined){
-    lt.textContent="--:--:--";
-    meta.textContent="Waiting for the mount clock and site.";
-    return;
+  var plate=PL[idx]||PL[0];
+  var have=!!(v&&v.lat!==null&&v.lat!==undefined&&v.lonE!==null&&v.lonE!==undefined);
+  if(v) lt.textContent=pad(v.lh)+":"+pad(v.lmi)+":"+pad(v.ls);
+  else lt.textContent="--:--:--";
+  var south=have&&v.lat<0;
+  var noStar=!have||(south&&!plate.oct&&(plate.north||(plate.y&&!plate.south)));
+  var ut=null, jd=2451545, lst=0, arc=0, ha=0;
+  if(v){
+    ut=manual?toUt(v.ly,v.lm,v.ld,v.lh,v.lmi,v.ls,v.tz):{y:v.uy,m:v.um,d:v.ud,hf:v.uhf};
+    jd=jdOf(ut.y,ut.m,ut.d,ut.hf);
   }
-  var south=v.lat<0;
-  var plate=PL[idx];
-  var noStar=south && (plate.north || (plate.y && !plate.south));
-  var ut=manual?toUt(v.ly,v.lm,v.ld,v.lh,v.lmi,v.ls,v.tz):{y:v.uy,m:v.um,d:v.ud,hf:v.uhf};
-  var jd=jdOf(ut.y,ut.m,ut.d,ut.hf);
-  var lst=(manual||v.lst===null||v.lst===undefined)?lstOf(jd,v.lonE):v.lst;
-  var cat=south?OCT:POL;
-  var star=precess(cat.ra,cat.dec,jd);
-  var arc=polMin(star.dec);
-  var ha=norm24(lst-star.ra);
+  if(have){
+    lst=(manual||v.lst===null||v.lst===undefined)?lstOf(jd,v.lonE):v.lst;
+    var cat=south?OCT:POL;
+    var star=precess(cat.ra,cat.dec,jd);
+    arc=polMin(star.dec);
+    ha=norm24(lst-star.ra);
+  }
   var marks=marksOf(plate, custom, south);
   var fit=1, k;
   for(k=0;k<marks.length;k++) if(marks[k].arc>fit) fit=marks[k].arc;
-  if(!noStar && arc>fit) fit=arc;
+  if(have&&!noStar&&arc>fit) fit=arc;
+  if(have&&south&&plate.oct){
+    for(k=0;k<OCTC.length;k++){
+      var oa=polMin(precess(OCTC[k].ra,OCTC[k].dec,jd).dec);
+      if(oa>fit) fit=oa;
+    }
+  }
   var minS=Math.min(w,h);
   var ppm=0.42*minS/fit;
   var cx=w/2, cy=h/2;
@@ -296,25 +321,87 @@ function render(){
       ctx.fillText(L24[step], q2[0], q2[1]);
     }
   }
-  if(!noStar){
+  if(have&&!noStar){
     var sp=pt(cx,cy,arc*ppm,ha);
     ctx.strokeStyle="#3dcc6e"; ctx.setLineDash([5,3]);
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(sp[0],sp[1]); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(sp[0],sp[1],3.4,0,6.3); ctx.fill();
   }
-  var who=south?"Sigma Octantis":"Polaris";
-  var place=between(arc, marks, south);
-  lt.textContent=pad(v.lh)+":"+pad(v.lmi)+":"+pad(v.ls);
-  var lines=v.ly+"-"+pad(v.lm)+"-"+pad(v.ld);
-  lines+="<br>UT "+hms(ut.hf);
-  lines+="<br>JD "+jd.toFixed(5);
-  lines+="<br>Latitude "+(v.lat>=0?"+":"")+v.lat.toFixed(4);
-  lines+="<br>Longitude (E - / W +) "+(-v.lonE>=0?"+":"")+(-v.lonE).toFixed(4);
-  lines+="<br>Hour angle "+hms(ha);
-  if(!noStar) lines+="<br>"+who+" "+arc.toFixed(1)+"\u2032 from the pole"+(place?", "+place:"");
-  lines+="<br>"+(dial===1?"Put 0 at the top.":"Put 12 at the top.");
-  if(noStar) lines+="<br><span class='ret-note'>This plate has no southern circles.</span>";
+  function drawFig(stars, links){
+    var spf=[], i, ra0=0, dec0=0;
+    for(i=0;i<stars.length;i++){
+      var p=precess(stars[i].ra, stars[i].dec, jd);
+      spf.push(p); ra0+=p.ra; dec0+=p.dec;
+    }
+    ra0/=spf.length; dec0/=spf.length;
+    var ang=(norm24(lst-ra0)*15+90)*Math.PI/180;
+    var rx=-Math.cos(ang), ry=Math.sin(ang);
+    var ex=-ry, ey=rx;
+    var pts=[], max=0.2;
+    for(i=0;i<spf.length;i++){
+      var dRa=(spf[i].ra-ra0)*15*Math.cos(dec0*Math.PI/180);
+      var dDec=spf[i].dec-dec0;
+      pts.push([dRa, dDec]);
+      if(Math.abs(dRa)>max) max=Math.abs(dRa);
+      if(Math.abs(dDec)>max) max=Math.abs(dDec);
+    }
+    var box=Math.max(18, Math.min(34, 0.07*minS));
+    var sc=box/max;
+    var rad=Math.min(Ro+box+12, Math.min(w,h)*0.48-box);
+    if(rad<Ro+6) rad=Ro+6;
+    var ox=cx+rx*rad, oy=cy+ry*rad;
+    function xy(u,vv){return [ox+ex*u*sc+rx*vv*sc, oy+ey*u*sc+ry*vv*sc];}
+    ctx.strokeStyle="#9aa3ad"; ctx.fillStyle="#f4f7fb"; ctx.lineWidth=1;
+    ctx.beginPath();
+    for(i=0;i<links.length;i++){
+      var A=xy(pts[links[i][0]][0], pts[links[i][0]][1]);
+      var B=xy(pts[links[i][1]][0], pts[links[i][1]][1]);
+      ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]);
+    }
+    ctx.stroke();
+    for(i=0;i<pts.length;i++){
+      var Q=xy(pts[i][0], pts[i][1]);
+      ctx.beginPath(); ctx.arc(Q[0], Q[1], 2.2, 0, 6.3); ctx.fill();
+    }
+  }
+  if(have&&!south&&plate.fig){drawFig(DIP, DIPL); drawFig(CAS, CASL);}
+  if(have&&south&&plate.oct){
+    var oi, ops=[];
+    ctx.fillStyle="#fff";
+    for(oi=0;oi<OCTC.length;oi++){
+      var os=precess(OCTC[oi].ra, OCTC[oi].dec, jd);
+      var op=pt(cx,cy,polMin(os.dec)*ppm, norm24(lst-os.ra));
+      ops.push(op);
+      ctx.beginPath(); ctx.arc(op[0], op[1], 2.4, 0, 6.3); ctx.fill();
+    }
+    ctx.strokeStyle="#9aa3ad"; ctx.lineWidth=1; ctx.beginPath();
+    ctx.moveTo(ops[0][0], ops[0][1]);
+    ctx.lineTo(ops[1][0], ops[1][1]);
+    ctx.lineTo(ops[2][0], ops[2][1]);
+    ctx.closePath(); ctx.stroke();
+  }
+  var lines;
+  if(!v){
+    lines="Waiting for the mount clock.";
+  } else if(!have){
+    lines=v.ly+"-"+pad(v.lm)+"-"+pad(v.ld);
+    lines+="<br>The site is not set, so the pole star stays off the glass.";
+  } else {
+    var who=south?"Sigma Octantis":"Polaris";
+    var place=between(arc, marks, south);
+    lines=v.ly+"-"+pad(v.lm)+"-"+pad(v.ld);
+    lines+="<br>UT "+hms(ut.hf);
+    lines+="<br>JD "+jd.toFixed(5);
+    lines+="<br>Latitude "+(v.lat>=0?"+":"")+v.lat.toFixed(4);
+    lines+="<br>Longitude (E - / W +) "+(-v.lonE>=0?"+":"")+(-v.lonE).toFixed(4);
+    lines+="<br>Hour angle "+hms(ha);
+    if(!noStar) lines+="<br>"+who+" "+arc.toFixed(1)+"\u2032 from the pole"+(place?", "+place:"");
+    lines+="<br>"+(dial===1?"Put 0 at the top.":"Put 12 at the top.");
+    if(!south&&plate.fig) lines+="<br>Big Dipper and Cassiopeia, as on the glass.";
+    if(south&&plate.oct) lines+="<br>Octans stars at their true distance from the pole.";
+    if(noStar) lines+="<br><span class='ret-note'>This plate has no southern circles.</span>";
+  }
   meta.innerHTML=lines;
 }
 function applyManual(){
@@ -370,7 +457,11 @@ function boot(){
     document.getElementById("customBox").className=PL[idx].custom?"":"ret-hide";
   }
   showCustom();
-  sel.onchange=function(){idx=+sel.value||0; savePlate(); showCustom(); render();};
+  sel.onchange=function(){
+    var n=parseInt(sel.value,10);
+    idx=(n>=0&&n<PL.length)?n:0;
+    savePlate(); showCustom(); render();
+  };
   document.getElementById("arcmin").onchange=function(){
     var v=parseFloat(this.value);
     if(v>=20&&v<=80){custom=v; savePlate(); render();}
@@ -396,6 +487,7 @@ function boot(){
   document.getElementById("bPlus").onclick=function(){bright(1);};
   document.getElementById("bMinus").onclick=function(){bright(0);};
   window.addEventListener("resize", render);
+  render();
   poll();
   setInterval(poll, 1000);
 }
@@ -519,8 +611,20 @@ void TeenAstroWifi::handleReticule()
   sendHtml(data);
   data += "<script>";
   sendHtml(data);
-  data += FPSTR(html_reticule_js);
-  sendHtml(data);
+  {
+    char buf[768];
+    size_t n = strlen_P(html_reticule_js);
+    for (size_t i = 0; i < n; )
+    {
+      size_t c = n - i;
+      if (c > sizeof(buf) - 1) c = sizeof(buf) - 1;
+      memcpy_P(buf, html_reticule_js + i, c);
+      buf[c] = 0;
+      server.sendContent(buf);
+      i += c;
+      yield();
+    }
+  }
   data += "</script>";
   data += FPSTR(html_pageFooter);
   sendHtml(data);
