@@ -239,6 +239,7 @@ Les lettres **eF** apparaissent dans la ligne d'état lorsqu'un eFinder est conn
 | ![](images/icons/GNSS.png) | Heure et lieu synchronisés |
 | ![](images/icons/GNSST.png) | Heure seule |
 | ![](images/icons/GNSSL.png) | Lieu seul |
+| ![](images/icons/GNSSX.png) | Connecté, pas de suivi |
 | ![](images/icons/shift.png) | Shift est tenu |
 | ![](images/icons/Lock__.png) | Verrou, sans préciser lequel |
 | ![](images/icons/lock_t.png) | Télescope verrouillé |

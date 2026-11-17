@@ -241,6 +241,7 @@ Die Buchstaben **eF** erscheinen in der Statuszeile, wenn ein eFinder verbunden 
 | ![](images/icons/GNSS.png) | Zeit und Ort synchronisiert |
 | ![](images/icons/GNSST.png) | Nur die Zeit |
 | ![](images/icons/GNSSL.png) | Nur der Ort |
+| ![](images/icons/GNSSX.png) | Verbunden, kein Empfang |
 | ![](images/icons/shift.png) | Shift wird gehalten |
 | ![](images/icons/Lock__.png) | Gesperrt, ohne zu sagen was |
 | ![](images/icons/lock_t.png) | Teleskop gesperrt |

@@ -241,6 +241,7 @@ The letters **eF** appear in the status row when an eFinder is connected.
 | ![](images/icons/GNSS.png) | Time and location synchronized |
 | ![](images/icons/GNSST.png) | Time only |
 | ![](images/icons/GNSSL.png) | Location only |
+| ![](images/icons/GNSSX.png) | Connected, not tracking |
 | ![](images/icons/shift.png) | Shift is held |
 | ![](images/icons/Lock__.png) | Locked, without saying which |
 | ![](images/icons/lock_t.png) | Telescope locked |
