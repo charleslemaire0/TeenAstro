@@ -319,7 +319,7 @@ C'est suffisant pour une soirée visuelle si la mise en station mécanique est d
 | Limites | Horizon, zénith, axes, méridien |
 | Erreur monture | CH et NP tenus pendant un alignement à deux étoiles |
 | Réfraction | Voir ci-dessous |
-| Réticule | Luminosité du réticule polaire, si la sortie est câblée |
+| Réticule | Chercheur polaire et sa luminosité, sur une équatoriale |
 
 **Erreur monture** : **OFF** ou **ON**. Sur **ON**, la raquette demande **CH**, puis **NP**. Chaque valeur est en degrés, de −5 à +5, avec trois décimales, avec le signe de Wallace.
 
@@ -328,6 +328,8 @@ Laissez **OFF** pour l'alignement à deux étoiles habituel. Passez à **ON** qu
 Le même article est la dernière ligne de **Action Télescope → Aligner**.
 
 Sur la page web de la raquette, le bloc s'appelle **Mount error** et se place au-dessus de la réfraction. Le texte de cette page est en anglais, quelle que soit la langue du firmware. **Off** ou **On** vient en premier ; le texte après le choix est « Hold CH and NP ». CH et NP ont chacun leur ligne : la valeur, **Upload**, puis le nom et l'unité, en degrés, ±5, avec le signe de Wallace.
+
+Sur une monture équatoriale, l'onglet web **Reticule** affiche l'heure locale de l'observatoire, celle que l'on règle sur le chercheur polaire. On choisit le réticule pour que les cercles correspondent au verre en minutes d'arc, puis on place Polaris, ou Sigma Octantis dans le sud, là où la page le montre. **Brighter** et **Less Bright** commandent l'éclairage. Sur la raquette, **Réticule → Viseur** dessine le même réticule. Nord et Sud changent la plaque, Est et Ouest la luminosité.
 
 **Réfraction → Goto** : ON ou OFF. Activée, la réfraction atmosphérique est prise en compte dans le pointage (formule de Saemundsson à l'aller, Bennett au retour).
 

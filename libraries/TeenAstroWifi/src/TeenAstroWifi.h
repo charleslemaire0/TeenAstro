@@ -110,6 +110,8 @@
 #define EEPROM_DISPLAYSUBMODEL 24
 #define EEPROM_DISPLAY180 25
 #define EEPROM_VISITOR 26
+#define EEPROM_RETICLE_PLATE 27
+#define EEPROM_RETICLE_ARC 28
 #define EPPROM_password 50
 #define EEPROM_start_wifi_sta 100
 #ifdef ARDUINO_D1_MINI32
@@ -136,7 +138,7 @@ class TeenAstroWifi
   };
   enum ServerPage
   {
-    Index=1, Control, Speed, Tracking, Mount, Motors, Limits, Encoders, Site, Focuser, Wifi
+    Index=1, Control, Speed, Tracking, Mount, Motors, Limits, Encoders, Site, Focuser, Wifi, Reticule
   };
   static bool wifiOn;
   static volatile bool s_pumpedByTask;
@@ -199,6 +201,8 @@ class TeenAstroWifi
   static void handleConfigurationEncoders();
   static bool processConfigurationFocuserGet();
   static void handleConfigurationFocuser();
+  static void handleReticule();
+  static void reticuleAjax();
   static void handleRoot();
 
   static void controlAjax();

@@ -394,5 +394,12 @@
 #define T_BELOW_ZENITH "Unter Zenit"
 
 #define T_RETICULE "Strichplatte"
+#define T_FINDER "Sucher"
+#define T_PLATE "Platte"
+#define T_EQONLY "Nur aequatorial"
+#define T_RET_12TOP "12 oben"
+#define T_RET_0TOP "0 oben"
+#define T_RET_NOSOUTH "Kein Süden"
+#define T_RET_NOSITE "Kein Ort"
 #define T_BRIGHTER "Heller"
 #define T_LESSBRIGHT "Weniger hell"

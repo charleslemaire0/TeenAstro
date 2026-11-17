@@ -395,5 +395,12 @@
 #define T_BELOW_ZENITH "Below Zenith"
 
 #define T_RETICULE "Reticule"
+#define T_FINDER "Finder"
+#define T_PLATE "Plate"
+#define T_EQONLY "Equatorial only"
+#define T_RET_12TOP "12 at top"
+#define T_RET_0TOP "0 at top"
+#define T_RET_NOSOUTH "No south"
+#define T_RET_NOSITE "No site"
 #define T_BRIGHTER "Brighter"
 #define T_LESSBRIGHT "Less Bright"

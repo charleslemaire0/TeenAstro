@@ -6,7 +6,7 @@ The web server is where you set the site, the mount, the motors, the limits and 
 
 If that address does not answer, read the one in use on the hand controller: **Telescope Settings → Wifi → Show IP**. The two Wi‑Fi modes (Access Point and Station) are described on the [WiFi Interface](https://groups.io/g/TeenAstro/wiki/14592) page.
 
-Screenshots below are from firmware **1.6** (dark theme). The navigation bar lists Status, Control, Speed, Tracking, Site, Mount, Motors, Limits and WiFi. Encoders and Focuser appear when those options are enabled.
+Screenshots below are from firmware **1.6** (dark theme). The navigation bar lists Status, Control, Speed, Tracking, Site, Mount, Motors, Limits and WiFi. Encoders and Focuser appear when those options are enabled. Reticule appears on an equatorial mount.
 
 ## Status
 
@@ -23,6 +23,10 @@ Latitude, longitude, elevation and time / time zone.
 ## Mount
 
 Mount type, motors and encoders. **Mount error** sits above Refraction: **Off** / **On** (“Hold CH and NP”), then CH and NP in degrees (±5, Wallace’s signs). Same meaning as on the hand controller. After **Save** on a **4 Stars** or **3+3 Stars** alignment, these CH and NP fields are filled from the fit (they are not left at 0.000°).
+
+## Reticule
+
+Equatorial mounts only. The large clock is observatory local time, the time you set on the polar finder. Choose the plate so the rings match the glass in arcminutes, then place Polaris, or Sigma Octantis in the south, where the page shows it. **Brighter** and **Less Bright** are the illuminator.
 
 ## Motors
 

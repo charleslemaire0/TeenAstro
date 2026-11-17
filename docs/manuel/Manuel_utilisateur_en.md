@@ -321,7 +321,7 @@ That is enough for a visual night if the mechanical polar alignment is already g
 | Limits | Horizon, zenith, axes, meridian |
 | Mount error | CH and NP held in a two-star alignment |
 | Refraction | See below |
-| Reticule | Polar-finder brightness, if that output is wired |
+| Reticule | Polar finder and its brightness, on an equatorial mount |
 
 **Mount error**: **Off** or **On**. When **On**, enter **CH**, then **NP**. Each value is in degrees, from −5 to +5, with three decimals, in Wallace's sign.
 
@@ -330,6 +330,8 @@ Leave it **Off** for the usual two-star alignment. Turn it **On** when CH and NP
 The same item is the last line of **Telescope Action → Align**.
 
 On the hand controller web page the card is labelled **Mount error** and sits above refraction. **Off** or **On** comes first; the text after the choice is “Hold CH and NP”. CH and NP are each their own row: the value, **Upload**, then the name and the unit, in degrees, ±5, in Wallace's sign. The web page is in English on every firmware.
+
+On an equatorial mount the web **Reticule** tab shows observatory local time, which is the time you set on the polar finder. Choose the plate so the rings match the glass in arcminutes, then place Polaris, or Sigma Octantis in the south, where the page shows it. **Brighter** and **Less Bright** are the illuminator. On the hand controller, **Reticule → Finder** draws that same plate. North and South change the plate, East and West the brightness.
 
 **Refraction → Goto**: ON or OFF. When on, atmospheric refraction is included in the slew (Saemundsson on the way out, Bennett on the way back).
 

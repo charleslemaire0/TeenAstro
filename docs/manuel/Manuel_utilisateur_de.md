@@ -321,7 +321,7 @@ Das genügt für einen visuellen Abend, wenn die mechanische Polausrichtung scho
 | Grenzen | Horizont, Zenit, Achsen, Meridian |
 | Montierungsfehler | CH und NP, fest bei einer 2-Sterne-Ausrichtung |
 | Refraktion | Siehe unten |
-| Strichplatte | Helligkeit des Polsucher-Fadenkreuzes, wenn der Ausgang verdrahtet ist |
+| Strichplatte | Polsucher und seine Helligkeit, an einer äquatorialen Montierung |
 
 **Montierungsfehler**: **AUS** oder **AN**. Bei **AN** fragt der Handkontroller **CH**, dann **NP**. Jeder Wert ist in Grad, von −5 bis +5, mit drei Nachkommastellen, mit Wallaces Vorzeichen.
 
@@ -330,6 +330,8 @@ Das genügt für einen visuellen Abend, wenn die mechanische Polausrichtung scho
 Derselbe Eintrag ist die letzte Zeile von **Teleskop Aktion → Ausrichten**.
 
 Auf der Webseite des Handkontrollers heißt der Block **Mount error** und steht über der Refraktion. Der Seitentext ist auf jeder Firmware englisch. **Off** oder **On** kommt zuerst; der Text nach der Auswahl ist „Hold CH and NP“. CH und NP haben je eine eigene Zeile: der Wert, **Upload**, dann Name und Einheit, in Grad, ±5, mit Wallaces Vorzeichen.
+
+Bei einer äquatorialen Montierung zeigt der Web-Reiter **Reticule** die Ortszeit der Sternwarte, also die Zeit, die man am Polsucher einstellt. Man wählt die Strichplatte so, dass die Ringe zum Glas in Bogenminuten passen, und setzt dann Polaris, oder am Südhimmel Sigma Octantis, dorthin, wo die Seite sie zeigt. **Brighter** und **Less Bright** steuern die Beleuchtung. Am Handkontroller zeichnet **Strichplatte → Sucher** dieselbe Platte. Nord und Süd wechseln die Platte, Ost und West die Helligkeit.
 
 **Refraktion → Goto**: AN oder AUS. Eingeschaltet geht die atmosphärische Refraktion in den Schwenk ein (Saemundsson hin, Bennett zurück).
 

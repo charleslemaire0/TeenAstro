@@ -291,16 +291,3 @@ void SmartHandController::menuSetDriftRate(int axis)
 
 
 
-void SmartHandController::menuReticule()
-{
-  const char* options = T_BRIGHTER "\n" T_LESSBRIGHT;
-  uint8_t selection = 1;
-  while (selection != 0)
-  {
-    selection = display->UserInterfaceSelectionList(&buttonPad, T_RETICULE, selection, options);
-    if (selection > 0)
-    {
-      DisplayMessageLX200(m_client->reticuleBrightnessAdjust(selection == 1), false);
-    }
-  }
-}

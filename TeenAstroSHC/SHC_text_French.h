@@ -394,5 +394,12 @@
 #define T_BELOW_ZENITH "< Zénith"
 
 #define T_RETICULE "Réticule"
+#define T_FINDER "Viseur"
+#define T_PLATE "Plaque"
+#define T_EQONLY "Équatoriale seule"
+#define T_RET_12TOP "12 en haut"
+#define T_RET_0TOP "0 en haut"
+#define T_RET_NOSOUTH "Pas de sud"
+#define T_RET_NOSITE "Pas de site"
 #define T_BRIGHTER "plus brillant"
 #define T_LESSBRIGHT "moins brillant"

@@ -192,6 +192,8 @@ const char html_links5S[] PROGMEM = "<a class='sel' href='/configuration_site.ht
 const char html_links5N[] PROGMEM = "<a href='/configuration_site.htm'>Site</a>\n";
 const char html_links6S[] PROGMEM = "<a class='sel' href='/configuration_mount.htm'>Mount</a>\n";
 const char html_links6N[] PROGMEM = "<a href='/configuration_mount.htm'>Mount</a>\n";
+const char html_links6bS[] PROGMEM = "<a class='sel' href='/reticule.htm'>Reticule</a>\n";
+const char html_links6bN[] PROGMEM = "<a href='/reticule.htm'>Reticule</a>\n";
 const char html_links7S[] PROGMEM = "<a class='sel' href='/configuration_motors.htm'>Motors</a>\n";
 const char html_links7N[] PROGMEM = "<a href='/configuration_motors.htm'>Motors</a>\n";
 const char html_links8S[] PROGMEM = "<a class='sel' href='/configuration_limits.htm'>Limits</a>\n";
@@ -489,6 +491,11 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   }
   data += page == ServerPage::Site ? FPSTR(html_links5S) : FPSTR(html_links5N);
   data += page == ServerPage::Mount ? FPSTR(html_links6S) : FPSTR(html_links6N);
+  {
+    TeenAstroMountStatus::Mount mt = ta_MountStatus.getMount();
+    if (mt == TeenAstroMountStatus::MOUNT_TYPE_GEM || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK)
+      data += page == ServerPage::Reticule ? FPSTR(html_links6bS) : FPSTR(html_links6bN);
+  }
   if (motors)
     data += page == ServerPage::Motors ? FPSTR(html_links7S) : FPSTR(html_links7N);
   data += page == ServerPage::Limits ? FPSTR(html_links8S) : FPSTR(html_links8N);
@@ -741,6 +748,8 @@ void TeenAstroWifi::setup()
   server.on("/configuration_limits.htm", handleConfigurationLimits);
   server.on("/configuration_encoders.htm", handleConfigurationEncoders);
   server.on("/configuration_focuser.htm", handleConfigurationFocuser);
+  server.on("/reticule.htm", handleReticule);
+  server.on("/reticule.txt", reticuleAjax);
   server.on("/control.htm", handleControl);
   server.on("/control.txt", controlAjax);
   server.on("/guide.txt", guideAjax);

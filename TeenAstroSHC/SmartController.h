@@ -109,6 +109,10 @@ private:
   bool handleAlignRecenterSpeed();
   void acceptAlignStar();
   void menuReticule();
+  void showReticuleFinder();
+  void drawReticule();
+  void reticulePickPlate();
+  bool reticuleEditArc();
   void menuTrack();
 
   uint8_t current_selection_filter = 1;

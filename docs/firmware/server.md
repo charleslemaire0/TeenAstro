@@ -9,7 +9,7 @@ ESP8266 firmware: TCP bridge on port **9999**, exposing the MainUnit LX200 seria
 ## Role
 
 - Listen on TCP 9999; forward bytes to/from MainUnit serial (57600).
-- Web server for WiFi credentials (STA/AP), web password, site and mount config. On the mount page, **Mount error** is above refraction: an Off/On choice (“Hold CH and NP”), then one row for CH and one for NP. Each row is the value, Upload, then the name and the unit (degrees, ±5). The signs are Wallace's.
+- Web server for WiFi credentials (STA/AP), web password, site and mount config. On the mount page, **Mount error** is above refraction: an Off/On choice (“Hold CH and NP”), then one row for CH and one for NP. Each row is the value, Upload, then the name and the unit (degrees, ±5). The signs are Wallace's. On an equatorial mount the Reticule page shows observatory local time and where to place Polaris, or Sigma Octantis in the south, on the selected plate. The rings are arcminutes from the pole. Brighter and Less Bright drive the illuminator.
 
 ---
 
