@@ -331,7 +331,7 @@ The same item is the last line of **Telescope Action → Align**.
 
 On the hand controller web page the card is labelled **Mount error** and sits above refraction. **Off** or **On** comes first; the text after the choice is “Hold CH and NP”. CH and NP are each their own row: the value, **Upload**, then the name and the unit, in degrees, ±5, in Wallace's sign. The web page is in English on every firmware.
 
-On an equatorial mount the web **Reticule** tab shows observatory local time and one circle at the pole star's true distance. Place Polaris, or Sigma Octantis in the south, on that circle with 12 at the top. **Brighter** and **Less Bright** are the illuminator. On the hand controller, **Reticule → Finder** draws the same circle. East and West change the brightness.
+On an equatorial mount the web **Reticule** tab draws one circle at the pole star's true distance from the pole. Polaris is used in the north and Sigma Octantis in the south. Put 12 at the top. The clock in the bottom-right corner is the observatory local time from the mount. That time already includes the site longitude, so the longitude correction on the polar finder stays at 0. Set the finder to that clock and place the pole star on the circle. **Brighter** and **Less Bright** sit with the clock, clear of the circle, and drive the illuminator. On the hand controller, **Reticule → Finder** draws the same circle, with the local time beside it. East and West change the brightness.
 
 **Refraction → Goto**: ON or OFF. When on, atmospheric refraction is included in the slew (Saemundsson on the way out, Bennett on the way back).
 

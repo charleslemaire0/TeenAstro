@@ -114,7 +114,8 @@ def build_webserver() -> str:
         p(
             "Screenshots below are from firmware <strong>1.6</strong> (dark theme). "
             "The navigation bar lists Status, Control, Speed, Tracking, Site, Mount, Motors, "
-            "Limits and WiFi. Encoders and Focuser appear when those options are enabled."
+            "Limits and WiFi. Encoders and Focuser appear when those options are enabled. "
+            "Reticule appears on an equatorial mount."
         )
     )
 
@@ -147,6 +148,26 @@ def build_webserver() -> str:
         )
     )
     parts.append(img_tag("web_mount.png", "Webserver Mount — Mount error"))
+
+    parts.append(h("Reticule"))
+    parts.append(
+        p(
+            "Equatorial mounts only. The circle is the pole star's true distance from the pole: "
+            "Polaris in the north, Sigma Octantis in the south. Put 12 at the top. "
+            "The clock in the bottom-right corner is the observatory local time from the mount. "
+            "That time already includes the site longitude, so the longitude correction on the "
+            "polar finder stays at 0. Set the finder to that clock and place the pole star on the circle. "
+            "<strong>Brighter</strong> and <strong>Less Bright</strong> sit with the clock, clear of the circle."
+        )
+    )
+    parts.append(
+        p(
+            "On the hand controller: <strong>Telescope Settings → Mount → Reticule → Finder</strong>. "
+            "The same circle is on the left and the local time is beside it. "
+            "East makes the illuminator brighter, West makes it dimmer."
+        )
+    )
+    parts.append(img_tag("web_reticule.png", "Webserver Reticule"))
 
     parts.append(h("Motors"))
     parts.append(p("Gear ratios, steps, microsteps, currents and backlash for each axis."))

@@ -331,7 +331,7 @@ Derselbe Eintrag ist die letzte Zeile von **Teleskop Aktion → Ausrichten**.
 
 Auf der Webseite des Handkontrollers heißt der Block **Mount error** und steht über der Refraktion. Der Seitentext ist auf jeder Firmware englisch. **Off** oder **On** kommt zuerst; der Text nach der Auswahl ist „Hold CH and NP“. CH und NP haben je eine eigene Zeile: der Wert, **Upload**, dann Name und Einheit, in Grad, ±5, mit Wallaces Vorzeichen.
 
-Bei einer äquatorialen Montierung zeigt der Web-Reiter **Reticule** die Ortszeit der Sternwarte und einen Kreis im wahren Polabstand des Polarsterns. Polaris, oder am Südhimmel Sigma Octantis, setzt man auf diesen Kreis, mit 12 oben. **Brighter** und **Less Bright** steuern die Beleuchtung. Am Handkontroller zeichnet **Strichplatte → Sucher** denselben Kreis. Ost und West ändern die Helligkeit.
+Bei einer äquatorialen Montierung zeichnet der Web-Reiter **Reticule** einen Kreis im wahren Polabstand. Polaris gilt im Norden, Sigma Octantis im Süden. 12 steht oben. Die Uhr unten rechts ist die Ortszeit der Sternwarte, die Zeit des Standorts. Diese Zeit enthält die Länge bereits, daher bleibt die Längenkorrektur am Polsucher auf 0. Den Sucher stellt man auf diese Uhr und setzt den Polarstern auf den Kreis. **Brighter** und **Less Bright** stehen bei der Uhr, frei vom Kreis, und steuern die Beleuchtung. Am Handkontroller zeichnet **Strichplatte → Sucher** denselben Kreis, mit der Ortszeit daneben. Ost und West ändern die Helligkeit.
 
 **Refraktion → Goto**: AN oder AUS. Eingeschaltet geht die atmosphärische Refraktion in den Schwenk ein (Saemundsson hin, Bennett zurück).
 

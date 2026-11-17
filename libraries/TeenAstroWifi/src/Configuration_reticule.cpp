@@ -6,42 +6,32 @@
 
 const char html_reticule_style[] PROGMEM = R"raw(
 <style>
-.ret-wrap{position:relative;background:#12141a;border-radius:8px}
-#cv{width:100%;height:78vh;display:block;background:#12141a;touch-action:none}
-.ret-panel{position:absolute;z-index:3;top:8px;left:8px;max-width:320px;max-height:calc(78vh - 16px);overflow:auto;
-background:rgba(8,10,14,.92);color:#e8eaed;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.4}
-.ret-panel .lt{font-size:1.5em;font-weight:700;margin:2px 0 4px;letter-spacing:.02em}
-.ret-panel select,.ret-panel input{width:100%;max-width:100%;box-sizing:border-box;margin:3px 0}
-.ret-hide{display:none}
-.ret-panel button{margin:4px 4px 0 0}
-.ret-note{color:#f0c040;margin-top:4px}
+.content{max-width:none;margin:8px 12px 12px;padding:0}
+.ret-page{position:relative;padding:8px}
+#cv{width:100%;height:calc(100vh - 150px);min-height:280px;display:block;background:#12141a;border-radius:8px;touch-action:none}
+.ret-bar{position:absolute;right:16px;bottom:16px;max-width:280px;text-align:right;color:#e8eaed;font-size:14px;line-height:1.35;z-index:2}
+.ret-bar .lt{font-size:1.7em;font-weight:700;margin:0 0 4px;letter-spacing:.02em}
+.ret-bar .ret-btns{margin-top:8px;white-space:nowrap}
+.ret-bar button{margin:0 0 0 8px}
 </style>
-<div class='card'><div class='ret-wrap'>
+<div class='card ret-page'>
 <canvas id='cv'></canvas>
-<div class='ret-panel'>
-<div id='disp'>
+<div class='ret-bar'>
 <div>Local time</div>
 <div class='lt' id='lt'>--:--:--</div>
 <div id='meta'></div>
-<button type='button' id='bEdit'>Edit</button>
+<div class='ret-btns'>
 <button type='button' id='bPlus'>Brighter</button>
 <button type='button' id='bMinus'>Less Bright</button>
 </div>
-<div id='edit' class='ret-hide'>
-<label>Date and time<input id='dt' type='datetime-local' step='1'></label>
-<label>Latitude (N + / S -)<input id='lat' type='number' step='0.0001'></label>
-<label>Longitude (E - / W +)<input id='lon' type='number' step='0.0001'></label>
-<button type='button' id='bNow'>Now</button>
-<button type='button' id='bSub'>Submit</button>
-<button type='button' id='bBack'>Back to realtime</button>
 </div>
-</div></div></div>
+</div>
 )raw";
 
 const char html_reticule_js[] PROGMEM = R"raw(
 var POL={ra:2.5301944,dec:89.2641667};
 var OCT={ra:21.146111,dec:-88.956389};
-var st=null, manual=null, busy=false, editOn=false;
+var st=null, busy=false;
 function pad(n){n=Math.floor(Math.abs(n));return (n<10?"0":"")+n;}
 function norm24(h){h=h%24;if(h<0)h+=24;return h;}
 function frac(x){x=x-Math.floor(x);if(x<0)x+=1;return x;}
@@ -79,41 +69,13 @@ function splitIso(s){
   return {y:+s.substr(0,4), m:+s.substr(5,2), d:+s.substr(8,2),
     h:+s.substr(11,2), mi:+s.substr(14,2), s:+s.substr(17,2)};
 }
-function iso(y,m,d,h,mi,s){
-  return y+"-"+pad(m)+"-"+pad(d)+"T"+pad(h)+":"+pad(mi)+":"+pad(s);
-}
-function toUt(y,m,d,h,mi,s,tz){
-  var ms=Date.UTC(y,m-1,d,h,mi,s)-tz*3600000, u=new Date(ms);
-  return {y:u.getUTCFullYear(), m:u.getUTCMonth()+1, d:u.getUTCDate(),
-    hf:u.getUTCHours()+u.getUTCMinutes()/60+u.getUTCSeconds()/3600};
-}
 function view(){
-  if(manual) return manual;
   if(!st||!st.ok) return null;
   var L=splitIso(st.local), U=splitIso(st.utc);
   if(!L||!U) return null;
   return {lat:st.lat, lonE:st.lon, tz:st.tz, lst:st.lst,
     ly:L.y, lm:L.m, ld:L.d, lh:L.h, lmi:L.mi, ls:L.s,
     uy:U.y, um:U.m, ud:U.d, uhf:U.h+U.mi/60+U.s/3600};
-}
-function fillForm(){
-  var v=view(); if(!v) return;
-  if(v.ly) document.getElementById("dt").value=iso(v.ly,v.lm,v.ld,v.lh,v.lmi,v.ls);
-  if(v.lat!==null&&v.lat!==undefined) document.getElementById("lat").value=v.lat;
-  if(v.lonE!==null&&v.lonE!==undefined) document.getElementById("lon").value=(-v.lonE).toFixed(5);
-}
-function applyManual(){
-  if(!st) return false;
-  var dt=document.getElementById("dt").value;
-  var lat=parseFloat(document.getElementById("lat").value);
-  var lonW=parseFloat(document.getElementById("lon").value);
-  var L=splitIso(dt.length===16?dt+":00":dt);
-  if(!L||!(lat<=90&&lat>=-90)||!(lonW<=180&&lonW>=-180)) return false;
-  var tz=st.tz;
-  manual={lat:lat, lonE:-lonW, tz:tz, lst:null,
-    ly:L.y, lm:L.m, ld:L.d, lh:L.h, lmi:L.mi, ls:L.s};
-  render();
-  return true;
 }
 function pt(cx,cy,r,ha){
   var ang=(ha*15+90)*Math.PI/180;
@@ -136,18 +98,42 @@ function render(){
   var south=have&&v.lat<0;
   var arc=40, ha=0, ut=null, jd=0, lst=0;
   if(v){
-    ut=manual?toUt(v.ly,v.lm,v.ld,v.lh,v.lmi,v.ls,v.tz):{y:v.uy,m:v.um,d:v.ud,hf:v.uhf};
+    ut={y:v.uy,m:v.um,d:v.ud,hf:v.uhf};
     jd=jdOf(ut.y,ut.m,ut.d,ut.hf);
   }
   if(have){
-    lst=(manual||v.lst===null||v.lst===undefined)?lstOf(jd,v.lonE):v.lst;
+    lst=(v.lst===null||v.lst===undefined)?lstOf(jd,v.lonE):v.lst;
     var cat=south?OCT:POL;
     var star=precess(cat.ra,cat.dec,jd);
     arc=polMin(star.dec);
     ha=norm24(lst-star.ra);
   }
-  var minS=Math.min(w,h), ppm=0.42*minS/Math.max(arc,1);
-  var cx=w/2, cy=h/2, Ro=arc*ppm, step;
+  var lines;
+  if(!v) lines="Waiting for the mount clock.";
+  else if(!have) lines=v.ly+"-"+pad(v.lm)+"-"+pad(v.ld)+"<br>The site is not set, so the pole star stays off the glass.";
+  else {
+    lines=v.ly+"-"+pad(v.lm)+"-"+pad(v.ld);
+    lines+="<br>UT "+hms(ut.hf);
+    lines+="<br>"+(south?"Sigma Octantis":"Polaris")+" "+arc.toFixed(1)+"\u2032 from the pole";
+    lines+="<br>Hour angle "+hms(ha)+"<br>Put 12 at the top.";
+  }
+  meta.innerHTML=lines;
+  var m=8, ink=32, gap=12, boxL=w, boxT=h;
+  var bar=document.querySelector(".ret-bar");
+  if(bar){
+    var cR=cv.getBoundingClientRect(), bR=bar.getBoundingClientRect();
+    if(bR.width>0&&bR.top<cR.bottom&&bR.left<cR.right){
+      boxL=bR.left-cR.left-gap;
+      boxT=bR.top-cR.top-gap;
+    }
+  }
+  var aD=Math.min(w-2*m, boxT-m), bD=Math.min(boxL-m, h-2*m);
+  var cx, cy, diam;
+  if(aD>=bD){ diam=aD; cx=w/2; cy=m+diam/2; }
+  else { diam=bD; cx=m+(boxL-m)/2; cy=h/2; }
+  if(!(diam>48)){ diam=Math.min(w,h)-2*m; cx=w/2; cy=h/2; }
+  var Ro=diam/2-ink; if(Ro<12) Ro=12;
+  var step;
   ctx.strokeStyle="#ff3b30"; ctx.lineWidth=1; ctx.fillStyle="#ff3b30";
   ctx.beginPath();
   ctx.moveTo(cx,cy-Ro-24); ctx.lineTo(cx,cy+Ro+24);
@@ -168,16 +154,6 @@ function render(){
     var sp=pt(cx,cy,Ro,ha);
     ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(sp[0],sp[1],3.4,0,6.3); ctx.fill();
   }
-  var lines;
-  if(!v) lines="Waiting for the mount clock.";
-  else if(!have) lines=v.ly+"-"+pad(v.lm)+"-"+pad(v.ld)+"<br>The site is not set, so the pole star stays off the glass.";
-  else {
-    lines=v.ly+"-"+pad(v.lm)+"-"+pad(v.ld);
-    lines+="<br>UT "+hms(ut.hf);
-    lines+="<br>"+(south?"Sigma Octantis":"Polaris")+" "+arc.toFixed(1)+"\u2032 from the pole";
-    lines+="<br>Hour angle "+hms(ha)+"<br>Put 12 at the top.";
-  }
-  meta.innerHTML=lines;
 }
 function getJson(url, cb, onDone){
   var x=new XMLHttpRequest();
@@ -195,35 +171,17 @@ function poll(){
   getJson("/reticule.txt?x="+Date.now(), function(j){
     if(!j||!j.ok) return;
     st=j;
-    if(!manual){ if(!editOn) fillForm(); render(); }
+    render();
   }, function(){ busy=false; });
 }
 function bright(v){
   getJson("/reticule.txt?b="+v+"&x="+Date.now(), function(j){
     if(!j||!j.ok) return;
     st=j;
-    if(!manual){fillForm(); render();}
+    render();
   });
 }
 function boot(){
-  document.getElementById("bEdit").onclick=function(){
-    editOn=true; fillForm();
-    document.getElementById("disp").className="ret-hide";
-    document.getElementById("edit").className="";
-  };
-  document.getElementById("bNow").onclick=function(){
-    manual=null; editOn=false;
-    document.getElementById("edit").className="ret-hide";
-    document.getElementById("disp").className="";
-    fillForm(); render();
-  };
-  document.getElementById("bBack").onclick=document.getElementById("bNow").onclick;
-  document.getElementById("bSub").onclick=function(){
-    if(!applyManual()) return;
-    editOn=false;
-    document.getElementById("edit").className="ret-hide";
-    document.getElementById("disp").className="";
-  };
   document.getElementById("bPlus").onclick=function(){bright(1);};
   document.getElementById("bMinus").onclick=function(){bright(0);};
   window.addEventListener("resize", render);

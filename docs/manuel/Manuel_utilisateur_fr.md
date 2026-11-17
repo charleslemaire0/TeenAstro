@@ -329,7 +329,7 @@ Le même article est la dernière ligne de **Action Télescope → Aligner**.
 
 Sur la page web de la raquette, le bloc s'appelle **Mount error** et se place au-dessus de la réfraction. Le texte de cette page est en anglais, quelle que soit la langue du firmware. **Off** ou **On** vient en premier ; le texte après le choix est « Hold CH and NP ». CH et NP ont chacun leur ligne : la valeur, **Upload**, puis le nom et l'unité, en degrés, ±5, avec le signe de Wallace.
 
-Sur une monture équatoriale, l'onglet web **Reticule** affiche l'heure locale de l'observatoire et un cercle au vrai écart de l'étoile polaire. On place Polaris, ou Sigma Octantis dans le sud, sur ce cercle, avec 12 en haut. **Brighter** et **Less Bright** commandent l'éclairage. Sur la raquette, **Réticule → Viseur** dessine le même cercle. Est et Ouest règlent la luminosité.
+Sur une monture équatoriale, l'onglet web **Reticule** trace un cercle au vrai écart de l'étoile polaire. Polaris sert au nord, Sigma Octantis au sud. On met 12 en haut. L'horloge en bas à droite est l'heure locale de l'observatoire, celle du site. Cette heure tient déjà compte de la longitude, donc la correction de longitude du chercheur polaire reste à 0. On règle le chercheur sur cette horloge et on place l'étoile polaire sur le cercle. **Brighter** et **Less Bright** sont à côté de l'horloge, hors du cercle, et commandent l'éclairage. Sur la raquette, **Réticule → Viseur** dessine le même cercle, avec l'heure locale à côté. Est et Ouest règlent la luminosité.
 
 **Réfraction → Goto** : ON ou OFF. Activée, la réfraction atmosphérique est prise en compte dans le pointage (formule de Saemundsson à l'aller, Bennett au retour).
 
