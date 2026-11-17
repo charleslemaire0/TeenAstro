@@ -6,7 +6,7 @@
 
 ![Status](screenshots/app_status.png)
 
-The top line is tracking, the rate, park, pier side, speed and whether an alignment model is stored. If the RTC coin cell on the main unit is empty or missing, that line shows **RTC battery**. Sky gotos and sync stay refused until the time is set.
+The top line is tracking, the rate, park, pier side, speed and whether an alignment model is stored. If the RTC coin cell on the main unit is empty or missing, that line shows **RTC battery**. After a full power-off the clock shows the firmware build time, or 1 January 2019 on a Teensy 4 main unit. Sky gotos and sync stay refused until the time is set.
 
 **RA / Dec** and **Alt / Az** are the telescope pointing. Below that are UTC, the date and local sidereal time, then the current goto target, then the firmware name and board.
 

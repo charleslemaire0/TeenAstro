@@ -433,7 +433,7 @@ Set backlash only after the gear ratio and the direction are correct. Too much b
 
 The main unit derives local sidereal time from this. A clock wrong by one minute shifts pointing by about 15' in right ascension.
 
-The clock is kept by a coin cell on the main unit. If that cell is empty or missing, the time starts at 1 January 2019 and the status row shows **Er!** / **T**. Sky gotos, meridian flips, push-to and sync are refused until the time is set here, by GNSS, or from a computer. Going home, parking and the direction buttons still work. This is not the supply battery.
+The clock is kept by a coin cell on the main unit. With the cell empty or missing, switch the mount fully off and on. The clock then shows the firmware build time, the same date as the firmware date on the version screen, and the status row shows **Er!** / **T**. A Teensy 4 main unit shows 1 January 2019. Sky gotos, meridian flips, push-to and sync are refused until the time is set here, by GNSS, or from a computer. Going home, parking and the direction buttons still work. The cell is read only across that power-off: while the mount stays powered, the clock keeps the time it already has. This is not the supply battery.
 
 ### Site
 
@@ -1157,7 +1157,7 @@ If you loosened the clutches during the night, do at least a sync again, and an 
 | What you see | Where to look |
 |--------------|----------------|
 | **ERROR** / **version** | Hand controller and main unit from different releases |
-| **Er!** / **T**, date near 1 January 2019 | RTC coin cell on the main unit. Set the time, or let GNSS do it. Not the supply battery |
+| **Er!** / **T**, clock at the firmware build date, or at 1 January 2019 on a Teensy 4 main unit | RTC coin cell on the main unit. Set the time, or let GNSS do it. Not the supply battery |
 | **Not Connected**, then a reboot | Hand-controller cable, a battery sagging under load, or the main unit off |
 | The display dims, the hand controller restarts at the logo, a Max-speed goto stalls | Battery empty or too weak under load. The hand controller does not show voltage. Chapter 25 |
 | Black screen, Shift wakes it | Sleep timeout, not an empty battery |
@@ -1327,6 +1327,7 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 ### 1.6.18
 
 - An empty or missing RTC coin cell on the main unit is an error. The hand controller shows **Er!** / **T**. The web page says **RTC battery empty**. The Android app says **RTC battery**.
+- After a full power-off the clock shows the firmware build time. A Teensy 4 main unit shows 1 January 2019. Pulling the cell while the mount stays powered leaves the clock as it is.
 - Sky gotos, meridian flips, push-to and sync are refused until the clock is set from the hand controller, from GNSS, or from a computer. Going home, parking and the direction buttons still work.
 - ASCOM names the fault when a slew is refused. Alpaca refuses the slew as well.
 

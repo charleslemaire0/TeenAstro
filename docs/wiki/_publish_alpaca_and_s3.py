@@ -227,11 +227,13 @@ def build_alpaca(page_upgrade: int) -> str:
     parts.append(h("Empty RTC battery"))
     parts.append(
         p(
-            "If the coin cell on the main unit is empty or missing, the clock starts at "
-            "1 January 2019. The Windows ASCOM driver refuses a slew and says the RTC battery "
+            "If the coin cell on the main unit is empty or missing, switch the mount fully "
+            "off and on. The clock then shows the firmware build time. A Teensy 4 main unit "
+            "shows 1 January 2019. The Windows ASCOM driver refuses a slew and says the RTC battery "
             "is empty. Alpaca refuses the slew as well (<code>Slew or sync was rejected</code>). "
             "Set the time from the hand controller, from GNSS, or with the client's site/time "
-            "commands. Home, park and manual moves still work."
+            "commands. Home, park and manual moves still work. Pulling the cell while the mount "
+            "stays powered leaves the clock as it is."
         )
     )
     parts.append(h("Plate-solve alignment"))

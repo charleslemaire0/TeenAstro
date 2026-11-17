@@ -433,7 +433,7 @@ Das Spiel erst einstellen, wenn Getriebezahl und Drehrichtung stimmen. Zu viel S
 
 Das Steuergerät leitet daraus die lokale Sternzeit ab. Eine um eine Minute falsche Uhr verschiebt das Zeigen um etwa 15' in Rektaszension.
 
-Die Uhr hält eine Knopfzelle auf dem Steuergerät. Ist diese Zelle leer oder fehlt sie, beginnt die Zeit am 1. Januar 2019 und die Statuszeile zeigt **Er!** / **T**. Goto, Meridianumschlag, Push-to und Synchronisierung werden abgelehnt, bis die Zeit hier, per GNSS oder vom Rechner gesetzt ist. Home, Parken und die Richtungstasten bleiben möglich. Das ist nicht die Versorgungsbatterie.
+Die Uhr hält eine Knopfzelle auf dem Steuergerät. Ist diese Zelle leer oder fehlt sie, zeigt die Uhr nach einem kompletten Aus- und Einschalten die Bauzeit der Firmware, dasselbe Datum wie das Firmwaredatum auf dem Versionsbildschirm, und die Statuszeile zeigt **Er!** / **T**. Ein Steuergerät mit Teensy 4 zeigt den 1. Januar 2019. Goto, Meridianumschlag, Push-to und Synchronisierung werden abgelehnt, bis die Zeit hier, per GNSS oder vom Rechner gesetzt ist. Home, Parken und die Richtungstasten bleiben möglich. Die Zelle wird nur bei diesem Ausschalten gelesen: solange das Steuergerät versorgt bleibt, behält die Uhr die bisherige Zeit. Das ist nicht die Versorgungsbatterie.
 
 ### Ort
 
@@ -1157,7 +1157,7 @@ Mussten die Klemmen in der Nacht gelöst werden, mindestens neu synchronisieren,
 | Was zu sehen ist | Wohin schauen |
 |------------------|---------------|
 | **FEHLER** / **version** | Handkontroller und Steuergerät aus verschiedenen Veröffentlichungen |
-| **Er!** / **T**, Datum nahe dem 1. Januar 2019 | Pufferbatterie der Uhr am Steuergerät. Zeit setzen, oder GNSS das tun lassen. Nicht die Versorgungsbatterie |
+| **Er!** / **T**, Uhr auf dem Firmware-Baudatum, oder am 1. Januar 2019 bei einem Teensy-4-Steuergerät | Pufferbatterie der Uhr am Steuergerät. Zeit setzen, oder GNSS das tun lassen. Nicht die Versorgungsbatterie |
 | **Nicht verbunden**, dann Neustart | Kabel des Handkontrollers, Batterie, die unter Last einbricht, oder Steuergerät aus |
 | Die Anzeige wird blass, der Handkontroller startet beim Logo neu, ein Goto mit Max bleibt stehen | Batterie leer oder unter Last zu schwach. Der Handkontroller zeigt keine Spannung. Kapitel 26 |
 | Schwarzer Bildschirm, Shift weckt ihn | Ruheabschaltung, keine leere Batterie |
@@ -1327,6 +1327,7 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 ### 1.6.18
 
 - Eine leere oder fehlende Pufferbatterie der Uhr am Steuergerät ist ein Fehler. Der Handkontroller zeigt **Er!** / **T**. Die Webseite sagt **RTC battery empty**. Die Android-App sagt **RTC battery**.
+- Nach einem kompletten Aus- und Einschalten zeigt die Uhr die Bauzeit der Firmware. Ein Teensy-4-Steuergerät zeigt den 1. Januar 2019. Die Zelle bei laufender Versorgung zu ziehen lässt die Uhr unverändert.
 - Goto, Meridianumschlag, Push-to und Synchronisierung werden abgelehnt, bis die Uhr vom Handkontroller, von GNSS oder vom Rechner gestellt ist. Home, Parken und die Richtungstasten bleiben möglich.
 - ASCOM nennt den Fehler, wenn ein Schwenk abgelehnt wird. Alpaca lehnt den Schwenk ebenfalls ab.
 

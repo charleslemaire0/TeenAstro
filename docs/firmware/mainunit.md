@@ -35,6 +35,7 @@ Core mount firmware on Teensy 3/4. Real-time control loop: sidereal clock, step 
 ## Sidereal clock & timers
 
 - **masterClockSpeed** = 1,000,000; **siderealClockSpeed** ≈ 997269.5625.
+- Missing coin cell: on Teensy 3 (board 240) the core seeds the RTC with the firmware build time and writes `0x5A94C3A5` to the VBAT register file at `0x4003E01C`. On Teensy 4 the RTC sits on 2019-01-01 plus uptime. `latchIfRtcUninitialized()` latches `ERRT_RTC` from either sign. A clock write clears it.
 - **Timer1:** sidereal tick; **TIMER3/TIMER4:** axis step ISRs (half-step toggle, update delta, move).
 - Main loop calls `onSiderealTick(phase, forceTracking, elapsed)` when elapsed > 0; tracking: target += fstep·elapsed per axis.
 

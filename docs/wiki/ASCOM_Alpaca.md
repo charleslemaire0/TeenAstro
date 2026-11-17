@@ -40,7 +40,7 @@ The classic [ASCOM Driver](https://groups.io/g/TeenAstro/wiki/8102) (COM / IP on
 
 ## Empty RTC battery
 
-If the coin cell on the main unit is empty or missing, the clock starts at 1 January 2019. The Windows ASCOM driver refuses a slew and says the RTC battery is empty. Alpaca refuses the slew as well (`Slew or sync was rejected`). Set the time from the hand controller, from GNSS, or with the client's site/time commands. Home, park and manual moves still work.
+If the coin cell on the main unit is empty or missing, switch the mount fully off and on. The clock then shows the firmware build time. A Teensy 4 main unit shows 1 January 2019. The Windows ASCOM driver refuses a slew and says the RTC battery is empty. Alpaca refuses the slew as well (`Slew or sync was rejected`). Set the time from the hand controller, from GNSS, or with the client's site/time commands. Home, park and manual moves still work. Pulling the cell while the mount stays powered leaves the clock as it is.
 - **Focuser** — when a focuser is attached to the main unit.
 
 ## Plate-solve alignment

@@ -431,7 +431,7 @@ Réglez le jeu après que la réduction et le sens sont justes. Trop de jeu fait
 
 L'unité principale en déduit le temps sidéral local. Une heure fausse d'une minute décale le pointage d'environ 15' en ascension droite.
 
-L'heure est conservée par une pile bouton sur l'unité principale. Si cette pile est vide ou absente, l'heure part du 1er janvier 2019 et le bandeau affiche **Er !** / **T**. Les goto, les retournements, le push-to et la synchro sont refusés tant que l'heure n'est pas saisie ici, par le GNSS, ou depuis un ordinateur. Aller à la maison, parquer et les boutons de direction restent possibles. Ce n'est pas la batterie d'alimentation.
+L'heure est conservée par une pile bouton sur l'unité principale. Si cette pile est vide ou absente, un arrêt complet puis une remise sous tension ramène l'heure à la date de compilation du firmware, la même que la date de firmware à l'écran de version, et le bandeau affiche **Er !** / **T**. Une unité principale Teensy 4 affiche le 1er janvier 2019. Les goto, les retournements, le push-to et la synchro sont refusés tant que l'heure n'est pas saisie ici, par le GNSS, ou depuis un ordinateur. Aller à la maison, parquer et les boutons de direction restent possibles. La pile n'est lue qu'à cet arrêt : tant que l'unité reste alimentée, l'heure garde la valeur qu'elle avait. Ce n'est pas la batterie d'alimentation.
 
 ### Site
 
@@ -1155,7 +1155,7 @@ Si vous avez desserré les freins dans la nuit, refaites au moins une synchro, e
 | Ce que vous voyez | Piste |
 |-------------------|--------|
 | **ERREUR** / **version** | Raquette et unité principale de publications différentes |
-| **Er !** / **T**, date proche du 1er janvier 2019 | Pile de l'horloge sur l'unité principale. Saisissez l'heure, ou laissez le GNSS le faire. Pas la batterie d'alimentation |
+| **Er !** / **T**, heure à la date de compilation du firmware, ou au 1er janvier 2019 sur une unité Teensy 4 | Pile de l'horloge sur l'unité principale. Saisissez l'heure, ou laissez le GNSS le faire. Pas la batterie d'alimentation |
 | **pas Connecté**, puis redémarrage | Câble raquette, ou batterie qui s'écroule, ou unité principale arrêtée |
 | L'écran faiblit, la raquette repart sur le logo, un goto cale en vitesse Max | Batterie vide ou trop faible en charge. La raquette n'affiche pas la tension. Chapitre 25 |
 | Écran noir, Shift le rallume | Veille, pas une batterie vide |
@@ -1325,6 +1325,7 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 ### 1.6.18
 
 - Une pile d'horloge vide ou absente sur l'unité principale est une erreur. La raquette affiche **Er !** / **T**. La page web dit **RTC battery empty**. L'application Android dit **RTC battery**.
+- Après un arrêt complet, l'heure affichée est la date de compilation du firmware. Une unité Teensy 4 affiche le 1er janvier 2019. Retirer la pile pendant que l'unité reste alimentée laisse l'heure inchangée.
 - Les goto, les retournements, le push-to et la synchro sont refusés tant que l'heure n'est pas réglée depuis la raquette, le GNSS ou un ordinateur. Aller à la maison, parquer et les boutons de direction restent possibles.
 - ASCOM nomme le défaut lorsqu'un pointage est refusé. Alpaca refuse aussi le pointage.
 
