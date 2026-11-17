@@ -26,7 +26,7 @@ Mount type, motors and encoders. **Mount error** sits above Refraction: **Off** 
 
 ## Reticule
 
-Equatorial mounts only. The large clock is observatory local time, the time you set on the polar finder. Choose the plate so the rings match the glass in arcminutes, then place Polaris, or Sigma Octantis in the south, where the page shows it. **Brighter** and **Less Bright** are the illuminator.
+Equatorial mounts only. The large clock is observatory local time, the time you set on the polar finder. One circle is the pole star's true distance. Place Polaris, or Sigma Octantis in the south, on that circle with 12 at the top. **Brighter** and **Less Bright** are the illuminator.
 
 ## Motors
 

@@ -30,7 +30,7 @@ U8g2_ext: selection lists, input value (integer, DMS, float), messages, catalog 
 
 - **Actions_SyncGoto:** menuSyncGoto, menuCatalogs, menuCoordinates, menuPier, menuSpiral, menuCatalog, menuCatalogAlign, menuSolarSys, menuRADecNow, menuAltAz.
 - **Actions_Tel:** menuTelActionGoto, menuTelActionPushTo, menuSpeedRate, menuTrack.
-- **Actions_Reticule:** menuReticule. On an equatorial mount, Finder draws the polar-finder plate in arcminutes with observatory local time. Plate chooses the glass. Brighter and Less Bright are the illuminator.
+- **Actions_Reticule:** menuReticule. On an equatorial mount, Finder draws one circle at the pole star's true distance, with observatory local time and 12 at the top. Brighter and Less Bright are the illuminator.
 - **Actions_Focuser:** focuser actions.
 - **Actions_Efinder:** the eFinder menu, shown only when the main unit has found the camera. Solve, Solve & Sync, Align, GoTo++, Calibrate (camera center), Aim (Hz cone and Ve cone in the telescope frame), Exposure, Gain, Info.
 
