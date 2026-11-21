@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
@@ -40,6 +42,11 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   bool _stopAlign = false;
   String _status = '';
   String? _cameraError;
+  bool _fovMeasured = false;
+  String? _cameraId;
+  int? _shutterUs;
+  int? _iso;
+  String _exposureNote = '';
 
   bool get _hasCamera => !kIsWeb && Platform.isAndroid;
 
@@ -84,6 +91,19 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     return stars;
   }
 
+  /// Longer-side field of the camera, from its focal length and sensor size.
+  Future<double?> _lensField(String cameraId) async {
+    try {
+      final value = await const MethodChannel('com.teenastro/camera')
+          .invokeMethod<num>('longerSideFov', {'cameraId': cameraId});
+      final deg = value?.toDouble();
+      if (deg == null || deg < 5 || deg > 170) return null;
+      return deg;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _openCamera() async {
     try {
       final cameras = await availableCameras();
@@ -95,6 +115,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
             (c) => c!.lensDirection == CameraLensDirection.back,
             orElse: () => cameras.first,
           )!;
+      final measured = await _lensField(back.name);
       final cam = CameraController(
         back,
         ResolutionPreset.medium,
@@ -105,9 +126,19 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         await cam.dispose();
         return;
       }
+      try {
+        await cam.setExposureMode(ExposureMode.auto);
+        await cam.setFlashMode(FlashMode.off);
+      } catch (_) {}
+      if (measured != null) await _store.saveFov(measured);
       setState(() {
         _cam = cam;
+        _cameraId = back.name;
         _cameraError = null;
+        if (measured != null) {
+          _fov = measured;
+          _fovMeasured = true;
+        }
       });
     } catch (e) {
       if (mounted) setState(() => _cameraError = 'Camera unavailable');
@@ -121,12 +152,150 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     super.dispose();
   }
 
+  /// Null when the axis is above the horizon, or when the site is unknown.
+  String? _belowHorizon(double raH, double decD) {
+    final state = ref.read(mountStateProvider);
+    final lst = parseMountHours(state.siderealTime);
+    if (lst == null) return null;
+    final alt = altitudeDeg(state.latitude, lst, raH, decD);
+    if (alt > 0) return null;
+    return 'The solution is below the horizon (${alt.toStringAsFixed(0)}°)';
+  }
+
   (double, double)? _mountPointing() {
     final state = ref.read(mountStateProvider);
     final ra = parseMountHours(state.ra);
     final dec = parseMountDeg(state.dec);
     if (ra == null || dec == null) return null;
     return (ra, dec);
+  }
+
+  static const _cameraChannel = MethodChannel('com.teenastro/camera');
+
+  Uint8List? _jpegBytes(Object? raw) {
+    if (raw is Uint8List) return raw;
+    if (raw is List) return Uint8List.fromList(raw.cast<int>());
+    return null;
+  }
+
+  String _shutterLabel(int us, int iso) {
+    final time = us >= 1000000
+        ? '${(us / 1000000).toStringAsFixed(1)} s'
+        : us >= 10000
+            ? '${(us / 1000).toStringAsFixed(0)} ms'
+            : '${(us / 1000).toStringAsFixed(1)} ms';
+    return '$time · ISO $iso';
+  }
+
+  /// Lengthen the shutter, then the ISO, until the frame holds about 30 stars.
+  /// The preview is released so the shutter time can be set directly.
+  Future<StarFrame?> _captureForStars() async {
+    final id = _cameraId;
+    if (id == null) return null;
+    final preview = _cam;
+    if (mounted) setState(() => _cam = null);
+    await preview?.dispose();
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+
+    Map<dynamic, dynamic>? limits;
+    for (var attempt = 0; attempt < 3 && limits == null; attempt++) {
+      try {
+        final raw = await _cameraChannel.invokeMethod<dynamic>(
+          'manualOpen',
+          {'cameraId': id},
+        );
+        if (raw is Map) limits = raw;
+      } catch (_) {
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+      }
+    }
+    if (limits == null) {
+      _exposureNote = '';
+      if (mounted) {
+        setState(() => _status = 'The shutter could not be set');
+        await _openCamera();
+      }
+      return null;
+    }
+
+    final minUs = (limits['minUs'] as num).toInt();
+    var maxUs = (limits['maxUs'] as num).toInt();
+    final minIso = (limits['minIso'] as num).toInt();
+    final maxIso = (limits['maxIso'] as num).toInt();
+    var us = openingShutter(minUs: minUs, maxUs: maxUs);
+    var iso = (_iso ?? math.min(maxIso, math.max(minIso, 1600))).clamp(minIso, maxIso);
+
+    StarFrame? best;
+    var bestGap = 1 << 30;
+    var bestNote = '';
+    try {
+      for (var attempt = 0; attempt < 8; attempt++) {
+        final note = _shutterLabel(us, iso);
+        if (mounted) setState(() => _status = 'Shutter $note');
+        Uint8List? bytes;
+        var delivered = us;
+        try {
+          final raw = await _cameraChannel.invokeMethod<dynamic>(
+            'manualCapture',
+            {'exposureUs': us, 'iso': iso},
+          );
+          if (raw is Map) {
+            bytes = _jpegBytes(raw['jpeg']);
+            final got = raw['exposureUs'];
+            if (got is num && got > 0) delivered = got.toInt();
+          } else {
+            bytes = _jpegBytes(raw);
+          }
+        } catch (_) {
+          bytes = null;
+        }
+        final applied = deliveredShutter(
+          requestedUs: us,
+          deliveredUs: delivered,
+          minUs: minUs,
+          maxUs: maxUs,
+        );
+        us = applied.us;
+        maxUs = applied.maxUs;
+        final shown = _shutterLabel(us, iso);
+        final frame = bytes == null ? null : readStarFrame(bytes, maxStars: 80);
+        if (frame == null) continue;
+        final count = frame.stars.length;
+        final gap = (count - targetStarCount).abs();
+        if (gap < bestGap) {
+          bestGap = gap;
+          best = frame;
+          bestNote = shown;
+          _shutterUs = us;
+          _iso = iso;
+        }
+        if (mounted) setState(() => _status = '$count stars at $shown');
+        if (gap <= 6) break;
+        final next = nextShutter(
+          starCount: count,
+          us: us,
+          iso: iso,
+          minUs: minUs,
+          maxUs: maxUs,
+          minIso: minIso,
+          maxIso: maxIso,
+        );
+        if (next == null) break;
+        us = next.us;
+        iso = next.iso;
+      }
+    } finally {
+      try {
+        await _cameraChannel.invokeMethod<void>('manualClose');
+      } catch (_) {}
+      if (mounted) await _openCamera();
+    }
+    _exposureNote = bestNote;
+    if (best == null) return null;
+    final kept = best.stars.length <= targetStarCount
+        ? best.stars
+        : best.stars.sublist(0, targetStarCount);
+    return StarFrame(kept, best.width, best.height);
   }
 
   Future<FinderSolution?> _solve() async {
@@ -146,14 +315,19 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       _status = 'Capturing…';
     });
     try {
-      final shot = await cam.takePicture();
-      final bytes = await shot.readAsBytes();
-      final frame = readStarFrame(bytes);
+      final frame = await _captureForStars();
       if (frame == null || frame.stars.length < 4) {
-        setState(() => _status = 'Not enough stars in the frame');
+        final exposure = _exposureNote.isEmpty ? '' : ' at $_exposureNote';
+        setState(() => _status = frame == null
+            ? (_exposureNote.isEmpty
+                ? 'The picture could not be read'
+                : 'The shutter did not fire')
+            : 'Not enough stars (${frame.stars.length})$exposure');
         return null;
       }
-      final solved = solveField(
+      final state = ref.read(mountStateProvider);
+      final lst = parseMountHours(state.siderealTime);
+      final outcome = solveField(
         stars: frame.stars,
         catalog: _catalog,
         hintRa: hint.$1,
@@ -161,9 +335,13 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         width: frame.width,
         height: frame.height,
         fovDeg: _fov,
+        latDeg: lst == null ? null : state.latitude,
+        lstH: lst,
       );
+      final solved = outcome.solution;
       if (solved == null) {
-        setState(() => _status = 'The field did not match the catalog');
+        setState(() => _status =
+            outcome.reason ?? 'The field did not match the catalog');
         return null;
       }
       return solved;
@@ -226,17 +404,28 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           decD: axis.$2,
           rollRad: solved.rollRad,
           matches: solved.matches,
+          rmsDeg: solved.rmsDeg,
         );
       }
+      final horizon = _belowHorizon(shown.raH, shown.decD);
+      if (horizon != null) {
+        setState(() => _status = horizon);
+        return;
+      }
+      final residual = (shown.rmsDeg * 60).toStringAsFixed(1);
       if (!sync) {
         setState(() => _status =
-            'Solved ${shown.matches} stars. ${_cones.isZero ? 'Camera axis' : 'Telescope axis'} '
+            'Solved ${shown.matches} stars, residual $residual\''
+            '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}. '
+            '${_cones.isZero ? 'Camera axis' : 'Telescope axis'} '
                 '${_fmt(shown.raH, shown.decD)}');
         return;
       }
       final err = await _syncMount(shown.raH, shown.decD);
       if (!mounted) return;
-      setState(() => _status = err ?? 'Synced ${_fmt(shown.raH, shown.decD)}');
+      setState(() => _status = err ??
+          'Synced ${_fmt(shown.raH, shown.decD)}, residual $residual\''
+          '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -356,9 +545,9 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   Future<(double, double)> _altLimits() async {
     final raw =
         await ref.read(lx200ClientProvider).sendCommand(LX200.getAllConfig);
-    if (raw == null) return (0, 90);
+    if (raw == null) return (0.0, 90.0);
     final cfg = MountConfig.parseBinaryConfig(raw);
-    if (!cfg.valid) return (0, 90);
+    if (!cfg.valid) return (0.0, 90.0);
     return (cfg.minAlt.toDouble(), cfg.maxAlt.toDouble());
   }
 
@@ -545,8 +734,12 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           return;
         }
         if (solved == null) {
+          final why = _status;
           await _cancelAlign(client, true);
-          if (mounted) setState(() => _status = 'The field did not match');
+          if (mounted) {
+            setState(() => _status =
+                why.isEmpty ? 'The field did not match' : why);
+          }
           return;
         }
         var axisRa = solved.raH;
@@ -556,7 +749,15 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           axisRa = axis.$1;
           axisDec = axis.$2;
         }
-        setState(() => _status = '$n/${plan!.places.length}  Recording');
+        final horizon = _belowHorizon(axisRa, axisDec);
+        if (horizon != null) {
+          await _cancelAlign(client, true);
+          if (mounted) setState(() => _status = horizon);
+          return;
+        }
+        final residual = (solved.rmsDeg * 60).toStringAsFixed(1);
+        setState(() => _status =
+            '$n/${plan!.places.length}  $residual\'  Recording');
         final err = await _recordSolved(n, axisRa, axisDec);
         if (err != null) {
           await _cancelAlign(client, true);
@@ -620,26 +821,34 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Text('Field',
-                      style: TextStyle(color: TA.textSecondary, fontSize: 12)),
-                  Expanded(
-                    child: Slider(
-                      value: _fov,
-                      min: 15,
-                      max: 90,
-                      divisions: 75,
-                      label: '${_fov.round()}°',
-                      onChanged: _busy ? null : (v) => setState(() => _fov = v),
-                      onChangeEnd: (v) => _store.saveFov(v),
+              if (_fovMeasured)
+                Text(
+                  'Field ${_fov.round()}°',
+                  style: TextStyle(color: TA.text, fontFamily: 'monospace'),
+                )
+              else
+                Row(
+                  children: [
+                    Text('Field',
+                        style:
+                            TextStyle(color: TA.textSecondary, fontSize: 12)),
+                    Expanded(
+                      child: Slider(
+                        value: _fov.roundToDouble().clamp(15, 90),
+                        min: 15,
+                        max: 90,
+                        divisions: 75,
+                        label: '${_fov.round()}°',
+                        onChanged:
+                            _busy ? null : (v) => setState(() => _fov = v),
+                        onChangeEnd: (v) => _store.saveFov(v),
+                      ),
                     ),
-                  ),
-                  Text('${_fov.round()}°',
-                      style:
-                          TextStyle(color: TA.text, fontFamily: 'monospace')),
-                ],
-              ),
+                    Text('${_fov.round()}°',
+                        style: TextStyle(
+                            color: TA.text, fontFamily: 'monospace')),
+                  ],
+                ),
               Text(
                 _cones.isZero
                     ? 'Hz Cone 0.0\'   Ve Cone 0.0\''
