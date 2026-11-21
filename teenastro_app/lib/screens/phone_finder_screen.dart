@@ -203,7 +203,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final minIso = (limits['minIso'] as num).toInt();
     final maxIso = (limits['maxIso'] as num).toInt();
     var us = openingShutter(minUs: minUs, maxUs: maxUs);
-    var iso = (_iso ?? math.min(maxIso, math.max(minIso, 1600))).clamp(minIso, maxIso);
+    var iso = (_iso ?? math.min(maxIso, math.max(minIso, 1600)))
+        .clamp(minIso, maxIso);
 
     StarFrame? best;
     var bestGap = 1 << 30;
@@ -283,9 +284,14 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     if (cached != null) return cached;
     try {
       final files = <String, Uint8List>{};
-      for (final name in ['index-4117.fits', 'index-4118.fits', 'index-4119.fits']) {
+      for (final name in [
+        'index-4117.fits',
+        'index-4118.fits',
+        'index-4119.fits'
+      ]) {
         final data = await rootBundle.load('tool/stellar/indexes/$name');
-        files[name] = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        files[name] =
+            data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
       }
       final parsed = parseStellarIndexes(files);
       if (parsed.isEmpty) return null;
@@ -309,7 +315,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     try {
       final indexes = await _loadIndexes();
       if (indexes == null) {
-        setState(() => _status = 'The StellarSolver indexes are not in the app');
+        setState(
+            () => _status = 'The StellarSolver indexes are not in the app');
         return null;
       }
       final frame = await _captureForStars();
@@ -430,10 +437,10 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       }
       final residual = (shown.rmsDeg * 60).toStringAsFixed(1);
       if (!sync) {
-        setState(() => _status =
-            'Solved ${shown.matches} stars, residual $residual\''
-            '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}. '
-            '${_cones.isZero ? 'Camera axis' : 'Telescope axis'} '
+        setState(() =>
+            _status = 'Solved ${shown.matches} stars, residual $residual\''
+                '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}. '
+                '${_cones.isZero ? 'Camera axis' : 'Telescope axis'} '
                 '${_fmt(shown.raH, shown.decD)}');
         return;
       }
@@ -441,7 +448,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       if (!mounted) return;
       setState(() => _status = err ??
           'Synced ${_fmt(shown.raH, shown.decD)}, residual $residual\''
-          '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}');
+              '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -470,7 +477,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final secondPass = _recenterNext;
     _recenterNext = false;
     _busy = true;
-    setState(() => _status = secondPass ? 'Syncing after recenter…' : 'Auto sync…');
+    setState(
+        () => _status = secondPass ? 'Syncing after recenter…' : 'Auto sync…');
     try {
       final solved = await _solve();
       if (!mounted || solved == null) return;
@@ -530,8 +538,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
 
   Future<int?> _askAlignStars() {
     final mount = ref.read(mountStateProvider).mountType;
-    final six =
-        mount == MountType.gem || mount == MountType.undefined;
+    final six = mount == MountType.gem || mount == MountType.undefined;
     return showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -551,8 +558,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
                 onPressed: () => Navigator.pop(ctx, 6),
                 child: const Text('3+3 Stars')),
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
         ],
       ),
     );
@@ -570,14 +576,16 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   Future<bool> _onThisPier(PhoneAlignPlace place) async {
     final client = ref.read(lx200ClientProvider);
     final formatted = formatRaDecLx200(place.raH, place.decD);
-    final reply = await client.sendCommand(':M?${formatted.$1}${formatted.$2}#');
+    final reply =
+        await client.sendCommand(':M?${formatted.$1}${formatted.$2}#');
     final side = ref.read(mountStateProvider).pierSide;
     if (side == PierSide.unknown) return reply == 'E' || reply == 'W';
     final want = side == PierSide.west ? 'W' : 'E';
     return reply == want;
   }
 
-  Future<bool> _waitStill({Duration limit = const Duration(seconds: 180)}) async {
+  Future<bool> _waitStill(
+      {Duration limit = const Duration(seconds: 180)}) async {
     final notifier = ref.read(mountStateProvider.notifier);
     final started = DateTime.now();
     await Future.delayed(const Duration(milliseconds: 1500));
@@ -727,9 +735,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         if (!await _waitStill()) {
           await _cancelAlign(client, true);
           if (mounted) {
-            setState(() => _status = _stopAlign
-                ? 'Alignment stopped'
-                : 'The slew did not finish');
+            setState(() => _status =
+                _stopAlign ? 'Alignment stopped' : 'The slew did not finish');
           }
           return;
         }
@@ -749,8 +756,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           final why = _status;
           await _cancelAlign(client, true);
           if (mounted) {
-            setState(() => _status =
-                why.isEmpty ? 'The field did not match' : why);
+            setState(
+                () => _status = why.isEmpty ? 'The field did not match' : why);
           }
           return;
         }
@@ -768,8 +775,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           return;
         }
         final residual = (solved.rmsDeg * 60).toStringAsFixed(1);
-        setState(() => _status =
-            '$n/${plan!.places.length}  $residual\'  Recording');
+        setState(() =>
+            _status = '$n/${plan!.places.length}  $residual\'  Recording');
         final err = await _recordSolved(n, axisRa, axisDec);
         if (err != null) {
           await _cancelAlign(client, true);
@@ -811,6 +818,22 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final preview = _cam;
     return Column(
       children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          color: TA.surface,
+          child: Row(
+            children: [
+              Icon(Icons.photo_camera, size: 16, color: TA.accent),
+              const SizedBox(width: 8),
+              Text('Phone finder',
+                  style: TextStyle(
+                      color: TA.textHigh,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
         Expanded(
           child: preview != null && preview.value.isInitialized
               ? CameraPreview(preview)
@@ -828,164 +851,173 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
                   ),
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_fovMeasured)
+        ConstrainedBox(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.5),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_fovMeasured)
+                  Text(
+                    'Field ${_fov.round()}°',
+                    style: TextStyle(color: TA.text, fontFamily: 'monospace'),
+                  )
+                else
+                  Row(
+                    children: [
+                      Text('Field',
+                          style:
+                              TextStyle(color: TA.textSecondary, fontSize: 12)),
+                      Expanded(
+                        child: Slider(
+                          value: _fov.roundToDouble().clamp(15, 90),
+                          min: 15,
+                          max: 90,
+                          divisions: 75,
+                          label: '${_fov.round()}°',
+                          onChanged:
+                              _busy ? null : (v) => setState(() => _fov = v),
+                          onChangeEnd: (v) => _store.saveFov(v),
+                        ),
+                      ),
+                      Text('${_fov.round()}°',
+                          style: TextStyle(
+                              color: TA.text, fontFamily: 'monospace')),
+                    ],
+                  ),
                 Text(
-                  'Field ${_fov.round()}°',
-                  style: TextStyle(color: TA.text, fontFamily: 'monospace'),
-                )
-              else
+                  _cones.isZero
+                      ? 'Hz Cone 0.0\'   Ve Cone 0.0\''
+                      : 'Hz Cone ${formatArcmin(_cones.hzRad)}   '
+                          'Ve Cone ${formatArcmin(_cones.veRad)}',
+                  style: TextStyle(color: TA.textHigh, fontFamily: 'monospace'),
+                ),
                 Row(
                   children: [
-                    Text('Field',
-                        style:
-                            TextStyle(color: TA.textSecondary, fontSize: 12)),
                     Expanded(
-                      child: Slider(
-                        value: _fov.roundToDouble().clamp(15, 90),
-                        min: 15,
-                        max: 90,
-                        divisions: 75,
-                        label: '${_fov.round()}°',
-                        onChanged:
-                            _busy ? null : (v) => setState(() => _fov = v),
-                        onChangeEnd: (v) => _store.saveFov(v),
+                      child: Text(
+                        'Auto sync',
+                        style: TextStyle(color: TA.text),
                       ),
                     ),
-                    Text('${_fov.round()}°',
-                        style: TextStyle(
-                            color: TA.text, fontFamily: 'monospace')),
+                    Switch(
+                      value: _auto,
+                      onChanged: _busy
+                          ? null
+                          : (on) {
+                              setState(() => _auto = on);
+                              _store.saveAutoSync(on);
+                            },
+                    ),
                   ],
                 ),
-              Text(
-                _cones.isZero
-                    ? 'Hz Cone 0.0\'   Ve Cone 0.0\''
-                    : 'Hz Cone ${formatArcmin(_cones.hzRad)}   '
-                        'Ve Cone ${formatArcmin(_cones.veRad)}',
-                style: TextStyle(color: TA.textHigh, fontFamily: 'monospace'),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Auto sync',
-                      style: TextStyle(color: TA.text),
-                    ),
+                if (_auto)
+                  Row(
+                    children: [
+                      Text('Recenter',
+                          style:
+                              TextStyle(color: TA.textSecondary, fontSize: 12)),
+                      Expanded(
+                        child: Slider(
+                          value: _limitArcmin.toDouble(),
+                          min: 2,
+                          max: 60,
+                          divisions: 58,
+                          label: "$_limitArcmin'",
+                          onChanged: _busy
+                              ? null
+                              : (v) => setState(() => _limitArcmin = v.round()),
+                          onChangeEnd: (v) =>
+                              _store.saveRecenterArcmin(v.round()),
+                        ),
+                      ),
+                      Text("$_limitArcmin'",
+                          style: TextStyle(
+                              color: TA.text, fontFamily: 'monospace')),
+                    ],
                   ),
-                  Switch(
-                    value: _auto,
-                    onChanged: _busy
-                        ? null
-                        : (on) {
-                            setState(() => _auto = on);
-                            _store.saveAutoSync(on);
-                          },
-                  ),
-                ],
-              ),
-              if (_auto)
-                Row(
-                  children: [
-                    Text('Recenter',
+                if (_status.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(_status,
                         style:
                             TextStyle(color: TA.textSecondary, fontSize: 12)),
-                    Expanded(
-                      child: Slider(
-                        value: _limitArcmin.toDouble(),
-                        min: 2,
-                        max: 60,
-                        divisions: 58,
-                        label: "$_limitArcmin'",
-                        onChanged: _busy
+                  ),
+                const SizedBox(height: 8),
+                _aligning
+                    ? OutlinedButton(
+                        onPressed: () {
+                          _stopAlign = true;
+                          ref
+                              .read(lx200ClientProvider)
+                              .sendCommand(LX200.stopAll);
+                        },
+                        child: const Text('Stop'),
+                      )
+                    : OutlinedButton(
+                        onPressed: _busy
                             ? null
-                            : (v) => setState(() => _limitArcmin = v.round()),
-                        onChangeEnd: (v) =>
-                            _store.saveRecenterArcmin(v.round()),
+                            : () async {
+                                final stars = await _askAlignStars();
+                                if (stars == null || !mounted) return;
+                                await _runAlign(stars);
+                              },
+                        child: const Text('Align'),
+                      ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _busy
+                            ? null
+                            : () => _onSolve(sync: false, aim: false),
+                        child: const Text('Solve'),
                       ),
                     ),
-                    Text("$_limitArcmin'",
-                        style:
-                            TextStyle(color: TA.text, fontFamily: 'monospace')),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _busy
+                            ? null
+                            : () => _onSolve(sync: true, aim: false),
+                        child: const Text('Solve & Sync'),
+                      ),
+                    ),
                   ],
                 ),
-              if (_status.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(_status,
-                      style: TextStyle(color: TA.textSecondary, fontSize: 12)),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _busy
+                            ? null
+                            : () => _onSolve(sync: false, aim: true),
+                        child: const Text('Aim'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () async {
+                                await _store.clearCones();
+                                setState(() {
+                                  _cones = const FinderCones();
+                                  _status = 'Cones cleared';
+                                });
+                              },
+                        child: const Text('Clear cones'),
+                      ),
+                    ),
+                  ],
                 ),
-              const SizedBox(height: 8),
-              _aligning
-                  ? OutlinedButton(
-                      onPressed: () {
-                        _stopAlign = true;
-                        ref.read(lx200ClientProvider).sendCommand(LX200.stopAll);
-                      },
-                      child: const Text('Stop'),
-                    )
-                  : OutlinedButton(
-                      onPressed: _busy
-                          ? null
-                          : () async {
-                              final stars = await _askAlignStars();
-                              if (stars == null || !mounted) return;
-                              await _runAlign(stars);
-                            },
-                      child: const Text('Align'),
-                    ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _busy
-                          ? null
-                          : () => _onSolve(sync: false, aim: false),
-                      child: const Text('Solve'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          _busy ? null : () => _onSolve(sync: true, aim: false),
-                      child: const Text('Solve & Sync'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed:
-                          _busy ? null : () => _onSolve(sync: false, aim: true),
-                      child: const Text('Aim'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () async {
-                              await _store.clearCones();
-                              setState(() {
-                                _cones = const FinderCones();
-                                _status = 'Cones cleared';
-                              });
-                            },
-                      child: const Text('Clear cones'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

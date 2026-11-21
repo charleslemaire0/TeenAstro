@@ -77,8 +77,8 @@ const _shots = <(String, Widget, int, bool)>[
   ('app_planetarium', PlanetariumScreen(), 2, true),
   ('app_tracking', TrackingScreen(), 3, true),
   ('app_align', AlignmentScreen(), 4, false),
-  ('app_finder', PhoneFinderScreen(), 4, true),
-  ('app_settings', SettingsScreen(), 5, true),
+  ('app_finder', PhoneFinderScreen(), 5, true),
+  ('app_settings', SettingsScreen(), 6, true),
 ];
 
 void main() {
@@ -155,6 +155,7 @@ class _ShooterState extends State<_Shooter> {
                           NavigationDestination(icon: Icon(Icons.my_location), label: 'Goto'),
                           NavigationDestination(icon: Icon(Icons.track_changes), label: 'Tracking'),
                           NavigationDestination(icon: Icon(Icons.architecture), label: 'Align'),
+                          NavigationDestination(icon: Icon(Icons.photo_camera), label: 'Finder'),
                           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
                         ],
                       ),

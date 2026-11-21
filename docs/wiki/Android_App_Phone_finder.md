@@ -2,7 +2,7 @@
 
 > Groups.io: https://groups.io/g/TeenAstro/wiki/43290
 
-**Phone finder** plate-solves with the phone camera. No eFinder, and no `:e` command, is required. Open it from **Status** or from **Align**.
+**Phone finder** plate-solves with the phone camera. No eFinder, and no `:e` command, is required. Open it from the **Finder** tab, or from the **Phone finder** card on **Status**.
 
 ![Phone finder](screenshots/app_finder.png)
 

@@ -1,6 +1,6 @@
 # Phone finder
 
-The Android app plate-solves with the phone camera. No eFinder, and no `:e` command, is required. The screen is **Phone finder**, from the dashboard or from the alignment screen.
+The Android app plate-solves with the phone camera. No eFinder, and no `:e` command, is required. The screen is **Phone finder**, on the **Finder** tab, or from the card on the dashboard.
 
 Leave that screen open. The camera is released when you leave it, and **Auto sync** only runs while the screen is open. The Windows build of the app has no camera.
 

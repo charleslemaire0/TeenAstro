@@ -974,7 +974,7 @@ Le chercheur ne regarde pas dans l'axe du télescope. L'écart est deux rotation
 
 ### Chercheur du téléphone
 
-Sur Android, ouvrir **Phone finder** depuis le tableau de bord ou depuis l'écran d'alignement. Laisser cet écran ouvert : l'appareil photo doit rester allumé.
+Sur Android, ouvrir **Phone finder** depuis l'onglet **Finder** ou depuis le tableau de bord. Laisser cet écran ouvert : l'appareil photo doit rester allumé.
 
 Régler **Field** sur l'angle couvert par l'objectif, de 15° à 90°. La valeur de départ est 60°. Le catalogue va jusqu'à la magnitude 4,5, donc un champ d'oculaire étroit ne correspond pas. Fixer le téléphone sur le tube.
 

@@ -976,7 +976,7 @@ Der Sucher blickt nicht entlang des Teleskops. Der Unterschied sind zwei Drehung
 
 ### Sucher im Handy
 
-Unter Android **Phone finder** vom Dashboard oder vom Ausrichtungsbildschirm öffnen. Diesen Bildschirm offen lassen: die Kamera muss an bleiben.
+Unter Android **Phone finder** über den Reiter **Finder** oder vom Dashboard öffnen. Diesen Bildschirm offen lassen: die Kamera muss an bleiben.
 
 **Field** auf den Winkel stellen, den das Objektiv abdeckt, von 15° bis 90°. Der Anfangswert ist 60°. Der Katalog geht bis Magnitude 4,5, ein enges Okularfeld passt also nicht. Das Handy am Tubus festklemmen.
 

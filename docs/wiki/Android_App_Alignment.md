@@ -15,6 +15,4 @@ Pick the kind, then **Start**. The chart offers named stars. Center the star and
 
 **Mount error** is Off or On, the same switch as on the hand controller. Signs are Wallace’s. **4 Stars** and **3+3 Stars** measure CH and NP. They do not read the stored values.
 
-**Phone finder** on this screen opens the camera plate solve. It does not start the alignment.
-
 Back to the [Android app](https://groups.io/g/TeenAstro/wiki/43283).

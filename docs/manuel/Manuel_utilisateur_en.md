@@ -976,7 +976,7 @@ The finder does not look along the telescope. The difference is two rotations in
 
 ### Phone finder
 
-On Android, open **Phone finder** from the dashboard or from the alignment screen. Leave that screen open: the camera has to stay on.
+On Android, open **Phone finder** from the **Finder** tab or from the dashboard. Leave that screen open: the camera has to stay on.
 
 Set **Field** to the angle the phone lens covers, from 15° to 90°. The default is 60°. The catalog is bright stars, down to magnitude 4.5, so a narrow eyepiece field will not match. Clamp the phone to the tube.
 

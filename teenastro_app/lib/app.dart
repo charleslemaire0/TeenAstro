@@ -70,6 +70,7 @@ class AppShell extends ConsumerWidget {
           NavigationDestination(icon: Icon(Icons.my_location), label: 'Goto'),
           NavigationDestination(icon: Icon(Icons.track_changes), label: 'Tracking'),
           NavigationDestination(icon: Icon(Icons.architecture), label: 'Align'),
+          NavigationDestination(icon: Icon(Icons.photo_camera), label: 'Finder'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
@@ -80,8 +81,9 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith('/control')) return 1;
     if (location.startsWith('/goto') || location.startsWith('/catalogs') || location.startsWith('/planetarium')) return 2;
     if (location.startsWith('/tracking')) return 3;
-    if (location.startsWith('/alignment') || location.startsWith('/finder')) return 4;
-    if (location.startsWith('/settings')) return 5;
+    if (location.startsWith('/alignment')) return 4;
+    if (location.startsWith('/finder')) return 5;
+    if (location.startsWith('/settings')) return 6;
     return 0;
   }
 
@@ -92,7 +94,8 @@ class AppShell extends ConsumerWidget {
       case 2: context.go(ref.read(lastGotoTabRouteProvider));
       case 3: context.go('/tracking');
       case 4: context.go('/alignment');
-      case 5: context.go('/settings');
+      case 5: context.go('/finder');
+      case 6: context.go('/settings');
     }
   }
 }

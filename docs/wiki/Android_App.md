@@ -10,7 +10,7 @@ The first screen asks for that address and port. A full address such as `http://
 
 ![Connect](screenshots/app_connect.png)
 
-Six tabs sit along the bottom: **Status**, **Control**, **Goto**, **Tracking**, **Align**, **Settings**.
+Seven tabs sit along the bottom: **Status**, **Control**, **Goto**, **Tracking**, **Align**, **Finder**, **Settings**.
 
 - [Status](https://groups.io/g/TeenAstro/wiki/APP_STATUS) — pointing, time, target
 - [Control](https://groups.io/g/TeenAstro/wiki/APP_CONTROL) — slew, park, home, flip, focuser
