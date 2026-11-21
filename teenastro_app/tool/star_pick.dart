@@ -39,6 +39,12 @@ class StarPickApp extends StatelessWidget {
 }
 
 const _lensPref = 'star_pick_lens_distortion';
+const _lensK2Pref = 'star_pick_lens_k2';
+const _lensK3Pref = 'star_pick_lens_k3';
+const _lensOxPref = 'star_pick_lens_ox';
+const _lensOyPref = 'star_pick_lens_oy';
+const _lensFovPref = 'star_pick_lens_field';
+const _magPref = 'star_pick_mag_limit';
 
 class StarPickPage extends StatefulWidget {
   const StarPickPage({super.key});
@@ -60,16 +66,33 @@ class _StarPickPageState extends State<StarPickPage> {
   List<FinderStar> _catalog = const [];
   List<String> _catalogNames = const [];
   List<double> _catalogMags = const [];
+  List<FinderStar> _identify = const [];
+  List<String> _identifyNames = const [];
+  List<double> _identifyMags = const [];
   String? _selected;
   String? _photoPath;
   Uint8List? _jpeg;
+  img.Image? _source;
   double _imageW = 0;
   double _imageH = 0;
   final _placed = <PlacedStar>[];
   final _notInCatalog = <_Pin>[];
   final _missing = <_Pin>[];
   final _matched = <_Pin>[];
-  double? _lensK;
+  double? _lensK1;
+  double _lensK2 = 0;
+  double _lensK3 = 0;
+  double _lensOx = 0;
+  double _lensOy = 0;
+  double? _lensFov;
+
+  LensTerms? get _storedLens =>
+      _lensK1 == null ? null : LensTerms(_lensK1!, _lensK2, _lensK3);
+  double? get _storedOriginX =>
+      _lensK1 == null || _imageW < 2 ? null : _imageW / 2 + _lensOx;
+  double? get _storedOriginY =>
+      _lensK1 == null || _imageH < 2 ? null : _imageH / 2 + _lensOy;
+  double _magLimit = 5.5;
   final _log = <String>[
     'Choose a star name, then click it on the photo.',
   ];
@@ -121,10 +144,13 @@ class _StarPickPageState extends State<StarPickPage> {
     final catalog = <FinderStar>[];
     final catalogNames = <String>[];
     final catalogMags = <double>[];
+    final identify = <FinderStar>[];
+    final identifyNames = <String>[];
+    final identifyMags = <double>[];
     for (final item in faint['stars'] as List<dynamic>) {
       final m = item as Map<String, dynamic>;
       final mag = (m['mag'] as num).toDouble();
-      if (mag > wideCatalogMag) continue;
+      if (mag > wideIdentifyMag) continue;
       final now = equatorialEquinoxToJNow(
         (m['ra'] as num).toDouble(),
         (m['dec'] as num).toDouble(),
@@ -132,8 +158,13 @@ class _StarPickPageState extends State<StarPickPage> {
         jd,
       );
       final name = ((m['name'] as String?) ?? '').trim();
+      final label = name.isEmpty ? 'HIP ${m['hip']}' : name;
+      identify.add(FinderStar(now.$1, now.$2));
+      identifyNames.add(label);
+      identifyMags.add(mag);
+      if (mag > wideCatalogMag) continue;
       catalog.add(FinderStar(now.$1, now.$2));
-      catalogNames.add(name.isEmpty ? 'HIP ${m['hip']}' : name);
+      catalogNames.add(label);
       catalogMags.add(mag);
     }
     bright.sort((a, b) => a.name.compareTo(b.name));
@@ -143,6 +174,9 @@ class _StarPickPageState extends State<StarPickPage> {
       _catalog = catalog;
       _catalogNames = catalogNames;
       _catalogMags = catalogMags;
+      _identify = identify;
+      _identifyNames = identifyNames;
+      _identifyMags = identifyMags;
       _selected = bright.any((s) => s.name == 'Vega')
           ? 'Vega'
           : (bright.isEmpty ? null : bright.first.name);
@@ -165,6 +199,7 @@ class _StarPickPageState extends State<StarPickPage> {
     setState(() {
       _photoPath = picked;
       _jpeg = oriented.$1;
+      _source = null;
       _imageW = oriented.$2.toDouble();
       _imageH = oriented.$3.toDouble();
       _placed.clear();
@@ -199,6 +234,7 @@ class _StarPickPageState extends State<StarPickPage> {
         final star = name == null ? null : known[name];
         final x = (m['x'] as num).toDouble() * sx;
         final y = (m['y'] as num).toDouble() * sy;
+        final refined = m['refined'] == true;
         if (star != null && m['named'] != false) {
           placed.add(PlacedStar(
             name: star.name,
@@ -207,6 +243,7 @@ class _StarPickPageState extends State<StarPickPage> {
             decD: star.decD,
             x: x,
             y: y,
+            refined: refined,
           ));
         } else {
           final used = placed.where((s) => !s.named).length + 1;
@@ -221,6 +258,7 @@ class _StarPickPageState extends State<StarPickPage> {
             x: x,
             y: y,
             named: false,
+            refined: refined,
           ));
         }
       }
@@ -231,14 +269,18 @@ class _StarPickPageState extends State<StarPickPage> {
         _text(_lat, json['lat']);
         _text(_lst, json['lst']);
         if (placed.length < 2) {
-          _text(_fov, json['fov']);
+          if (_lensFov == null) _text(_fov, json['fov']);
           _text(_ra, json['ra']);
           _text(_dec, json['dec']);
         }
       });
       _say(
           'Restored ${placed.length} stars from ${file.uri.pathSegments.last}.');
-      _estimateField();
+      if (placed.any((s) => !s.refined)) {
+        _refineUncentered();
+      } else {
+        _estimateField();
+      }
     } catch (error) {
       _say('The saved stars could not be read ($error).');
     }
@@ -266,6 +308,7 @@ class _StarPickPageState extends State<StarPickPage> {
             'dec': s.decD,
             'x': s.x,
             'y': s.y,
+            'refined': s.refined,
           },
       ],
     };
@@ -332,7 +375,7 @@ class _StarPickPageState extends State<StarPickPage> {
             '${a.name} to ${b.name}: ${sky.toStringAsFixed(1)}° over ${pixels.toStringAsFixed(0)} px, field ${pair.toStringAsFixed(1)}°');
       }
     }
-    _fov.text = fov.toStringAsFixed(1);
+    if (_lensFov == null) _fov.text = fov.toStringAsFixed(1);
     final center = named.length >= 3 ? null : _meanSky(named);
     if (center != null) {
       _ra.text = _clockHours(center.$1);
@@ -359,13 +402,15 @@ class _StarPickPageState extends State<StarPickPage> {
       width: _imageW,
       height: _imageH,
       fovDeg: fov,
-      distortion: _lensK,
+      distortion: _storedLens,
+      originX: _storedOriginX,
+      originY: _storedOriginY,
     );
     if (camera == null) {
       return 'The named stars do not form one camera pose.';
     }
     final pose = camera.solution;
-    _fov.text = camera.fovDeg.toStringAsFixed(1);
+    if (_lensFov == null) _fov.text = camera.fovDeg.toStringAsFixed(1);
     final poseRa = _clockHours(pose.raH);
     final poseDec = _signedDegrees(pose.decD);
     var roll = pose.rollRad * 180 / math.pi;
@@ -373,7 +418,7 @@ class _StarPickPageState extends State<StarPickPage> {
     if (roll < 0) roll += 360;
     final residual = (pose.rmsDeg * 60).toStringAsFixed(1);
     var compared = 'residual $residual\'.';
-    if (_lensK != null) {
+    if (_lensK1 != null) {
       final plain = widePoseFromNamedStars(
         stars: [
           for (final s in named) (raH: s.raH, decD: s.decD, x: s.x, y: s.y),
@@ -381,7 +426,9 @@ class _StarPickPageState extends State<StarPickPage> {
         width: _imageW,
         height: _imageH,
         fovDeg: fov,
-        distortion: 0,
+        distortion: const LensTerms.none(),
+        originX: _storedOriginX,
+        originY: _storedOriginY,
       );
       final without = plain == null
           ? 'the frame does not close'
@@ -413,8 +460,25 @@ class _StarPickPageState extends State<StarPickPage> {
   Future<void> _loadLens() async {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getDouble(_lensPref);
+    final k2 = prefs.getDouble(_lensK2Pref);
+    final k3 = prefs.getDouble(_lensK3Pref);
+    final ox = prefs.getDouble(_lensOxPref);
+    final oy = prefs.getDouble(_lensOyPref);
+    final field = prefs.getDouble(_lensFovPref);
+    final mag = prefs.getDouble(_magPref);
     if (!mounted) return;
-    setState(() => _lensK = value);
+    setState(() {
+      _lensK1 = value;
+      _lensK2 = k2 ?? 0;
+      _lensK3 = k3 ?? 0;
+      _lensOx = ox ?? 0;
+      _lensOy = oy ?? 0;
+      _lensFov = field;
+      if (mag != null) {
+        _magLimit = mag.clamp(1.0, wideIdentifyMag).toDouble();
+      }
+      if (field != null) _fov.text = field.toStringAsFixed(1);
+    });
   }
 
   Future<void> _calibrateLens() async {
@@ -422,54 +486,116 @@ class _StarPickPageState extends State<StarPickPage> {
       _say('Open a photo first.');
       return;
     }
-    final named = [for (final s in _placed) if (s.named) s];
-    if (named.length < 3) {
-      _say('Place 3 named stars before calibrating the lens.');
+    final skyByName = <String, FinderStar>{};
+    for (var i = 0; i < _catalogNames.length && i < _catalog.length; i++) {
+      skyByName.putIfAbsent(_catalogNames[i], () => _catalog[i]);
+    }
+    for (var i = 0; i < _identifyNames.length && i < _identify.length; i++) {
+      skyByName.putIfAbsent(_identifyNames[i], () => _identify[i]);
+    }
+    final stars = <({double raH, double decD, double x, double y})>[];
+    final used = <String>{};
+    for (final mark in _placed) {
+      if (mark.named) {
+        if (!used.add(mark.name)) continue;
+        stars.add((raH: mark.raH, decD: mark.decD, x: mark.x, y: mark.y));
+        continue;
+      }
+      final name = _alignedName(mark);
+      final sky = name == null ? null : skyByName[name];
+      if (name == null || sky == null || !used.add(name)) continue;
+      stars.add((raH: sky.raH, decD: sky.decD, x: mark.x, y: mark.y));
+    }
+    if (stars.length < 3) {
+      _say(
+          'Solve the plate, or place 3 named stars, before calibrating the lens.');
       return;
     }
     final fov = double.tryParse(_fov.text.trim().replaceAll(',', '.')) ?? 70;
     final camera = widePoseFromNamedStars(
-      stars: [
-        for (final s in named) (raH: s.raH, decD: s.decD, x: s.x, y: s.y),
-      ],
+      stars: stars,
       width: _imageW,
       height: _imageH,
       fovDeg: fov,
       fitDistortion: true,
     );
     if (camera == null) {
-      _say('The named stars do not agree, so the lens was not calibrated.');
+      _say(
+          'The recognized stars do not agree, so the lens was not calibrated.');
       return;
     }
+    final ox = camera.originX - _imageW / 2;
+    final oy = camera.originY - _imageH / 2;
     final plain = widePoseFromNamedStars(
-      stars: [
-        for (final s in named) (raH: s.raH, decD: s.decD, x: s.x, y: s.y),
-      ],
+      stars: stars,
       width: _imageW,
       height: _imageH,
       fovDeg: fov,
-      distortion: 0,
+      distortion: const LensTerms.none(),
+      originX: camera.originX,
+      originY: camera.originY,
     );
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_lensPref, camera.distortion);
+    await prefs.setDouble(_lensPref, camera.lens.k1);
+    await prefs.setDouble(_lensK2Pref, camera.lens.k2);
+    await prefs.setDouble(_lensK3Pref, camera.lens.k3);
+    await prefs.setDouble(_lensOxPref, ox);
+    await prefs.setDouble(_lensOyPref, oy);
+    await prefs.setDouble(_lensFovPref, camera.fovDeg);
     if (!mounted) return;
-    setState(() => _lensK = camera.distortion);
+    setState(() {
+      _lensK1 = camera.lens.k1;
+      _lensK2 = camera.lens.k2;
+      _lensK3 = camera.lens.k3;
+      _lensOx = ox;
+      _lensOy = oy;
+      _lensFov = camera.fovDeg;
+      _fov.text = camera.fovDeg.toStringAsFixed(1);
+    });
     final withLens = (camera.solution.rmsDeg * 60).toStringAsFixed(1);
     final without = plain == null
         ? 'the frame does not close'
         : '${(plain.solution.rmsDeg * 60).toStringAsFixed(1)}\'';
+    final center = ox.abs() < 5 && oy.abs() < 5
+        ? 'The optical center stays at the middle of the picture.'
+        : 'The optical center is ${ox.abs().toStringAsFixed(0)} px '
+            '${ox >= 0 ? 'right' : 'left'} and '
+            '${oy.abs().toStringAsFixed(0)} px '
+            '${oy >= 0 ? 'below' : 'above'} the middle.';
     _say(
-      'Lens distortion ${camera.distortion.toStringAsFixed(3)} stored. '
-      'Named-star residual $withLens\' with this lens, $without without it.',
+      'Camera stored from ${stars.length} stars. '
+      'Long side ${camera.fovDeg.toStringAsFixed(1)}°, '
+      'distortion ${camera.lens.describe()}. '
+      '$center '
+      'The next solve can omit the named stars. '
+      'Residual $withLens\' with this lens, $without without it.',
     );
+  }
+
+  Future<void> _storeMagLimit(double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_magPref, value);
   }
 
   Future<void> _clearLens() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_lensPref);
+    await prefs.remove(_lensK2Pref);
+    await prefs.remove(_lensK3Pref);
+    await prefs.remove(_lensOxPref);
+    await prefs.remove(_lensOyPref);
+    await prefs.remove(_lensFovPref);
     if (!mounted) return;
-    setState(() => _lensK = null);
-    _say('Lens calibration cleared. The next solve uses no radial distortion.');
+    setState(() {
+      _lensK1 = null;
+      _lensK2 = 0;
+      _lensK3 = 0;
+      _lensOx = 0;
+      _lensOy = 0;
+      _lensFov = null;
+    });
+    _say(
+        'Camera calibration cleared. The next solve has no stored field or distortion.');
   }
 
   Future<void> _openParameters() async {
@@ -478,7 +604,30 @@ class _StarPickPageState extends State<StarPickPage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialog) {
-            final k = _lensK;
+            final lens = _storedLens;
+            final field = _lensFov;
+            final String summary;
+            if (lens != null && field != null) {
+              final moved = _lensOx.abs() >= 5 || _lensOy.abs() >= 5;
+              final center = moved
+                  ? 'Optical center ${_lensOx.abs().toStringAsFixed(0)} px '
+                      '${_lensOx >= 0 ? 'right' : 'left'} and '
+                      '${_lensOy.abs().toStringAsFixed(0)} px '
+                      '${_lensOy >= 0 ? 'below' : 'above'} the middle. '
+                  : '';
+              summary =
+                  'Stored camera: long side ${field.toStringAsFixed(1)}°, '
+                  'distortion ${lens.describe()}. '
+                  '$center'
+                  'A later solve reuses this and does not need named stars.';
+            } else if (lens == null) {
+              summary =
+                  'No camera calibration is stored. Solve the plate, or place named stars, then calibrate. '
+                  'A later solve can omit the names.';
+            } else {
+              summary = 'Distortion ${lens.describe()} is stored. '
+                  'Calibrate again so the field of view is stored too.';
+            }
             return AlertDialog(
               backgroundColor: const Color(0xFF161B22),
               title: const Text('Parameters'),
@@ -489,10 +638,30 @@ class _StarPickPageState extends State<StarPickPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      k == null
-                          ? 'No lens calibration is stored. Solves use no radial distortion.'
-                          : 'Radial distortion k = ${k.toStringAsFixed(3)}. Solves reuse this value, and the residual is lower than with no distortion.',
+                      summary,
                       style: const TextStyle(color: Color(0xFFF0F6FC)),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Magnitude limit ${_magLimit.toStringAsFixed(1)}',
+                      style: const TextStyle(color: Color(0xFFF0F6FC)),
+                    ),
+                    Slider(
+                      min: 1,
+                      max: wideIdentifyMag,
+                      divisions: ((wideIdentifyMag - 1) * 10).round(),
+                      value: _magLimit.clamp(1.0, wideIdentifyMag).toDouble(),
+                      label: _magLimit.toStringAsFixed(1),
+                      onChanged: (value) {
+                        setDialog(() {
+                          _magLimit = value;
+                        });
+                        _storeMagLimit(value);
+                      },
+                    ),
+                    const Text(
+                      'Stars fainter than this are not named and are not drawn.',
+                      style: TextStyle(color: Color(0xFF8B949E), fontSize: 12),
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
@@ -504,7 +673,7 @@ class _StarPickPageState extends State<StarPickPage> {
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton(
-                      onPressed: k == null
+                      onPressed: lens == null && field == null
                           ? null
                           : () async {
                               await _clearLens();
@@ -550,7 +719,9 @@ class _StarPickPageState extends State<StarPickPage> {
       _say('Place 3 named stars for a pose, or mark at least 4 stars.');
       return;
     }
-    final fov = double.tryParse(_fov.text.trim().replaceAll(',', '.'));
+    final typedFov = double.tryParse(_fov.text.trim().replaceAll(',', '.'));
+    final calibrated = _lensK1 != null && _lensFov != null && namedCount < 3;
+    final fov = calibrated ? _lensFov : typedFov;
     if (fov == null || fov <= 0) {
       _say('Enter the field of the long side, in degrees.');
       return;
@@ -611,12 +782,22 @@ class _StarPickPageState extends State<StarPickPage> {
         'dec': [for (final s in _catalog) s.decD],
         'catalogNames': _catalogNames,
         'catalogMags': _catalogMags,
+        'identifyRa': [for (final s in _identify) s.raH],
+        'identifyDec': [for (final s in _identify) s.decD],
+        'identifyNames': _identifyNames,
+        'identifyMags': _identifyMags,
         'hintRa': hintRa,
         'hintDec': hintDec,
         'width': _imageW,
         'height': _imageH,
         'fov': fov,
-        'distortion': _lensK,
+        'distortion': _lensK1,
+        'distortionK2': _lensK2,
+        'distortionK3': _lensK3,
+        'originX': _storedOriginX,
+        'originY': _storedOriginY,
+        'calibrated': calibrated,
+        'magLimit': _magLimit,
         'lat': lat,
         'lst': lst,
       });
@@ -660,6 +841,117 @@ class _StarPickPageState extends State<StarPickPage> {
     _scrollLog();
   }
 
+  img.Image? _sourceImage() {
+    final cached = _source;
+    if (cached != null) return cached;
+    final bytes = _jpeg;
+    if (bytes == null) return null;
+    final decoded = img.decodeImage(bytes);
+    _source = decoded;
+    return decoded;
+  }
+
+  ({double x, double y, bool refined}) _centerOf(double x, double y) {
+    final src = _sourceImage();
+    if (src == null) return (x: x, y: y, refined: false);
+    final mid = starMiddle(src, x, y);
+    if (mid == null) return (x: x, y: y, refined: false);
+    return (x: mid.x, y: mid.y, refined: true);
+  }
+
+  PlacedStar? _refinedStar(PlacedStar star, img.Image src) {
+    final mid = starMiddle(src, star.x, star.y);
+    if (mid == null) return null;
+    return PlacedStar(
+      name: star.name,
+      mag: star.mag,
+      raH: star.raH,
+      decD: star.decD,
+      x: mid.x,
+      y: mid.y,
+      named: star.named,
+      refined: true,
+    );
+  }
+
+  void _refineUncentered() {
+    final src = _sourceImage();
+    if (src == null) {
+      _say('The picture could not be read, so the unrefined stars were left.');
+      _estimateField();
+      return;
+    }
+    var pending = 0;
+    var done = 0;
+    var missed = 0;
+    setState(() {
+      for (var i = 0; i < _placed.length; i++) {
+        final star = _placed[i];
+        if (star.refined) continue;
+        pending++;
+        final next = _refinedStar(star, src);
+        if (next == null) {
+          missed++;
+          continue;
+        }
+        _placed[i] = next;
+        done++;
+      }
+      if (done > 0) {
+        _notInCatalog.clear();
+        _missing.clear();
+        _matched.clear();
+      }
+      _log.add(
+        'Centered $done of $pending stars that were not refined. '
+        '$missed had no star nearby.',
+      );
+    });
+    _estimateField();
+    _saveStars();
+    _scrollLog();
+  }
+
+  void _centerStars() {
+    if (_jpeg == null || _placed.isEmpty) {
+      _say('Open a photo and place stars first.');
+      return;
+    }
+    final src = _sourceImage();
+    if (src == null) {
+      _say('The picture could not be read.');
+      return;
+    }
+    var moved = 0;
+    var missed = 0;
+    setState(() {
+      for (var i = 0; i < _placed.length; i++) {
+        final star = _placed[i];
+        final next = _refinedStar(star, src);
+        if (next == null) {
+          missed++;
+          continue;
+        }
+        final dx = next.x - star.x;
+        final dy = next.y - star.y;
+        final shifted = dx * dx + dy * dy >= 0.25;
+        if (!shifted && star.refined) continue;
+        _placed[i] = next;
+        if (shifted) moved++;
+      }
+      _notInCatalog.clear();
+      _missing.clear();
+      _matched.clear();
+      _log.add(
+        'Centered $moved of ${_placed.length} stars on the bright middle. '
+        '$missed had no star nearby.',
+      );
+    });
+    _estimateField();
+    _saveStars();
+    _scrollLog();
+  }
+
   void _onTap(Offset local, double viewW, double viewH) {
     if (_jpeg == null || viewW < 2 || viewH < 2) return;
     final image = Offset(
@@ -672,6 +964,7 @@ class _StarPickPageState extends State<StarPickPage> {
         image.dy > _imageH) {
       return;
     }
+    final spot = _centerOf(image.dx, image.dy);
     final unnamed = _selected == 'Unnamed';
     final chosen = unnamed ? null : _named(_selected);
     final hit = 16 * _imageW / viewW;
@@ -699,9 +992,10 @@ class _StarPickPageState extends State<StarPickPage> {
           mag: 0,
           raH: 0,
           decD: 0,
-          x: image.dx,
-          y: image.dy,
+          x: spot.x,
+          y: spot.y,
           named: false,
+          refined: spot.refined,
         ));
         _log.add('Unnamed star $n placed. ${_placed.length} stars placed.');
       } else if (chosen == null) {
@@ -713,8 +1007,9 @@ class _StarPickPageState extends State<StarPickPage> {
           mag: chosen.mag,
           raH: chosen.raH,
           decD: chosen.decD,
-          x: image.dx,
-          y: image.dy,
+          x: spot.x,
+          y: spot.y,
+          refined: spot.refined,
         ));
         _log.add('${chosen.name} placed. ${_placed.length} stars placed.');
       }
@@ -764,6 +1059,14 @@ class _StarPickPageState extends State<StarPickPage> {
           child: Stack(
             children: [
               Image.memory(jpeg, width: viewW, height: viewH, fit: BoxFit.fill),
+              CustomPaint(
+                size: Size(viewW, viewH),
+                painter: _ResidualPainter(
+                  pins: _matched,
+                  imageW: _imageW,
+                  imageH: _imageH,
+                ),
+              ),
               for (final star in _missing) _skyMark(star, viewW, viewH),
               for (var i = 0; i < _placed.length; i++) _mark(i, viewW, viewH),
             ],
@@ -773,14 +1076,16 @@ class _StarPickPageState extends State<StarPickPage> {
     );
   }
 
-  String? _alignedName(PlacedStar star) {
+  _Pin? _alignedPin(PlacedStar star) {
     for (final pin in _matched) {
       if ((pin.x - star.x).abs() < 1 && (pin.y - star.y).abs() < 1) {
-        return pin.name;
+        return pin;
       }
     }
     return null;
   }
+
+  String? _alignedName(PlacedStar star) => _alignedPin(star)?.name;
 
   bool _missedCatalog(PlacedStar star) {
     for (final pin in _notInCatalog) {
@@ -794,7 +1099,9 @@ class _StarPickPageState extends State<StarPickPage> {
   Widget _mark(int index, double viewW, double viewH) {
     final star = _placed[index];
     final missed = _missedCatalog(star);
-    final aligned = _alignedName(star);
+    final alignedPin = _alignedPin(star);
+    final aligned = alignedPin?.name;
+    final residual = alignedPin?.arcmin;
     final color = missed
         ? const Color(0xFFFF5A5A)
         : aligned != null
@@ -824,7 +1131,8 @@ class _StarPickPageState extends State<StarPickPage> {
                       style: TextStyle(color: color, fontSize: 9),
                     ),
             ),
-            if (star.named || missed || aligned != null) const SizedBox(width: 4),
+            if (star.named || missed || aligned != null)
+              const SizedBox(width: 4),
             if (star.named || missed || aligned != null)
               DecoratedBox(
                 decoration: BoxDecoration(
@@ -836,8 +1144,10 @@ class _StarPickPageState extends State<StarPickPage> {
                       const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   child: Text(
                     missed
-                        ? '${star.named ? star.name : 'Unnamed ${star.name}'}  not in catalog'
-                        : (aligned ?? star.name),
+                        ? (star.named ? star.name : 'U${star.name}')
+                        : residual == null
+                            ? (aligned ?? star.name)
+                            : '${aligned ?? star.name}  ${residual.toStringAsFixed(1)}\'',
                     style: TextStyle(color: color, fontSize: 12),
                   ),
                 ),
@@ -876,7 +1186,8 @@ class _StarPickPageState extends State<StarPickPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 child: Text(
                   star.name,
-                  style: const TextStyle(color: Color(0xFF6CB6FF), fontSize: 12),
+                  style:
+                      const TextStyle(color: Color(0xFF6CB6FF), fontSize: 12),
                 ),
               ),
             ),
@@ -974,12 +1285,17 @@ class _StarPickPageState extends State<StarPickPage> {
             ),
             const SizedBox(height: 6),
             OutlinedButton(
+              onPressed: _busy ? null : _centerStars,
+              child: const Text('Center stars'),
+            ),
+            const SizedBox(height: 6),
+            OutlinedButton(
               onPressed: _busy ? null : _openParameters,
               child: const Text('Parameters'),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Green marks matched a catalog star. Red marks were clicked and are absent from the catalog. Blue marks are catalog stars in the frame that were not clicked.',
+              'A green mark stays on the click. The arrow is the residual toward the catalog star, drawn 8 times longer, and the number is its length in arcminutes. Red marks were not in the catalog. Blue marks are catalog stars that were not clicked.',
               style: TextStyle(color: Color(0xFF8B949E), fontSize: 12),
             ),
             const SizedBox(height: 10),
@@ -1061,11 +1377,15 @@ class _Pin {
   final String name;
   final double x;
   final double y;
-  const _Pin(this.name, this.x, this.y);
+  final double? arcmin;
+  final double? vx;
+  final double? vy;
+  const _Pin(this.name, this.x, this.y, {this.arcmin, this.vx, this.vy});
 }
 
 List<_Pin> _pins(Object? raw) {
   if (raw is! List) return const [];
+  double? opt(Object? value) => value is num ? value.toDouble() : null;
   return [
     for (final item in raw)
       if (item is Map)
@@ -1073,8 +1393,72 @@ List<_Pin> _pins(Object? raw) {
           (item['name'] ?? '').toString(),
           (item['x'] as num).toDouble(),
           (item['y'] as num).toDouble(),
+          arcmin: opt(item['arcmin']),
+          vx: opt(item['vx']),
+          vy: opt(item['vy']),
         ),
   ];
+}
+
+/// Residual from the click toward the catalog star, drawn longer than true
+/// so a few arcminutes stay visible. The circle itself is not moved.
+class _ResidualPainter extends CustomPainter {
+  final List<_Pin> pins;
+  final double imageW;
+  final double imageH;
+  const _ResidualPainter({
+    required this.pins,
+    required this.imageW,
+    required this.imageH,
+  });
+
+  static const gain = 8.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (imageW < 2 || imageH < 2) return;
+    final sx = size.width / imageW;
+    final sy = size.height / imageH;
+    final paint = Paint()
+      ..color = const Color(0xFF3DDC84)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+    for (final pin in pins) {
+      final vx = pin.vx;
+      final vy = pin.vy;
+      if (vx == null || vy == null) continue;
+      final dx = vx * sx * gain;
+      final dy = vy * sy * gain;
+      if (dx * dx + dy * dy < 4) continue;
+      final start = Offset(pin.x * sx, pin.y * sy);
+      final tip = start + Offset(dx, dy);
+      canvas.drawLine(start, tip, paint);
+      final ang = math.atan2(dy, dx);
+      const head = 8.0;
+      const wing = 0.45;
+      canvas.drawLine(
+        tip,
+        tip +
+            Offset(
+              head * math.cos(ang + math.pi - wing),
+              head * math.sin(ang + math.pi - wing),
+            ),
+        paint,
+      );
+      canvas.drawLine(
+        tip,
+        tip +
+            Offset(
+              head * math.cos(ang + math.pi + wing),
+              head * math.sin(ang + math.pi + wing),
+            ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ResidualPainter old) => true;
 }
 
 class NamedStar {
@@ -1093,6 +1477,7 @@ class PlacedStar {
   final double x;
   final double y;
   final bool named;
+  final bool refined;
   const PlacedStar({
     required this.name,
     required this.mag,
@@ -1101,6 +1486,7 @@ class PlacedStar {
     required this.x,
     required this.y,
     this.named = true,
+    this.refined = false,
   });
 }
 
@@ -1123,13 +1509,44 @@ Map<String, Object?> runPickedSolve(Map<String, Object?> raw) {
   final ys = nums(raw['ys']);
   final ras = nums(raw['ra']);
   final decs = nums(raw['dec']);
+  final identifyRa = raw['identifyRa'];
+  final identifyDec = raw['identifyDec'];
+  final identifyNameRaw = raw['identifyNames'];
+  final hasIdentify = identifyRa is List &&
+      identifyDec is List &&
+      identifyNameRaw is List &&
+      identifyRa.length == identifyDec.length &&
+      identifyRa.length == identifyNameRaw.length &&
+      identifyRa.isNotEmpty;
+  final identifyCatalog = hasIdentify
+      ? <FinderStar>[
+          for (var i = 0; i < identifyRa.length; i++)
+            FinderStar(
+              (identifyRa[i] as num).toDouble(),
+              (identifyDec[i] as num).toDouble(),
+            ),
+        ]
+      : null;
+  final identifyLabels = hasIdentify ? words(identifyNameRaw) : null;
+  final identifyMagRaw = raw['identifyMags'];
+  final identifyMagList =
+      hasIdentify && identifyMagRaw is List ? nums(identifyMagRaw) : null;
   final trace = <String>[];
   final lat = opt(raw['lat']);
   final lst = opt(raw['lst']);
+  final storedK1 = opt(raw['distortion']);
+  final storedLens = storedK1 == null
+      ? null
+      : LensTerms(
+          storedK1,
+          opt(raw['distortionK2']) ?? 0,
+          opt(raw['distortionK3']) ?? 0,
+        );
+  final originX = opt(raw['originX']);
+  final originY = opt(raw['originY']);
   final markNamed = raw['markNamed'];
-  final namedCount = markNamed is List
-      ? markNamed.where((item) => item == true).length
-      : 0;
+  final namedCount =
+      markNamed is List ? markNamed.where((item) => item == true).length : 0;
   if (namedCount >= 3) {
     final markNames = words(raw['markNames']);
     final markRa = nums(raw['markRa']);
@@ -1151,58 +1568,19 @@ Map<String, Object?> runPickedSolve(Map<String, Object?> raw) {
       ],
       catalogNames: words(raw['catalogNames']),
       catalogMags: nums(raw['catalogMags']),
+      identifyCatalog: identifyCatalog,
+      identifyNames: identifyLabels,
+      identifyMags: identifyMagList,
+      magnitudeLimit: opt(raw['magLimit']),
       width: numOf(raw['width']),
       height: numOf(raw['height']),
       fovDeg: numOf(raw['fov']),
-      distortion: opt(raw['distortion']),
+      distortion: storedLens,
+      originX: originX,
+      originY: originY,
       trace: trace,
     );
     final solution = report.solution;
-    if (solution != null && xs.length >= 4) {
-      var namedRoll = solution.rollRad * 180 / math.pi;
-      namedRoll %= 360;
-      if (namedRoll < 0) namedRoll += 360;
-      trace.add(
-        'Named stars stay on the picture and are ignored for the roll check. '
-        'The search uses the solved position. '
-        'Named roll ${namedRoll.toStringAsFixed(1)}°.',
-      );
-      final rollCheck = solveField(
-        stars: [
-          for (var i = 0; i < xs.length; i++) PixelStar(xs[i], ys[i]),
-        ],
-        catalog: [
-          for (var i = 0; i < ras.length; i++) FinderStar(ras[i], decs[i]),
-        ],
-        hintRa: solution.raH,
-        hintDec: solution.decD,
-        width: numOf(raw['width']),
-        height: numOf(raw['height']),
-        fovDeg: numOf(raw['fov']),
-        latDeg: lat != null && lst != null ? lat : null,
-        lstH: lat != null && lst != null ? lst : null,
-        trace: trace,
-      );
-      final found = rollCheck.solution;
-      if (found == null) {
-        trace.add(
-          rollCheck.reason ??
-              'The unnamed stars did not recover a roll around the solved position.',
-        );
-      } else {
-        var roll = found.rollRad * 180 / math.pi;
-        roll %= 360;
-        if (roll < 0) roll += 360;
-        var delta = roll - namedRoll;
-        if (delta > 180) delta -= 360;
-        if (delta < -180) delta += 360;
-        trace.add(
-          'Unnamed roll ${roll.toStringAsFixed(1)}°, '
-          '${delta.toStringAsFixed(1)}° from the named roll. '
-          '${found.matches} stars, residual ${(found.rmsDeg * 60).toStringAsFixed(1)}\'.',
-        );
-      }
-    }
     return {
       'trace': trace,
       if (solution != null) 'raH': solution.raH,
@@ -1215,121 +1593,78 @@ Map<String, Object?> runPickedSolve(Map<String, Object?> raw) {
         for (final s in report.missing) {'name': s.name, 'x': s.x, 'y': s.y},
       ],
       'matched': [
-        for (final s in report.matched) {'name': s.name, 'x': s.x, 'y': s.y},
+        for (final s in report.matched)
+          {
+            'name': s.name,
+            'x': s.x,
+            'y': s.y,
+            'arcmin': s.arcmin,
+            'vx': s.vx,
+            'vy': s.vy,
+          },
       ],
     };
   }
-  final catalog = [
-    for (var i = 0; i < ras.length; i++) FinderStar(ras[i], decs[i]),
-  ];
-  final pixels = [
-    for (var i = 0; i < xs.length; i++) PixelStar(xs[i], ys[i]),
-  ];
-  final fov = numOf(raw['fov']);
-  final width = numOf(raw['width']);
-  final height = numOf(raw['height']);
-  final identified = <({double raH, double decD, double x, double y})>[];
-  var solved = solveField(
-    stars: pixels,
-    catalog: catalog,
+  final markNames = words(raw['markNames']);
+  final markRa = nums(raw['markRa']);
+  final markDec = nums(raw['markDec']);
+  final report = solveWideFromHint(
+    marks: [
+      for (var i = 0; i < xs.length; i++)
+        (
+          name: markNames[i],
+          named: markNamed is List && markNamed[i] == true,
+          raH: markRa[i],
+          decD: markDec[i],
+          x: xs[i],
+          y: ys[i],
+        ),
+    ],
+    catalog: [
+      for (var i = 0; i < ras.length; i++) FinderStar(ras[i], decs[i]),
+    ],
+    catalogNames: words(raw['catalogNames']),
+    catalogMags: nums(raw['catalogMags']),
+    identifyCatalog: identifyCatalog,
+    identifyNames: identifyLabels,
+    identifyMags: identifyMagList,
+    magnitudeLimit: opt(raw['magLimit']),
+    width: numOf(raw['width']),
+    height: numOf(raw['height']),
+    fovDeg: numOf(raw['fov']),
+    distortion: storedLens,
+    calibrated: raw['calibrated'] == true,
+    originX: originX,
+    originY: originY,
     hintRa: numOf(raw['hintRa']),
     hintDec: numOf(raw['hintDec']),
-    width: width,
-    height: height,
-    fovDeg: fov,
     latDeg: lat != null && lst != null ? lat : null,
     lstH: lat != null && lst != null ? lst : null,
     trace: trace,
-    identified: identified,
   );
-  if (solved.solution != null) {
-    trace.add(
-      'Solving again around the first solution. '
-      'Search radius stays ${(fov * 0.65).toStringAsFixed(1)}°.',
-    );
-    final second = <({double raH, double decD, double x, double y})>[];
-    final again = solveField(
-      stars: pixels,
-      catalog: catalog,
-      hintRa: solved.solution!.raH,
-      hintDec: solved.solution!.decD,
-      width: width,
-      height: height,
-      fovDeg: fov,
-      latDeg: lat != null && lst != null ? lat : null,
-      lstH: lat != null && lst != null ? lst : null,
-      trace: trace,
-      identified: second,
-    );
-    if (again.solution != null) {
-      solved = again;
-      identified
-        ..clear()
-        ..addAll(second);
-    }
-  }
-  if (identified.length >= 3) {
-    final known = <int>{};
-    for (final star in identified) {
-      for (var i = 0; i < xs.length; i++) {
-        if ((xs[i] - star.x).abs() < 0.5 && (ys[i] - star.y).abs() < 0.5) {
-          known.add(i);
-        }
-      }
-    }
-    final marks =
-        <({String name, bool named, double raH, double decD, double x, double y})>[];
-    for (var i = 0; i < xs.length; i++) {
-      ({double raH, double decD, double x, double y})? hit;
-      if (known.contains(i)) {
-        hit = identified.firstWhere(
-          (s) => (s.x - xs[i]).abs() < 0.5 && (s.y - ys[i]).abs() < 0.5,
-        );
-      } else {
-        hit = null;
-      }
-      marks.add((
-        name: hit == null ? '$i' : 'matched',
-        named: hit != null,
-        raH: hit?.raH ?? 0,
-        decD: hit?.decD ?? 0,
-        x: xs[i],
-        y: ys[i],
-      ));
-    }
-    final report = solveWideField(
-      marks: marks,
-      catalog: catalog,
-      catalogNames: words(raw['catalogNames']),
-      catalogMags: nums(raw['catalogMags']),
-      width: width,
-      height: height,
-      fovDeg: fov,
-      distortion: opt(raw['distortion']),
-      trace: trace,
-    );
-    final solution = report.solution ?? solved.solution;
-    return {
-      'trace': trace,
-      if (solution != null) 'raH': solution.raH,
-      if (solution != null) 'decD': solution.decD,
-      'notInCatalog': [
-        for (final s in report.notInCatalog)
-          {'name': s.label, 'x': s.x, 'y': s.y},
-      ],
-      'missing': [
-        for (final s in report.missing) {'name': s.name, 'x': s.x, 'y': s.y},
-      ],
-      'matched': [
-        for (final s in report.matched) {'name': s.name, 'x': s.x, 'y': s.y},
-      ],
-    };
-  }
-  final solution = solved.solution;
+  final solution = report.solution;
   return {
     'trace': trace,
     if (solution != null) 'raH': solution.raH,
     if (solution != null) 'decD': solution.decD,
+    'notInCatalog': [
+      for (final s in report.notInCatalog)
+        {'name': s.label, 'x': s.x, 'y': s.y},
+    ],
+    'missing': [
+      for (final s in report.missing) {'name': s.name, 'x': s.x, 'y': s.y},
+    ],
+    'matched': [
+      for (final s in report.matched)
+        {
+          'name': s.name,
+          'x': s.x,
+          'y': s.y,
+          'arcmin': s.arcmin,
+          'vx': s.vx,
+          'vy': s.vy,
+        },
+    ],
   };
 }
 

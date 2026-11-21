@@ -372,6 +372,22 @@ void main() {
     expect(frameRead.height, 64);
   });
 
+  test('starMiddle moves a click onto the bright center', () {
+    final frame = img.Image(width: 80, height: 80);
+    img.fill(frame, color: img.ColorRgb8(10, 10, 12));
+    for (var dy = -4; dy <= 4; dy++) {
+      for (var dx = -4; dx <= 4; dx++) {
+        final v = (220 * math.exp(-(dx * dx + dy * dy) / 6)).round();
+        frame.setPixelRgb(30 + dx, 22 + dy, v, v, v);
+      }
+    }
+    final mid = starMiddle(frame, 24, 18);
+    expect(mid, isNotNull);
+    expect(mid!.x, closeTo(30, 0.6));
+    expect(mid.y, closeTo(22, 0.6));
+    expect(starMiddle(frame, 70, 70), isNull);
+  });
+
   test('separation is the tangent-plane distance in arcminutes', () {
     expect(separationArcmin(5, 10, 5, 10.1), closeTo(6, 0.01));
     expect(separationArcmin(5.01, 0, 5, 0), closeTo(9, 0.05));
