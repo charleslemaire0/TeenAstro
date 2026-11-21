@@ -1,0 +1,134 @@
+// Copyright (c) 2023 Steven Rosenthal smr@dt3.org
+// See LICENSE file in root directory for license terms.
+
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+
+// In top-level cedar-solve dir:
+// python scripts/compile_proto.py
+
+// In cedar-detect/python dir:
+// python -m grpc_tools.protoc -I../src/proto --python_out=. --pyi_out=. --grpc_python_out=. ../src/proto/cedar_detect.proto
+
+package cedar_detect;
+
+message CentroidsRequest {
+  // The image to analyze. The entire image is scanned for stars, excluding the
+  // three leftmost and three rightmost columns.
+  Image input_image = 1;
+
+  // Specifies the statistical significance threshold used for discriminating
+  // stars from background. Given a noise measure N, a pixel's value must be at
+  // least `sigma`*N greater than the background value in order to be considered
+  // a star candidate. Higher `sigma` values yield fewer stars; lower `sigma`
+  // values yield more stars but increase the likelihood of noise-induced false
+  // positives.
+  // Typical `sigma` values: 5-10.
+  double sigma = 2;
+
+  int32 max_size = 3 [deprecated=true];
+
+  // The `binning` argument to get_stars_from_image(): 1, 2, 4, or 8. Only
+  // relevant if `use_binned_for_star_candidates`; defaults to 2 if omitted.
+  optional int32 binning = 8;
+
+  // Ignored. The binned image is always returned when binning is applied.
+  bool return_binned = 4;
+
+  // If true, a 2x2 or 4x4 binning of `input_image` is used internally to
+  // identify star candidates instead of using the full-res `input_image`. This
+  // is useful when `input_image` pixels greatly oversample the spatial
+  // resolution (stars not tightly focused to ~2 pixels FWHM).
+  // Centroid positions are always reported in full-res `input_image` coordinates.
+  bool use_binned_for_star_candidates = 5;
+
+  // Ignored.
+  bool detect_hot_pixels = 6;
+
+  // Ignored.
+  bool normalize_rows = 9;
+
+  // If provided, specifies a portion of `input_image` over which the background
+  // level (excluding stars) is estimated.
+  optional Rectangle estimate_background_region = 7;
+}
+
+// Describes a region within an Image.
+message Rectangle {
+  int32 origin_x = 1;
+  int32 origin_y = 2;
+  int32 width = 3;
+  int32 height = 4;
+}
+
+message CentroidsResult {
+  // Estimated RMS noise level of the request's `input_image`.
+  double noise_estimate = 1;
+
+  // Estimated background level of the request's `estimate_background_region`.
+  optional double background_estimate = 7;
+
+  // The number of isolated hot pixels detected. Hot pixels are bright
+  // single-pixel spikes excluded from star candidates.
+  int32 hot_pixel_count = 2;
+
+  // The peak pixel value of the identified star candidates. This might be an average
+  // of the N brightest star candidates.
+  int32 peak_star_pixel = 6;
+
+  // The star candidates detected by CedarDetect; ordered by highest
+  // brightness first.
+  repeated StarCentroid star_candidates = 3;
+
+  // The 2x2 binning of `input_image`. Present when binning was applied
+  // (i.e. `use_binned_for_star_candidates`).
+  optional Image binned_image = 4;
+
+  // The time spent in the CedarDetect algorithm. The client can subtract this from
+  // the overall RPC time to glean the RPC overhead, which is likely dominated
+  // by the time needed to transfer `input_image` in the request.
+  google.protobuf.Duration algorithm_time = 5;
+}
+
+message Image {
+  int32 width = 1;
+  int32 height = 2;
+
+  // Row major format, uint8 grayscale pixels. Not populated if `shmem_name` is
+  // present.
+  bytes image_data = 3;
+
+  // If present, identifies a shm_open() shared memory object in which the
+  // image data has been written. This should be unchanged between requests.
+  optional string shmem_name = 4;
+
+  // The server must reopen `shmem_name` because the client has re-created
+  // it with a new size.
+  bool reopen_shmem = 5;
+}
+
+// Summarizes a star-like spot found by the CedarDetect algorithm.
+message StarCentroid {
+  // Location of star centroid in full resolution image coordinates.
+  ImageCoord centroid_position = 1;
+
+  // Sum of the uint8 pixel values of the star's region. The estimated
+  // background is subtracted.
+  double brightness = 4;
+
+  // Count of saturated pixel values.
+  int32 num_saturated = 6;
+}
+
+message ImageCoord {
+  // A location in full resolution image coordinates. (0.5, 0.5) corresponds to
+  // the center of the image's upper left pixel.
+  double x = 1;
+  double y = 2;
+}
+
+service CedarDetect {
+  // Returns INTERNAL error if the Image request's shared memory cannot be accessed.
+  rpc ExtractCentroids(CentroidsRequest) returns (CentroidsResult);
+}

@@ -57,3 +57,9 @@ Thumbs.db
 
 # Scripts output (if any generated artifacts)
 # scripts/generate_app_icon.py may write under assets – add paths here if needed
+
+# Tetra plate-solve catalog. tetra_solve.py downloads and builds these.
+tool/tetra/
+
+# Cedar detector binary. cedar_extract.py starts it when Extract stars is pressed.
+tool/cedar/cedar-detect-server.exe

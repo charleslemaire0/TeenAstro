@@ -58,7 +58,7 @@ class FinderCones {
 /// Field angle, in degrees, of the longer side of a lens.
 ///
 /// [widthMm] and [heightMm] are the sensor's physical size. [focalMm] is the
-/// lens focal length. This is the plate scale [solveField] expects.
+/// lens focal length. The angle is the longer side of the frame.
 double longerSideFieldDeg(double widthMm, double heightMm, double focalMm) {
   final side = math.max(widthMm, heightMm);
   if (focalMm <= 0 || side <= 0) {
@@ -317,8 +317,7 @@ bool _lensOpen(double f, LensTerms lens, double width, double height) {
 ///
 /// The plate is the pinhole view of a real camera: north up puts east to the
 /// left. [fovDeg] is the longer side after the focal length is fitted.
-/// [originX] and [originY] are the optical center. They start at the middle
-/// of the picture and move only when the lens is calibrated.
+/// The optical center is the middle of the picture.
 class WideCamera {
   final FinderSolution solution;
   final double fovDeg;
@@ -431,33 +430,22 @@ class WideFieldReport {
 
 /// Pose of a rectilinear frame from at least three named stars.
 ///
-/// The focal length starts from [fovDeg]. [distortion] is a stored radial
-/// lens (k1, k2, k3). With neither [distortion] nor [fitDistortion], the
-/// lens is treated as having no radial distortion. [fitDistortion] searches
-/// k1, then k2, then k3. With at least six stars it also moves the optical
-/// center, and it keeps a lens only when the plate residual is no larger
-/// than the same fit with no radial term. [originX] and [originY] lock a
-/// stored center; omitted, the center is the middle of the picture.
+/// The focal length starts from [fovDeg]. The lens is a pinhole and the
+/// optical center is the middle of the picture.
 WideCamera? widePoseFromNamedStars({
   required List<({double raH, double decD, double x, double y})> stars,
   required double width,
   required double height,
   required double fovDeg,
-  LensTerms? distortion,
-  bool fitDistortion = false,
-  bool lockFocal = false,
-  double? originX,
-  double? originY,
 }) {
   if (stars.length < 3 || width < 2 || height < 2 || fovDeg <= 1) return null;
   final long = math.max(width, height);
   final f0 = long / 2 / math.tan(fovDeg * math.pi / 360);
   var bestF = f0;
-  var bestLens = distortion ?? const LensTerms.none();
+  const bestLens = LensTerms.none();
   var bestErr = 1e9;
-  final lockOrigin = originX != null && originY != null;
-  var cx = originX ?? width / 2;
-  var cy = originY ?? height / 2;
+  final cx = width / 2;
+  final cy = height / 2;
   final step = math.max(10.0, f0 / 80);
   final separations = <double>[];
   for (var i = 0; i < stars.length; i++) {
@@ -494,177 +482,11 @@ WideCamera? widePoseFromNamedStars({
     if (rms < bestErr) {
       bestErr = rms;
       bestF = f;
-      bestLens = lens;
     }
   }
 
-  void scanK2(double span, double stepK) {
-    final center = bestLens.k2;
-    final k1 = bestLens.k1;
-    final k3 = bestLens.k3;
-    final f = bestF;
-    for (var k2 = center - span; k2 <= center + span + 1e-9; k2 += stepK) {
-      consider(f, LensTerms(k1, k2, k3));
-    }
-  }
-
-  void scanK3(double span, double stepK) {
-    final center = bestLens.k3;
-    final k1 = bestLens.k1;
-    final k2 = bestLens.k2;
-    final f = bestF;
-    for (var k3 = center - span; k3 <= center + span + 1e-9; k3 += stepK) {
-      consider(f, LensTerms(k1, k2, k3));
-    }
-  }
-
-  if (lockFocal) {
-    bestF = f0;
-    bestLens = distortion ?? const LensTerms.none();
-  } else if (distortion != null) {
-    for (var f = f0 * 0.75; f <= f0 * 1.25; f += step) {
-      consider(f, distortion);
-    }
-  } else if (fitDistortion) {
-    for (var f = f0 * 0.75; f <= f0 * 1.25; f += step) {
-      for (var k100 = -40; k100 <= 20; k100 += 4) {
-        consider(f, LensTerms(k100 / 100.0, 0, 0));
-      }
-    }
-    final coarseF = bestF;
-    final coarseK = bestLens.k1;
-    final fine = math.max(4.0, step / 5);
-    for (var f = coarseF - step; f <= coarseF + step; f += fine) {
-      for (var k1000 = ((coarseK - 0.05) * 1000).round();
-          k1000 <= ((coarseK + 0.05) * 1000).round();
-          k1000 += 5) {
-        consider(f, LensTerms(k1000 / 1000.0, 0, 0));
-      }
-    }
-    // k2 and k3 need stars at several radii. Three stars only support k1.
-    if (stars.length >= 6) {
-      scanK2(0.5, 0.05);
-      scanK2(0.06, 0.01);
-    }
-    if (stars.length >= 10) {
-      scanK3(0.5, 0.05);
-      scanK3(0.06, 0.01);
-    }
-    final midF = bestF;
-    final mid = bestLens;
-    for (var f = midF - step; f <= midF + step; f += fine) {
-      for (var k1000 = ((mid.k1 - 0.04) * 1000).round();
-          k1000 <= ((mid.k1 + 0.04) * 1000).round();
-          k1000 += 5) {
-        consider(f, LensTerms(k1000 / 1000.0, mid.k2, mid.k3));
-      }
-    }
-    if (stars.length >= 6) scanK2(0.08, 0.01);
-    if (stars.length >= 10) scanK3(0.08, 0.01);
-    if (!lockOrigin && stars.length >= 6) {
-      var plainF = f0;
-      var plainErr = 1e9;
-      for (var f = f0 * 0.75; f <= f0 * 1.25; f += step) {
-        final rms = pairError(f, const LensTerms.none());
-        if (rms < plainErr) {
-          plainErr = rms;
-          plainF = f;
-        }
-      }
-      var holdX = width / 2;
-      var holdY = height / 2;
-      var holdPoint = _widePointing(
-        stars: stars,
-        width: width,
-        height: height,
-        f: plainF,
-        lens: const LensTerms.none(),
-        originX: holdX,
-        originY: holdY,
-      );
-      void scanOrigin(double span, double stepO) {
-        final baseX = holdX;
-        final baseY = holdY;
-        for (var oy = baseY - span; oy <= baseY + span; oy += stepO) {
-          for (var ox = baseX - span; ox <= baseX + span; ox += stepO) {
-            final rms = _widePointing(
-              stars: stars,
-              width: width,
-              height: height,
-              f: plainF,
-              lens: const LensTerms.none(),
-              originX: ox,
-              originY: oy,
-            );
-            if (rms < holdPoint) {
-              holdPoint = rms;
-              holdX = ox;
-              holdY = oy;
-            }
-          }
-        }
-      }
-
-      scanOrigin(120, 40);
-      scanOrigin(40, 10);
-      cx = holdX;
-      cy = holdY;
-      bestErr = 1e9;
-      bestF = plainF;
-      bestLens = const LensTerms.none();
-      for (var k100 = -40; k100 <= 20; k100 += 4) {
-        consider(plainF, LensTerms(k100 / 100.0, 0, 0));
-      }
-      final movedF = bestF;
-      final movedK = bestLens.k1;
-      for (var f = movedF - step; f <= movedF + step; f += fine) {
-        for (var k1000 = ((movedK - 0.05) * 1000).round();
-            k1000 <= ((movedK + 0.05) * 1000).round();
-            k1000 += 5) {
-          consider(f, LensTerms(k1000 / 1000.0, 0, 0));
-        }
-      }
-      if (stars.length >= 6) {
-        scanK2(0.5, 0.05);
-        scanK2(0.06, 0.01);
-      }
-      if (stars.length >= 10) {
-        scanK3(0.5, 0.05);
-        scanK3(0.06, 0.01);
-      }
-    }
-    final keptF = bestF;
-    final keptLens = bestLens;
-    final keptPoint = _widePointing(
-      stars: stars,
-      width: width,
-      height: height,
-      f: keptF,
-      lens: keptLens,
-      originX: cx,
-      originY: cy,
-    );
-    bestErr = 1e9;
-    for (var f = f0 * 0.75; f <= f0 * 1.25; f += step) {
-      consider(f, const LensTerms.none());
-    }
-    final plainPoint = _widePointing(
-      stars: stars,
-      width: width,
-      height: height,
-      f: bestF,
-      lens: const LensTerms.none(),
-      originX: cx,
-      originY: cy,
-    );
-    if (keptPoint <= plainPoint) {
-      bestF = keptF;
-      bestLens = keptLens;
-    }
-  } else {
-    for (var f = f0 * 0.75; f <= f0 * 1.25; f += step) {
-      consider(f, const LensTerms.none());
-    }
+  for (var f = f0 * 0.75; f <= f0 * 1.25; f += step) {
+    consider(f, bestLens);
   }
 
   var baseA = 0;
@@ -770,85 +592,6 @@ WideCamera? widePoseFromNamedStars({
   );
 }
 
-/// Plate residual, in degrees, after aligning the longest pair.
-double _widePointing({
-  required List<({double raH, double decD, double x, double y})> stars,
-  required double width,
-  required double height,
-  required double f,
-  required LensTerms lens,
-  required double originX,
-  required double originY,
-}) {
-  if (!_lensOpen(f, lens, width, height)) return 1e9;
-  var baseA = 0;
-  var baseB = 1;
-  var baseSep = -1.0;
-  for (var i = 0; i < stars.length; i++) {
-    for (var j = i + 1; j < stars.length; j++) {
-      final sep = sphereSeparationDeg(
-        stars[i].raH,
-        stars[i].decD,
-        stars[j].raH,
-        stars[j].decD,
-      );
-      if (sep > baseSep) {
-        baseSep = sep;
-        baseA = i;
-        baseB = j;
-      }
-    }
-  }
-  final camA = _wideRay(
-    stars[baseA].x,
-    stars[baseA].y,
-    width,
-    height,
-    f,
-    lens,
-    originX: originX,
-    originY: originY,
-  );
-  final camB = _wideRay(
-    stars[baseB].x,
-    stars[baseB].y,
-    width,
-    height,
-    f,
-    lens,
-    originX: originX,
-    originY: originY,
-  );
-  final skyA = _wideSky(stars[baseA].raH, stars[baseA].decD);
-  final skyB = _wideSky(stars[baseB].raH, stars[baseB].decD);
-  final rays = [
-    for (final s in stars)
-      _wideRay(
-        s.x,
-        s.y,
-        width,
-        height,
-        f,
-        lens,
-        originX: originX,
-        originY: originY,
-      ),
-  ];
-  final sky = [for (final s in stars) _wideSky(s.raH, s.decD)];
-  var namedRms = 1e9;
-  for (final flip in [false, true]) {
-    final rot = _wideAlign(camA, camB, skyA, skyB, flip);
-    var err = 0.0;
-    for (var i = 0; i < stars.length; i++) {
-      final ang = _wideAngle(_wideApply(rot, rays[i]), sky[i]);
-      err += ang * ang;
-    }
-    final rms = math.sqrt(err / stars.length);
-    if (rms < namedRms) namedRms = rms;
-  }
-  return namedRms;
-}
-
 /// Catalog match on a wide frame whose pose comes from the named marks.
 ///
 /// A click counts when a catalog star lies within [_wideMatchDeg]. Clicks
@@ -872,10 +615,6 @@ WideFieldReport solveWideField({
   List<double>? identifyMags,
   double? magnitudeLimit,
   double missingMag = 4.5,
-  LensTerms? distortion,
-  bool lockFocal = false,
-  double? originX,
-  double? originY,
   required double width,
   required double height,
   required double fovDeg,
@@ -891,10 +630,6 @@ WideFieldReport solveWideField({
     width: width,
     height: height,
     fovDeg: fovDeg,
-    distortion: distortion,
-    lockFocal: lockFocal,
-    originX: originX,
-    originY: originY,
   );
   if (camera == null) {
     const reason = 'The named stars do not form one camera pose';
@@ -902,32 +637,11 @@ WideFieldReport solveWideField({
     return const WideFieldReport(reason: reason);
   }
   final pose = camera.solution;
-  if (distortion != null) {
-    final plain = widePoseFromNamedStars(
-      stars: named,
-      width: width,
-      height: height,
-      fovDeg: fovDeg,
-      distortion: const LensTerms.none(),
-      originX: camera.originX,
-      originY: camera.originY,
-    );
-    if (plain != null) {
-      note(
-        'Named-star residual ${(pose.rmsDeg * 60).toStringAsFixed(1)}\' '
-        'with the stored lens, '
-        '${(plain.solution.rmsDeg * 60).toStringAsFixed(1)}\' without it.',
-      );
-    }
-  }
   note(
     'Catalog to magnitude ${wideCatalogMag.toStringAsFixed(1)}. '
     'Match radius ${_wideMatchDeg.toStringAsFixed(1)}°. '
     'Focal length ${camera.focalPx.toStringAsFixed(0)} px, '
-    'distortion ${camera.lens.describe()}'
-    '${distortion == null ? ', no lens calibration' : ', stored lens'}, '
-    'long side ${camera.fovDeg.toStringAsFixed(1)}°'
-    '${(camera.originX - width / 2).abs() < 5 && (camera.originY - height / 2).abs() < 5 ? '' : ', optical center ${(camera.originX - width / 2).toStringAsFixed(0)} px, ${(camera.originY - height / 2).toStringAsFixed(0)} px from the middle'}.',
+    'long side ${camera.fovDeg.toStringAsFixed(1)}°.',
   );
   var rollDeg = pose.rollRad * 180 / math.pi;
   rollDeg %= 360;
@@ -981,10 +695,6 @@ WideFieldReport solveWideField({
       width: width,
       height: height,
       fovDeg: fovDeg,
-      distortion: camera.lens,
-      lockFocal: lockFocal,
-      originX: camera.originX,
-      originY: camera.originY,
     );
     if (again != null) {
       final retry = assign(again);
@@ -1384,10 +1094,9 @@ class _Polished {
 ///
 /// The picture is the pinhole used for named stars. Roll is searched, and a
 /// center within [_wideHintDeg] of [hintRa] and [hintDec] can still match.
-/// When [calibrated] is set, [fovDeg] and [distortion] are the stored camera
-/// and are not searched again. Otherwise the typed field is tried from 90%
-/// to 110%. One or two named marks fix the center for each roll. Three or
-/// more matches are then fitted with [widePoseFromNamedStars].
+/// The typed field is tried from 90% to 110%. One or two named marks fix
+/// the center for each roll. Three or more matches are then fitted with
+/// [widePoseFromNamedStars].
 WideFieldReport solveWideFromHint({
   required List<
           ({
@@ -1407,10 +1116,6 @@ WideFieldReport solveWideFromHint({
   List<double>? identifyMags,
   double? magnitudeLimit,
   double missingMag = 4.5,
-  LensTerms? distortion,
-  bool calibrated = false,
-  double? originX,
-  double? originY,
   required double width,
   required double height,
   required double fovDeg,
@@ -1431,7 +1136,7 @@ WideFieldReport solveWideFromHint({
     return const WideFieldReport(reason: reason);
   }
   final haveSite = latDeg != null && lstH != null;
-  final lens = distortion ?? const LensTerms.none();
+  const lens = LensTerms.none();
   final longSide = math.max(width, height);
   final focal0 = longSide / 2 / math.tan(fovDeg * math.pi / 360);
   final sky = <({double x, double y, double z})>[
@@ -1456,15 +1161,7 @@ WideFieldReport solveWideFromHint({
     'Catalog stars near the hint: ${nearby.length}. '
     'Below the horizon and left out: $below.',
   );
-  if (calibrated) {
-    note(
-      'Stored field ${fovDeg.toStringAsFixed(1)}°, stored lens. '
-      'Roll is searched around the typed center.',
-    );
-  } else {
-    note(distortion == null ? 'No lens calibration.' : 'Stored lens.');
-    note('The typed field is tried from 90% to 110%.');
-  }
+  note('The typed field is tried from 90% to 110%.');
   if (nearby.length < 4) {
     final reason = below > 0
         ? 'Not enough stars above the horizon'
@@ -1486,11 +1183,9 @@ WideFieldReport solveWideFromHint({
         : '${anchors.length} named marks fix the center for each roll.');
   }
 
-  final scales = calibrated
-      ? const [1.0]
-      : <double>[
-          for (var i = 0; i <= 8; i++) 0.90 + i * 0.025,
-        ];
+  final scales = <double>[
+    for (var i = 0; i <= 8; i++) 0.90 + i * 0.025,
+  ];
   final raySets = <List<({double x, double y, double z})>>[
     for (final scale in scales)
       [
@@ -1502,8 +1197,6 @@ WideFieldReport solveWideFromHint({
             height,
             focal0 * scale,
             lens,
-            originX: originX,
-            originY: originY,
           ),
       ],
   ];
@@ -1627,8 +1320,7 @@ WideFieldReport solveWideFromHint({
   if (rollShown < 0) rollShown += 360;
   note(
     'Pinhole camera around ${_traceHours(hintRa)}, ${_traceDegrees(hintDec)}, '
-    'roll ${rollShown.toStringAsFixed(1)}°. '
-    '${calibrated ? 'Stored field, stored lens' : distortion == null ? 'No lens calibration' : 'Stored lens'}.',
+    'roll ${rollShown.toStringAsFixed(1)}°.',
   );
   note(
     '${polished.asg.count} clicks agree inside ${_wideMatchDeg.toStringAsFixed(1)}°. '
@@ -1669,10 +1361,6 @@ WideFieldReport solveWideFromHint({
     identifyMags: identifyMags,
     magnitudeLimit: magnitudeLimit,
     missingMag: missingMag,
-    distortion: distortion,
-    lockFocal: calibrated,
-    originX: originX,
-    originY: originY,
     width: width,
     height: height,
     fovDeg: fovDeg,
@@ -2135,249 +1823,6 @@ double altitudeDeg(double latDeg, double lstH, double raH, double decD) {
   return math.asin(sinAlt.clamp(-1.0, 1.0)) * 180 / math.pi;
 }
 
-/// Hinted plate solve. [fovDeg] is the longer side of the frame.
-/// The hint is only where to look; the result is the camera axis.
-///
-/// A candidate is kept only when the matched stars agree to within
-/// [_maxRmsDeg], they span a real patch of the frame, and — when [latDeg]
-/// and [lstH] are given — the axis is above the horizon.
-FieldSolve solveField({
-  required List<PixelStar> stars,
-  required List<FinderStar> catalog,
-  required double hintRa,
-  required double hintDec,
-  required double width,
-  required double height,
-  required double fovDeg,
-  double? latDeg,
-  double? lstH,
-  List<String>? trace,
-  List<({double raH, double decD, double x, double y})>? identified,
-}) {
-  void note(String line) => trace?.add(line);
-  if (stars.length < 4 || catalog.isEmpty || width < 2 || height < 2) {
-    note('Not enough stars in the frame (${stars.length}).');
-    return const FieldSolve(reason: 'Not enough stars in the frame');
-  }
-  final haveSite = latDeg != null && lstH != null;
-  final scale = fovDeg / math.max(width, height);
-  final reach = fovDeg * 0.65;
-  note(
-      '${stars.length} marked stars on a ${width.toStringAsFixed(0)}×${height.toStringAsFixed(0)} frame.');
-  note('Long side ${fovDeg.toStringAsFixed(1)}°, '
-      '${scale.toStringAsFixed(4)}° per pixel. '
-      'Search radius ${reach.toStringAsFixed(1)}°.');
-  note('Hint ${_traceHours(hintRa)}, ${_traceDegrees(hintDec)}.');
-  final nearby = <FinderStar>[];
-  var below = 0;
-  for (final s in catalog) {
-    final (e, n) = skyOffset(s.raH, s.decD, hintRa, hintDec);
-    if (e * e + n * n > reach * reach) continue;
-    if (haveSite && altitudeDeg(latDeg, lstH, s.raH, s.decD) <= 0) {
-      below++;
-      continue;
-    }
-    nearby.add(s);
-  }
-  note('Catalog stars near the hint: ${nearby.length}. '
-      'Below the horizon and left out: $below.');
-  if (nearby.length < 4) {
-    final reason = below > 0
-        ? 'Not enough stars above the horizon'
-        : 'Not enough catalog stars near the hint';
-    note(reason);
-    return FieldSolve(reason: reason);
-  }
-
-  final det = <(double right, double up)>[];
-  for (final p in stars) {
-    det.add(((p.x - width / 2) * scale, (height / 2 - p.y) * scale));
-  }
-  final need = det.length >= 15 ? 6 : 4;
-  final minSpan = math.max(2.0, fovDeg * 0.12);
-  note(
-      'A solution needs $need matches spanning at least ${minSpan.toStringAsFixed(1)}°.');
-
-  const bin = 0.3;
-  FinderSolution? best;
-  var sawHorizon = false;
-  double? worstRms;
-  var votes = 0;
-  var measured = 0;
-  var bestShort = 0;
-  double? anchorDeg;
-  var anchorRms = 1e9;
-  var refining = false;
-
-  String rollText(double deg) {
-    var shown = deg % 360;
-    if (shown < 0) shown += 360;
-    return shown.toStringAsFixed(1);
-  }
-
-  void measure(double deg) {
-    final roll = deg * math.pi / 180;
-    final bins = <int, _Vote>{};
-    for (final star in nearby) {
-      final (e, n) = skyOffset(star.raH, star.decD, hintRa, hintDec);
-      final (right0, up0) = skyToTelescope(e, n, roll);
-      for (final d in det) {
-        final tr = d.$1 - right0;
-        final tu = d.$2 - up0;
-        if (tr.abs() > reach || tu.abs() > reach) continue;
-        final key = (tr / bin).round() * 100000 + (tu / bin).round();
-        final vote = bins.putIfAbsent(key, () => _Vote());
-        vote.add(tr, tu);
-      }
-    }
-    _Vote? top;
-    for (final v in bins.values) {
-      if (top == null || v.n > top.n) top = v;
-    }
-    if (top == null || top.n < 4) {
-      if (!refining && trace != null && deg % 90 == 0) {
-        note('Roll ${rollText(deg)}°: strongest vote ${top?.n ?? 0}.');
-      }
-      return;
-    }
-    votes++;
-    final tr = top.sr / top.n;
-    final tu = top.su / top.n;
-    final (east, north) = telescopeToSky(-tr, -tu, roll);
-    var sky = offsetToSky(hintRa, hintDec, east, north);
-    var fit = _matchField(
-      det: det,
-      catalog: nearby,
-      centerRa: sky.$1,
-      centerDec: sky.$2,
-      roll: roll,
-    );
-    if (fit == null) return;
-    final (corrE, corrN) = telescopeToSky(-fit.biasR, -fit.biasU, roll);
-    final refined = offsetToSky(sky.$1, sky.$2, corrE, corrN);
-    final fit2 = _matchField(
-      det: det,
-      catalog: nearby,
-      centerRa: refined.$1,
-      centerDec: refined.$2,
-      roll: roll,
-    );
-    if (fit2 != null && fit2.count >= fit.count && fit2.rms <= fit.rms) {
-      fit = fit2;
-      sky = refined;
-    }
-    measured++;
-    final short = fit.count < need || fit.span < minSpan;
-    if (!short && fit.rms < anchorRms) {
-      anchorDeg = deg;
-      anchorRms = fit.rms;
-    }
-    if (refining) {
-      if (!short) {
-        note(
-          'Roll ${rollText(deg)}°: ${fit.count} matches, '
-          'residual ${(fit.rms * 60).toStringAsFixed(1)}\' '
-          'at ${_traceHours(sky.$1)}, ${_traceDegrees(sky.$2)}.',
-        );
-      }
-    } else if (trace != null && (short ? fit.count > bestShort : true)) {
-      final where =
-          'Roll ${rollText(deg)}°: ${fit.count} matches, span ${fit.span.toStringAsFixed(1)}°, '
-          'residual ${(fit.rms * 60).toStringAsFixed(1)}\' '
-          'at ${_traceHours(sky.$1)}, ${_traceDegrees(sky.$2)}.';
-      if (short) {
-        bestShort = fit.count;
-        note('$where Short of the match or the span.');
-      } else if (fit.rms > _maxRmsDeg) {
-        final worst = worstRms;
-        if (worst == null || fit.rms < worst) {
-          note('$where Residual is above 24\'.');
-        }
-      } else if (haveSite && altitudeDeg(latDeg, lstH, sky.$1, sky.$2) <= 0) {
-        note('$where Below the horizon.');
-      } else {
-        final kept = best;
-        if (kept == null ||
-            fit.count > kept.matches ||
-            (fit.count == kept.matches && fit.rms < kept.rmsDeg)) {
-          note('$where Kept.');
-        }
-      }
-    }
-    if (short) return;
-    if (fit.rms > _maxRmsDeg) {
-      final worst = worstRms;
-      if (worst == null || fit.rms < worst) worstRms = fit.rms;
-      return;
-    }
-    if (haveSite && altitudeDeg(latDeg, lstH, sky.$1, sky.$2) <= 0) {
-      sawHorizon = true;
-      return;
-    }
-    final kept = best;
-    if (kept != null &&
-        (fit.count < kept.matches ||
-            (fit.count == kept.matches && fit.rms >= kept.rmsDeg))) {
-      return;
-    }
-    best = FinderSolution(
-      raH: sky.$1,
-      decD: sky.$2,
-      rollRad: roll,
-      matches: fit.count,
-      rmsDeg: fit.rms,
-    );
-  }
-
-  for (var deg = 0; deg < 360; deg++) {
-    measure(deg.toDouble());
-  }
-  note(
-      '360 rolls at 1°. $votes had a vote of 4 or more. $measured were measured.');
-  final solved = best;
-  final around = solved == null ? anchorDeg : solved.rollRad * 180 / math.pi;
-  if (around != null) {
-    note(
-      'Roll refined in steps of 0.1° around ${rollText(around)}°. '
-      'A step of 1° is coarser than the 24\' residual.',
-    );
-    refining = true;
-    for (var step = -10; step <= 10; step++) {
-      measure(around + step * 0.1);
-    }
-  }
-  final chosen = best;
-  if (chosen != null) {
-    note(
-        'Camera axis ${_traceHours(chosen.raH)}, ${_traceDegrees(chosen.decD)}. '
-        '${chosen.matches} stars, residual ${(chosen.rmsDeg * 60).toStringAsFixed(1)}\'.');
-    if (identified != null) {
-      _collectMatches(
-        det: det,
-        stars: stars,
-        catalog: nearby,
-        centerRa: chosen.raH,
-        centerDec: chosen.decD,
-        roll: chosen.rollRad,
-        into: identified,
-      );
-    }
-    return FieldSolve(solution: chosen);
-  }
-  if (sawHorizon) {
-    note('The solution is below the horizon.');
-    return const FieldSolve(reason: 'The solution is below the horizon');
-  }
-  final high = worstRms;
-  if (high != null) {
-    final arcmin = (high * 60).toStringAsFixed(0);
-    final reason = "Residuals too large ($arcmin')";
-    note(reason);
-    return FieldSolve(reason: reason);
-  }
-  note('The field did not match the catalog.');
-  return const FieldSolve(reason: 'The field did not match the catalog');
-}
 
 String _traceHours(double hours) {
   var total = (wrapHours(hours) * 3600).round();
@@ -2398,121 +1843,6 @@ String _traceDegrees(double degrees) {
   return "$sign$d°${m.toString().padLeft(2, '0')}'";
 }
 
-const double _matchDeg = 0.75;
-const double _maxRmsDeg = 0.40;
-
-class _StarFit {
-  final int count;
-  final double rms;
-  final double span;
-  final double biasR;
-  final double biasU;
-  const _StarFit(this.count, this.rms, this.span, this.biasR, this.biasU);
-}
-
-/// One-to-one matches between detections and catalog stars at [centerRa]/[centerDec].
-_StarFit? _matchField({
-  required List<(double right, double up)> det,
-  required List<FinderStar> catalog,
-  required double centerRa,
-  required double centerDec,
-  required double roll,
-}) {
-  final proj = <(double right, double up)>[];
-  for (final s in catalog) {
-    final (e, n) = skyOffset(s.raH, s.decD, centerRa, centerDec);
-    proj.add(skyToTelescope(e, n, roll));
-  }
-  final pairs = <({double d, int i, int j})>[];
-  for (var i = 0; i < det.length; i++) {
-    for (var j = 0; j < proj.length; j++) {
-      final dr = det[i].$1 - proj[j].$1;
-      final du = det[i].$2 - proj[j].$2;
-      final dist = math.sqrt(dr * dr + du * du);
-      if (dist <= _matchDeg) pairs.add((d: dist, i: i, j: j));
-    }
-  }
-  pairs.sort((a, b) => a.d.compareTo(b.d));
-  final usedI = List<bool>.filled(det.length, false);
-  final usedJ = List<bool>.filled(proj.length, false);
-  var sumSq = 0.0;
-  var biasR = 0.0;
-  var biasU = 0.0;
-  final matched = <(double right, double up)>[];
-  for (final p in pairs) {
-    if (usedI[p.i] || usedJ[p.j]) continue;
-    usedI[p.i] = true;
-    usedJ[p.j] = true;
-    sumSq += p.d * p.d;
-    biasR += det[p.i].$1 - proj[p.j].$1;
-    biasU += det[p.i].$2 - proj[p.j].$2;
-    matched.add(det[p.i]);
-  }
-  final n = matched.length;
-  if (n < 4) return null;
-  var span = 0.0;
-  for (var a = 0; a < n; a++) {
-    for (var b = a + 1; b < n; b++) {
-      final dr = matched[a].$1 - matched[b].$1;
-      final du = matched[a].$2 - matched[b].$2;
-      final dist = math.sqrt(dr * dr + du * du);
-      if (dist > span) span = dist;
-    }
-  }
-  return _StarFit(n, math.sqrt(sumSq / n), span, biasR / n, biasU / n);
-}
-
-/// Catalog stars that landed on a detection at the reported solution.
-/// This does not decide whether the solution is kept.
-void _collectMatches({
-  required List<(double right, double up)> det,
-  required List<PixelStar> stars,
-  required List<FinderStar> catalog,
-  required double centerRa,
-  required double centerDec,
-  required double roll,
-  required List<({double raH, double decD, double x, double y})> into,
-}) {
-  final proj = <(double right, double up)>[];
-  for (final s in catalog) {
-    final (e, n) = skyOffset(s.raH, s.decD, centerRa, centerDec);
-    proj.add(skyToTelescope(e, n, roll));
-  }
-  final pairs = <({double d, int i, int j})>[];
-  for (var i = 0; i < det.length; i++) {
-    for (var j = 0; j < proj.length; j++) {
-      final dr = det[i].$1 - proj[j].$1;
-      final du = det[i].$2 - proj[j].$2;
-      final dist = math.sqrt(dr * dr + du * du);
-      if (dist <= _matchDeg) pairs.add((d: dist, i: i, j: j));
-    }
-  }
-  pairs.sort((a, b) => a.d.compareTo(b.d));
-  final usedI = List<bool>.filled(det.length, false);
-  final usedJ = List<bool>.filled(catalog.length, false);
-  for (final p in pairs) {
-    if (usedI[p.i] || usedJ[p.j]) continue;
-    usedI[p.i] = true;
-    usedJ[p.j] = true;
-    into.add((
-      raH: catalog[p.j].raH,
-      decD: catalog[p.j].decD,
-      x: stars[p.i].x,
-      y: stars[p.i].y,
-    ));
-  }
-}
-
-class _Vote {
-  int n = 0;
-  double sr = 0;
-  double su = 0;
-  void add(double r, double u) {
-    n++;
-    sr += r;
-    su += u;
-  }
-}
 
 /// One automatic alignment place. [raH] is hours, [decD] is degrees.
 class PhoneAlignPlace {

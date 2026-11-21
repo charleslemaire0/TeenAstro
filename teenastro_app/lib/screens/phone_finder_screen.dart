@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -18,6 +17,7 @@ import 'package:teenastro_app/services/lx200_tcp_client.dart';
 import 'package:teenastro_app/services/mount_state_provider.dart';
 import 'package:teenastro_app/services/phone_finder.dart';
 import 'package:teenastro_app/services/phone_finder_store.dart';
+import 'package:teenastro_app/services/stellar_solver.dart';
 import 'package:teenastro_app/theme.dart';
 
 /// Plate solve from the phone camera. The hardware efinder is not used.
@@ -31,7 +31,6 @@ class PhoneFinderScreen extends ConsumerStatefulWidget {
 class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   final _store = PhoneFinderStore();
   CameraController? _cam;
-  List<FinderStar> _catalog = const [];
   FinderCones _cones = const FinderCones();
   double _fov = 60;
   bool _auto = false;
@@ -43,6 +42,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   String _status = '';
   String? _cameraError;
   bool _fovMeasured = false;
+  List<StellarIndex>? _indexes;
   String? _cameraId;
   int? _shutterUs;
   int? _iso;
@@ -61,34 +61,14 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final fov = await _store.loadFov();
     final auto = await _store.loadAutoSync();
     final limit = await _store.loadRecenterArcmin();
-    final raw = await rootBundle.loadString('assets/catalogs/stars.json');
-    final jd = julianDate(DateTime.now().toUtc());
-    final catalog = _catalogFromJson(raw, jd);
     if (!mounted) return;
     setState(() {
       _cones = cones;
       _fov = fov;
       _auto = auto;
       _limitArcmin = limit;
-      _catalog = catalog;
     });
     if (_hasCamera) await _openCamera();
-  }
-
-  List<FinderStar> _catalogFromJson(String raw, double jd) {
-    final json = jsonDecode(raw) as Map<String, dynamic>;
-    final objects = json['objects'] as List<dynamic>;
-    final stars = <FinderStar>[];
-    for (final item in objects) {
-      final m = item as Map<String, dynamic>;
-      final mag = (m['mag'] as num?)?.toDouble();
-      if (mag == null || mag > 4.5) continue;
-      final ra = (m['ra'] as num).toDouble();
-      final dec = (m['dec'] as num).toDouble();
-      final now = equatorialEquinoxToJNow(ra, dec, 2000, jd);
-      stars.add(FinderStar(now.$1, now.$2));
-    }
-    return stars;
   }
 
   /// Longer-side field of the camera, from its focal length and sensor size.
@@ -298,16 +278,28 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     return StarFrame(kept, best.width, best.height);
   }
 
+  Future<List<StellarIndex>?> _loadIndexes() async {
+    final cached = _indexes;
+    if (cached != null) return cached;
+    try {
+      final files = <String, Uint8List>{};
+      for (final name in ['index-4117.fits', 'index-4118.fits', 'index-4119.fits']) {
+        final data = await rootBundle.load('tool/stellar/indexes/$name');
+        files[name] = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      }
+      final parsed = parseStellarIndexes(files);
+      if (parsed.isEmpty) return null;
+      _indexes = parsed;
+      return parsed;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<FinderSolution?> _solve() async {
     final cam = _cam;
     if (cam == null || !cam.value.isInitialized) {
       setState(() => _status = 'The phone camera is not ready');
-      return null;
-    }
-    final hint = _mountPointing();
-    if (hint == null) {
-      setState(
-          () => _status = 'Connect the mount so the solve knows where to look');
       return null;
     }
     setState(() {
@@ -315,6 +307,11 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       _status = 'Capturing…';
     });
     try {
+      final indexes = await _loadIndexes();
+      if (indexes == null) {
+        setState(() => _status = 'The StellarSolver indexes are not in the app');
+        return null;
+      }
       final frame = await _captureForStars();
       if (frame == null || frame.stars.length < 4) {
         final exposure = _exposureNote.isEmpty ? '' : ' at $_exposureNote';
@@ -325,26 +322,45 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
             : 'Not enough stars (${frame.stars.length})$exposure');
         return null;
       }
-      final state = ref.read(mountStateProvider);
-      final lst = parseMountHours(state.siderealTime);
-      final outcome = solveField(
+      if (mounted) setState(() => _status = 'StellarSolver…');
+      await Future<void>.delayed(Duration.zero);
+      final pointing = _mountPointing();
+      final hint = pointing == null
+          ? null
+          : equatorialJNowToEquinox(
+              pointing.$1,
+              pointing.$2,
+              2000,
+              julianDate(DateTime.now().toUtc()),
+            );
+      final outcome = solveStellarField(
         stars: frame.stars,
-        catalog: _catalog,
-        hintRa: hint.$1,
-        hintDec: hint.$2,
+        indexes: indexes,
         width: frame.width,
         height: frame.height,
-        fovDeg: _fov,
-        latDeg: lst == null ? null : state.latitude,
-        lstH: lst,
+        longSideDeg: _fov,
+        hintRaH: hint?.$1,
+        hintDecD: hint?.$2,
       );
       final solved = outcome.solution;
       if (solved == null) {
         setState(() => _status =
-            outcome.reason ?? 'The field did not match the catalog');
+            outcome.reason ?? 'StellarSolver found no match in this photo');
         return null;
       }
-      return solved;
+      final now = equatorialEquinoxToJNow(
+        solved.raH,
+        solved.decD,
+        2000,
+        julianDate(DateTime.now().toUtc()),
+      );
+      return FinderSolution(
+        raH: now.$1,
+        decD: now.$2,
+        rollRad: solved.rollRad,
+        matches: solved.matches,
+        rmsDeg: solved.rmsDeg,
+      );
     } catch (_) {
       if (mounted) setState(() => _status = 'The picture could not be read');
       return null;
@@ -601,10 +617,6 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   Future<void> _runAlign(int stars) async {
     if (!_hasCamera || _cam == null) {
       setState(() => _status = 'The phone camera is used on Android');
-      return;
-    }
-    if (_catalog.isEmpty) {
-      setState(() => _status = 'The star catalog is not ready');
       return;
     }
     final client = ref.read(lx200ClientProvider);

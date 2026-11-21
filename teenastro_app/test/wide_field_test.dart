@@ -142,70 +142,7 @@ void main() {
     final shiftedBack = shifted.pixel(shifted.direction(900, 1800));
     expect(shiftedBack!.x, closeTo(900, 1.5));
     expect(shiftedBack.y, closeTo(1800, 1.5));
-    final fixed = widePoseFromNamedStars(
-      stars: [
-        (
-          raH: byName['Vega']!.ra,
-          decD: byName['Vega']!.dec,
-          x: 2271.2,
-          y: 1541.3
-        ),
-        (
-          raH: byName['Deneb']!.ra,
-          decD: byName['Deneb']!.dec,
-          x: 2040.0,
-          y: 31.7
-        ),
-        (
-          raH: byName['Altair']!.ra,
-          decD: byName['Altair']!.dec,
-          x: 378.7,
-          y: 1652.4
-        ),
-      ],
-      width: 3060,
-      height: 4080,
-      fovDeg: 66.8,
-      distortion: const LensTerms(-0.06, 0, 0),
-    );
-    expect(fixed!.lens.k1, -0.06);
-    expect(fixed.lens.k2, 0);
-    expect(fixed.lens.k3, 0);
-    final higher = widePoseFromNamedStars(
-      stars: [
-        (
-          raH: byName['Vega']!.ra,
-          decD: byName['Vega']!.dec,
-          x: 2271.2,
-          y: 1541.3
-        ),
-        (
-          raH: byName['Deneb']!.ra,
-          decD: byName['Deneb']!.dec,
-          x: 2040.0,
-          y: 31.7
-        ),
-        (
-          raH: byName['Altair']!.ra,
-          decD: byName['Altair']!.dec,
-          x: 378.7,
-          y: 1652.4
-        ),
-      ],
-      width: 3060,
-      height: 4080,
-      fovDeg: 66.8,
-      distortion: const LensTerms(-0.12, 0.08, -0.03),
-    );
-    expect(higher, isNotNull);
-    expect(higher!.lens.k1, -0.12);
-    expect(higher.lens.k2, 0.08);
-    expect(higher.lens.k3, -0.03);
-    final edge = higher.pixel(higher.direction(200, 200));
-    expect(edge, isNotNull);
-    expect(edge!.x, closeTo(200, 1.5));
-    expect(edge.y, closeTo(200, 1.5));
-    final corner = fixed.pixel(fixed.direction(200, 200));
+    final corner = camera.pixel(camera.direction(200, 200));
     expect(corner, isNotNull);
     expect(corner!.x, closeTo(200, 1.5));
     expect(corner.y, closeTo(200, 1.5));
@@ -220,7 +157,7 @@ void main() {
     }
 
     final cor = byName['Cor Caroli']!;
-    final corPix = fixed.pixel(sky(cor.ra, cor.dec));
+    final corPix = camera.pixel(sky(cor.ra, cor.dec));
     if (corPix != null) {
       final inside = corPix.x >= 0 &&
           corPix.y >= 0 &&
@@ -251,7 +188,6 @@ void main() {
     expect(solution.matches, greaterThanOrEqualTo(3));
     final text = trace.join('\n');
     expect(text, contains('Pinhole camera'));
-    expect(text, contains('No lens calibration'));
     expect(text, contains('roll '));
     expect(result.matched.map((s) => s.name), contains('Vega'));
   });
@@ -286,46 +222,6 @@ void main() {
     expect(solution.decD, closeTo(22.4, 1.0));
     expect(solution.matches, greaterThanOrEqualTo(3));
     expect(trace.join('\n'), contains('named mark'));
-    expect(result.matched.map((s) => s.name), contains('Vega'));
-  });
-
-  test('a stored camera solves without named stars', () {
-    final roof = _roofCatalog();
-    final by = roof.byName;
-    final camera = widePoseFromNamedStars(
-      stars: [
-        (raH: by['Vega']!.ra, decD: by['Vega']!.dec, x: 2271.2, y: 1541.3),
-        (raH: by['Deneb']!.ra, decD: by['Deneb']!.dec, x: 2040.0, y: 31.7),
-        (raH: by['Altair']!.ra, decD: by['Altair']!.dec, x: 378.7, y: 1652.4),
-      ],
-      width: 3060,
-      height: 4080,
-      fovDeg: 66.8,
-      fitDistortion: true,
-    );
-    expect(camera, isNotNull);
-    final trace = <String>[];
-    final result = solveWideFromHint(
-      marks: _roofClicks(),
-      catalog: roof.catalog,
-      catalogNames: roof.names,
-      width: 3060,
-      height: 4080,
-      fovDeg: camera!.fovDeg,
-      distortion: camera.lens,
-      calibrated: true,
-      hintRa: 18.75,
-      hintDec: 23.2,
-      trace: trace,
-    );
-    final solution = result.solution;
-    expect(solution, isNotNull, reason: trace.join('\n'));
-    expect(solution!.raH, closeTo(18.68, 0.08));
-    expect(solution.decD, closeTo(22.4, 1.0));
-    expect(solution.matches, greaterThanOrEqualTo(3));
-    final text = trace.join('\n');
-    expect(text, contains('Stored field'));
-    expect(text, isNot(contains('90% to 110%')));
     expect(result.matched.map((s) => s.name), contains('Vega'));
   });
 

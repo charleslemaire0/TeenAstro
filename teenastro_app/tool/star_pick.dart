@@ -1,4 +1,4 @@
-// Click stars on a photo, then run the phone-finder plate solver.
+// Cedar finds the stars for Tetra. StellarSolver solves the photo itself.
 //   flutter run -d windows -t tool/star_pick.dart
 import 'dart:convert';
 import 'dart:io';
@@ -24,7 +24,7 @@ class StarPickApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Star pick',
+      title: 'Photo solve',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0D1117),
@@ -38,13 +38,19 @@ class StarPickApp extends StatelessWidget {
   }
 }
 
-const _lensPref = 'star_pick_lens_distortion';
-const _lensK2Pref = 'star_pick_lens_k2';
-const _lensK3Pref = 'star_pick_lens_k3';
-const _lensOxPref = 'star_pick_lens_ox';
-const _lensOyPref = 'star_pick_lens_oy';
-const _lensFovPref = 'star_pick_lens_field';
 const _magPref = 'star_pick_mag_limit';
+const _cedarSigmaPref = 'star_pick_cedar_sigma';
+const _cedarBinPref = 'star_pick_cedar_binning';
+const _cedarMaxPref = 'star_pick_cedar_max';
+const _tetraPatternPref = 'star_pick_tetra_pattern';
+const _tetraSecondsPref = 'star_pick_tetra_seconds';
+const _solverPref = 'star_pick_solver';
+const _stellarIndexPref = 'star_pick_stellar_index';
+const _stellarScalePref = 'star_pick_stellar_scale';
+const _stellarDownPref = 'star_pick_stellar_downsample';
+const _stellarSecondsPref = 'star_pick_stellar_seconds';
+
+enum _Solver { tetra, stellar }
 
 class StarPickPage extends StatefulWidget {
   const StarPickPage({super.key});
@@ -55,99 +61,59 @@ class StarPickPage extends StatefulWidget {
 
 class _StarPickPageState extends State<StarPickPage> {
   final _fov = TextEditingController(text: '70');
-  final _ra = TextEditingController();
-  final _dec = TextEditingController();
-  final _lat = TextEditingController();
-  final _lst = TextEditingController();
   final _view = TransformationController();
   final _logScroll = ScrollController();
 
-  List<NamedStar> _bright = const [];
-  List<FinderStar> _catalog = const [];
-  List<String> _catalogNames = const [];
-  List<double> _catalogMags = const [];
   List<FinderStar> _identify = const [];
   List<String> _identifyNames = const [];
   List<double> _identifyMags = const [];
-  String? _selected;
   String? _photoPath;
   Uint8List? _jpeg;
   img.Image? _source;
   double _imageW = 0;
   double _imageH = 0;
   final _placed = <PlacedStar>[];
-  final _notInCatalog = <_Pin>[];
-  final _missing = <_Pin>[];
-  final _matched = <_Pin>[];
-  double? _lensK1;
-  double _lensK2 = 0;
-  double _lensK3 = 0;
-  double _lensOx = 0;
-  double _lensOy = 0;
-  double? _lensFov;
-
-  LensTerms? get _storedLens =>
-      _lensK1 == null ? null : LensTerms(_lensK1!, _lensK2, _lensK3);
-  double? get _storedOriginX =>
-      _lensK1 == null || _imageW < 2 ? null : _imageW / 2 + _lensOx;
-  double? get _storedOriginY =>
-      _lensK1 == null || _imageH < 2 ? null : _imageH / 2 + _lensOy;
   double _magLimit = 5.5;
+  double _cedarSigma = 8;
+  int _cedarBinning = 2;
+  int _cedarMax = 80;
+  int _tetraPattern = 12;
+  int _tetraSeconds = 10;
+  _Solver _solver = _Solver.tetra;
+  String _stellarIndex = '';
+  double _stellarScale = 0.20;
+  int _stellarDownsample = 2;
+  int _stellarSeconds = 30;
+  bool _extracting = false;
   final _log = <String>[
-    'Choose a star name, then click it on the photo.',
+    'Open a photo, then press Solve. Tetra uses Cedar. StellarSolver reads the photo itself.',
   ];
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
-    for (final controller in [_fov, _ra, _dec, _lat, _lst]) {
-      controller.addListener(_saveStars);
-    }
+    _fov.addListener(_saveStars);
     _loadCatalog();
-    _loadLens();
+    _loadSettings();
   }
 
   @override
   void dispose() {
     _fov.dispose();
-    _ra.dispose();
-    _dec.dispose();
-    _lat.dispose();
-    _lst.dispose();
     _view.dispose();
     _logScroll.dispose();
     super.dispose();
   }
 
   Future<void> _loadCatalog() async {
-    final raw = await rootBundle.loadString('assets/catalogs/stars.json');
+    final raw = await rootBundle.loadString('assets/data/stars_mag9.json');
     final jd = julianDate(DateTime.now().toUtc());
     final json = jsonDecode(raw) as Map<String, dynamic>;
-    final bright = <NamedStar>[];
-    for (final item in json['objects'] as List<dynamic>) {
-      final m = item as Map<String, dynamic>;
-      final mag = (m['mag'] as num?)?.toDouble();
-      final name = (m['name'] as String?)?.trim() ?? '';
-      if (mag == null || mag > 1.5 || name.isEmpty) continue;
-      final now = equatorialEquinoxToJNow(
-        (m['ra'] as num).toDouble(),
-        (m['dec'] as num).toDouble(),
-        2000,
-        jd,
-      );
-      bright.add(NamedStar(name, mag, now.$1, now.$2));
-    }
-    final faint = jsonDecode(await rootBundle.loadString(
-      'assets/data/stars_mag9.json',
-    )) as Map<String, dynamic>;
-    final catalog = <FinderStar>[];
-    final catalogNames = <String>[];
-    final catalogMags = <double>[];
     final identify = <FinderStar>[];
     final identifyNames = <String>[];
     final identifyMags = <double>[];
-    for (final item in faint['stars'] as List<dynamic>) {
+    for (final item in json['stars'] as List<dynamic>) {
       final m = item as Map<String, dynamic>;
       final mag = (m['mag'] as num).toDouble();
       if (mag > wideIdentifyMag) continue;
@@ -162,24 +128,12 @@ class _StarPickPageState extends State<StarPickPage> {
       identify.add(FinderStar(now.$1, now.$2));
       identifyNames.add(label);
       identifyMags.add(mag);
-      if (mag > wideCatalogMag) continue;
-      catalog.add(FinderStar(now.$1, now.$2));
-      catalogNames.add(label);
-      catalogMags.add(mag);
     }
-    bright.sort((a, b) => a.name.compareTo(b.name));
     if (!mounted) return;
     setState(() {
-      _bright = bright;
-      _catalog = catalog;
-      _catalogNames = catalogNames;
-      _catalogMags = catalogMags;
       _identify = identify;
       _identifyNames = identifyNames;
       _identifyMags = identifyMags;
-      _selected = bright.any((s) => s.name == 'Vega')
-          ? 'Vega'
-          : (bright.isEmpty ? null : bright.first.name);
     });
   }
 
@@ -198,27 +152,30 @@ class _StarPickPageState extends State<StarPickPage> {
     }
     setState(() {
       _photoPath = picked;
-      _jpeg = oriented.$1;
+      _jpeg = oriented.jpeg;
       _source = null;
-      _imageW = oriented.$2.toDouble();
-      _imageH = oriented.$3.toDouble();
+      _imageW = oriented.width.toDouble();
+      _imageH = oriented.height.toDouble();
       _placed.clear();
-      _notInCatalog.clear();
-      _missing.clear();
-      _matched.clear();
       _view.value = Matrix4.identity();
       _busy = false;
     });
     _loadStars(picked);
+    final fov = oriented.longSideDeg;
+    if (fov == null) {
+      _say(
+          'This photo has no 35 mm equivalent focal length, so the field was left as entered.');
+      return;
+    }
+    _fov.text = fov.toStringAsFixed(1);
+    _say(oriented.cameraNote ??
+        'Long side ${fov.toStringAsFixed(1)}° from the camera.');
   }
 
   void _loadStars(String photoPath) {
     final side = _starsPath(photoPath);
     final file = File(side);
-    if (!file.existsSync()) {
-      _say('Choose a star name, then click it on the photo.');
-      return;
-    }
+    if (!file.existsSync()) return;
     try {
       final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
       final savedW = (json['width'] as num?)?.toDouble() ?? _imageW;
@@ -226,30 +183,26 @@ class _StarPickPageState extends State<StarPickPage> {
       final sx = savedW == 0 ? 1.0 : _imageW / savedW;
       final sy = savedH == 0 ? 1.0 : _imageH / savedH;
       final marks = json['stars'] as List<dynamic>? ?? const [];
-      final known = {for (final s in _bright) s.name: s};
       final placed = <PlacedStar>[];
       for (final item in marks) {
         final m = item as Map<String, dynamic>;
         final name = m['name'] as String?;
-        final star = name == null ? null : known[name];
         final x = (m['x'] as num).toDouble() * sx;
         final y = (m['y'] as num).toDouble() * sy;
         final refined = m['refined'] == true;
-        if (star != null && m['named'] != false) {
+        if (m['named'] == true && name != null && name.isNotEmpty) {
           placed.add(PlacedStar(
-            name: star.name,
-            mag: star.mag,
-            raH: star.raH,
-            decD: star.decD,
+            name: name,
+            mag: (m['mag'] as num?)?.toDouble() ?? 0,
+            raH: (m['ra'] as num?)?.toDouble() ?? 0,
+            decD: (m['dec'] as num?)?.toDouble() ?? 0,
             x: x,
             y: y,
             refined: refined,
           ));
         } else {
           final used = placed.where((s) => !s.named).length + 1;
-          final label = name == null || name.isEmpty || known.containsKey(name)
-              ? '$used'
-              : name;
+          final label = name == null || name.isEmpty ? '$used' : name;
           placed.add(PlacedStar(
             name: label,
             mag: 0,
@@ -266,21 +219,11 @@ class _StarPickPageState extends State<StarPickPage> {
         _placed
           ..clear()
           ..addAll(placed);
-        _text(_lat, json['lat']);
-        _text(_lst, json['lst']);
-        if (placed.length < 2) {
-          if (_lensFov == null) _text(_fov, json['fov']);
-          _text(_ra, json['ra']);
-          _text(_dec, json['dec']);
-        }
+        _text(_fov, json['fov']);
       });
       _say(
           'Restored ${placed.length} stars from ${file.uri.pathSegments.last}.');
-      if (placed.any((s) => !s.refined)) {
-        _refineUncentered();
-      } else {
-        _estimateField();
-      }
+      if (placed.any((s) => !s.refined)) _refineUncentered();
     } catch (error) {
       _say('The saved stars could not be read ($error).');
     }
@@ -294,10 +237,6 @@ class _StarPickPageState extends State<StarPickPage> {
       'width': _imageW,
       'height': _imageH,
       'fov': _fov.text,
-      'ra': _ra.text,
-      'dec': _dec.text,
-      'lat': _lat.text,
-      'lst': _lst.text,
       'stars': [
         for (final s in _placed)
           {
@@ -326,250 +265,53 @@ class _StarPickPageState extends State<StarPickPage> {
     controller.text = value.toString();
   }
 
-  int _nextUnnamed() {
-    var n = 0;
-    for (final star in _placed) {
-      if (star.named) continue;
-      final value = int.tryParse(star.name) ?? 0;
-      if (value > n) n = value;
-    }
-    return n + 1;
-  }
-
-  NamedStar? _named(String? name) {
-    for (final star in _bright) {
-      if (star.name == name) return star;
-    }
-    return null;
-  }
-
-  void _estimateField() {
-    final named = [
-      for (final s in _placed)
-        if (s.named) s
-    ];
-    if (named.length < 2 || _imageW < 2) return;
-    final fov = longSideFieldFromStars(
-      stars: [
-        for (final s in named) (raH: s.raH, decD: s.decD, x: s.x, y: s.y),
-      ],
-      width: _imageW,
-      height: _imageH,
-    );
-    if (fov == null) {
-      _say('These stars are too close to estimate a field.');
-      return;
-    }
-    final long = math.max(_imageW, _imageH);
-    final lines = <String>[];
-    for (var i = 0; i < named.length; i++) {
-      for (var j = i + 1; j < named.length; j++) {
-        final a = named[i];
-        final b = named[j];
-        final pixels =
-            math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
-        final sky = sphereSeparationDeg(a.raH, a.decD, b.raH, b.decD);
-        if (pixels < 30 || sky < 0.5) continue;
-        final pair = sky / pixels * long;
-        lines.add(
-            '${a.name} to ${b.name}: ${sky.toStringAsFixed(1)}° over ${pixels.toStringAsFixed(0)} px, field ${pair.toStringAsFixed(1)}°');
-      }
-    }
-    if (_lensFov == null) _fov.text = fov.toStringAsFixed(1);
-    final center = named.length >= 3 ? null : _meanSky(named);
-    if (center != null) {
-      _ra.text = _clockHours(center.$1);
-      _dec.text = _signedDegrees(center.$2);
-    }
-    final pose = named.length < 3 ? null : _poseSentence(named, fov);
-    setState(() {
-      _log.addAll(lines);
-      if (pose != null) {
-        _log.add(pose);
-      } else {
-        _log.add(
-            'Long side ${fov.toStringAsFixed(1)}°. Search center ${_ra.text}, ${_dec.text}. A third named star gives the pose.');
-      }
-    });
-    _scrollLog();
-  }
-
-  String? _poseSentence(List<PlacedStar> named, double fov) {
-    final camera = widePoseFromNamedStars(
-      stars: [
-        for (final s in named) (raH: s.raH, decD: s.decD, x: s.x, y: s.y),
-      ],
-      width: _imageW,
-      height: _imageH,
-      fovDeg: fov,
-      distortion: _storedLens,
-      originX: _storedOriginX,
-      originY: _storedOriginY,
-    );
-    if (camera == null) {
-      return 'The named stars do not form one camera pose.';
-    }
-    final pose = camera.solution;
-    if (_lensFov == null) _fov.text = camera.fovDeg.toStringAsFixed(1);
-    final poseRa = _clockHours(pose.raH);
-    final poseDec = _signedDegrees(pose.decD);
-    var roll = pose.rollRad * 180 / math.pi;
-    roll %= 360;
-    if (roll < 0) roll += 360;
-    final residual = (pose.rmsDeg * 60).toStringAsFixed(1);
-    var compared = 'residual $residual\'.';
-    if (_lensK1 != null) {
-      final plain = widePoseFromNamedStars(
-        stars: [
-          for (final s in named) (raH: s.raH, decD: s.decD, x: s.x, y: s.y),
-        ],
-        width: _imageW,
-        height: _imageH,
-        fovDeg: fov,
-        distortion: const LensTerms.none(),
-        originX: _storedOriginX,
-        originY: _storedOriginY,
-      );
-      final without = plain == null
-          ? 'the frame does not close'
-          : '${(plain.solution.rmsDeg * 60).toStringAsFixed(1)}\'';
-      compared =
-          'residual $residual\' with the stored lens, $without without it.';
-    }
-    return 'Pose $poseRa, $poseDec, roll ${roll.toStringAsFixed(1)}°, '
-        '$compared '
-        'Long side ${camera.fovDeg.toStringAsFixed(1)}°.';
-  }
-
-  (double, double) _meanSky(List<PlacedStar> stars) {
-    var east = 0.0;
-    var north = 0.0;
-    var dec = 0.0;
-    for (final s in stars) {
-      final angle = s.raH * math.pi / 12;
-      east += math.cos(angle);
-      north += math.sin(angle);
-      dec += s.decD;
-    }
-    return (
-      wrapHours(math.atan2(north, east) * 12 / math.pi),
-      dec / stars.length
-    );
-  }
-
-  Future<void> _loadLens() async {
+  Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getDouble(_lensPref);
-    final k2 = prefs.getDouble(_lensK2Pref);
-    final k3 = prefs.getDouble(_lensK3Pref);
-    final ox = prefs.getDouble(_lensOxPref);
-    final oy = prefs.getDouble(_lensOyPref);
-    final field = prefs.getDouble(_lensFovPref);
-    final mag = prefs.getDouble(_magPref);
+    for (final key in const [
+      'star_pick_lens_distortion',
+      'star_pick_lens_k2',
+      'star_pick_lens_k3',
+      'star_pick_lens_ox',
+      'star_pick_lens_oy',
+      'star_pick_lens_field',
+    ]) {
+      await prefs.remove(key);
+    }
     if (!mounted) return;
+    final mag = prefs.getDouble(_magPref);
+    final sigma = prefs.getDouble(_cedarSigmaPref);
+    final binning = prefs.getInt(_cedarBinPref);
+    final maxStars = prefs.getInt(_cedarMaxPref);
+    final pattern = prefs.getInt(_tetraPatternPref);
+    final seconds = prefs.getInt(_tetraSecondsPref);
+    final which = prefs.getString(_solverPref);
+    final stellarIndex = prefs.getString(_stellarIndexPref);
+    final stellarScale = prefs.getDouble(_stellarScalePref);
+    final stellarDown = prefs.getInt(_stellarDownPref);
+    final stellarSeconds = prefs.getInt(_stellarSecondsPref);
     setState(() {
-      _lensK1 = value;
-      _lensK2 = k2 ?? 0;
-      _lensK3 = k3 ?? 0;
-      _lensOx = ox ?? 0;
-      _lensOy = oy ?? 0;
-      _lensFov = field;
       if (mag != null) {
         _magLimit = mag.clamp(1.0, wideIdentifyMag).toDouble();
       }
-      if (field != null) _fov.text = field.toStringAsFixed(1);
-    });
-  }
-
-  Future<void> _calibrateLens() async {
-    if (_jpeg == null) {
-      _say('Open a photo first.');
-      return;
-    }
-    final skyByName = <String, FinderStar>{};
-    for (var i = 0; i < _catalogNames.length && i < _catalog.length; i++) {
-      skyByName.putIfAbsent(_catalogNames[i], () => _catalog[i]);
-    }
-    for (var i = 0; i < _identifyNames.length && i < _identify.length; i++) {
-      skyByName.putIfAbsent(_identifyNames[i], () => _identify[i]);
-    }
-    final stars = <({double raH, double decD, double x, double y})>[];
-    final used = <String>{};
-    for (final mark in _placed) {
-      if (mark.named) {
-        if (!used.add(mark.name)) continue;
-        stars.add((raH: mark.raH, decD: mark.decD, x: mark.x, y: mark.y));
-        continue;
+      if (sigma != null) _cedarSigma = sigma.clamp(4.0, 15.0).toDouble();
+      if (binning == 1 || binning == 2 || binning == 4) {
+        _cedarBinning = binning!;
       }
-      final name = _alignedName(mark);
-      final sky = name == null ? null : skyByName[name];
-      if (name == null || sky == null || !used.add(name)) continue;
-      stars.add((raH: sky.raH, decD: sky.decD, x: mark.x, y: mark.y));
-    }
-    if (stars.length < 3) {
-      _say(
-          'Solve the plate, or place 3 named stars, before calibrating the lens.');
-      return;
-    }
-    final fov = double.tryParse(_fov.text.trim().replaceAll(',', '.')) ?? 70;
-    final camera = widePoseFromNamedStars(
-      stars: stars,
-      width: _imageW,
-      height: _imageH,
-      fovDeg: fov,
-      fitDistortion: true,
-    );
-    if (camera == null) {
-      _say(
-          'The recognized stars do not agree, so the lens was not calibrated.');
-      return;
-    }
-    final ox = camera.originX - _imageW / 2;
-    final oy = camera.originY - _imageH / 2;
-    final plain = widePoseFromNamedStars(
-      stars: stars,
-      width: _imageW,
-      height: _imageH,
-      fovDeg: fov,
-      distortion: const LensTerms.none(),
-      originX: camera.originX,
-      originY: camera.originY,
-    );
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_lensPref, camera.lens.k1);
-    await prefs.setDouble(_lensK2Pref, camera.lens.k2);
-    await prefs.setDouble(_lensK3Pref, camera.lens.k3);
-    await prefs.setDouble(_lensOxPref, ox);
-    await prefs.setDouble(_lensOyPref, oy);
-    await prefs.setDouble(_lensFovPref, camera.fovDeg);
-    if (!mounted) return;
-    setState(() {
-      _lensK1 = camera.lens.k1;
-      _lensK2 = camera.lens.k2;
-      _lensK3 = camera.lens.k3;
-      _lensOx = ox;
-      _lensOy = oy;
-      _lensFov = camera.fovDeg;
-      _fov.text = camera.fovDeg.toStringAsFixed(1);
+      if (maxStars != null) _cedarMax = maxStars.clamp(20, 100);
+      if (pattern != null) _tetraPattern = pattern.clamp(4, 30);
+      if (seconds != null) _tetraSeconds = seconds.clamp(1, 30);
+      if (which == 'stellar') _solver = _Solver.stellar;
+      if (stellarIndex != null) _stellarIndex = stellarIndex;
+      if (stellarScale != null) {
+        _stellarScale = stellarScale.clamp(0.05, 0.50).toDouble();
+      }
+      if (stellarDown == 1 || stellarDown == 2 || stellarDown == 4) {
+        _stellarDownsample = stellarDown!;
+      }
+      if (stellarSeconds != null) {
+        _stellarSeconds = stellarSeconds.clamp(1, 120);
+      }
     });
-    final withLens = (camera.solution.rmsDeg * 60).toStringAsFixed(1);
-    final without = plain == null
-        ? 'the frame does not close'
-        : '${(plain.solution.rmsDeg * 60).toStringAsFixed(1)}\'';
-    final center = ox.abs() < 5 && oy.abs() < 5
-        ? 'The optical center stays at the middle of the picture.'
-        : 'The optical center is ${ox.abs().toStringAsFixed(0)} px '
-            '${ox >= 0 ? 'right' : 'left'} and '
-            '${oy.abs().toStringAsFixed(0)} px '
-            '${oy >= 0 ? 'below' : 'above'} the middle.';
-    _say(
-      'Camera stored from ${stars.length} stars. '
-      'Long side ${camera.fovDeg.toStringAsFixed(1)}°, '
-      'distortion ${camera.lens.describe()}. '
-      '$center '
-      'The next solve can omit the named stars. '
-      'Residual $withLens\' with this lens, $without without it.',
-    );
   }
 
   Future<void> _storeMagLimit(double value) async {
@@ -577,129 +319,390 @@ class _StarPickPageState extends State<StarPickPage> {
     await prefs.setDouble(_magPref, value);
   }
 
-  Future<void> _clearLens() async {
+  Future<void> _storeTetra() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_lensPref);
-    await prefs.remove(_lensK2Pref);
-    await prefs.remove(_lensK3Pref);
-    await prefs.remove(_lensOxPref);
-    await prefs.remove(_lensOyPref);
-    await prefs.remove(_lensFovPref);
-    if (!mounted) return;
-    setState(() {
-      _lensK1 = null;
-      _lensK2 = 0;
-      _lensK3 = 0;
-      _lensOx = 0;
-      _lensOy = 0;
-      _lensFov = null;
-    });
-    _say(
-        'Camera calibration cleared. The next solve has no stored field or distortion.');
+    await prefs.setInt(_tetraPatternPref, _tetraPattern);
+    await prefs.setInt(_tetraSecondsPref, _tetraSeconds);
+  }
+
+  Future<void> _storeCedar() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_cedarSigmaPref, _cedarSigma);
+    await prefs.setInt(_cedarBinPref, _cedarBinning);
+    await prefs.setInt(_cedarMaxPref, _cedarMax);
+  }
+
+  Future<void> _storeSolver() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _solverPref,
+      _solver == _Solver.stellar ? 'stellar' : 'tetra',
+    );
+  }
+
+  Future<void> _storeStellar() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_stellarIndexPref, _stellarIndex);
+    await prefs.setDouble(_stellarScalePref, _stellarScale);
+    await prefs.setInt(_stellarDownPref, _stellarDownsample);
+    await prefs.setInt(_stellarSecondsPref, _stellarSeconds);
+  }
+
+  void _chooseSolver(_Solver solver) {
+    setState(() => _solver = solver);
+    _storeSolver();
+  }
+
+  /// Image-width field, in degrees, from the long-side field.
+  ///
+  /// StellarSolver's degree scale is the width of the picture.
+  double? _widthFieldDeg() {
+    final long = double.tryParse(_fov.text.trim().replaceAll(',', '.'));
+    if (long == null || long <= 0 || _imageW < 2 || _imageH < 2) return null;
+    return long * _imageW / math.max(_imageW, _imageH);
+  }
+
+  String _scaleBand() {
+    final widthDeg = _widthFieldDeg();
+    if (widthDeg == null) {
+      return 'A band around the long-side field. It is the image width once a photo is open.';
+    }
+    final low = widthDeg * (1 - _stellarScale);
+    final high = widthDeg * (1 + _stellarScale);
+    return 'Image width ${widthDeg.toStringAsFixed(1)}° from the long side. '
+        'StellarSolver searches ${low.toStringAsFixed(1)}° to ${high.toStringAsFixed(1)}°.';
   }
 
   Future<void> _openParameters() async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialog) {
-            final lens = _storedLens;
-            final field = _lensFov;
-            final String summary;
-            if (lens != null && field != null) {
-              final moved = _lensOx.abs() >= 5 || _lensOy.abs() >= 5;
-              final center = moved
-                  ? 'Optical center ${_lensOx.abs().toStringAsFixed(0)} px '
-                      '${_lensOx >= 0 ? 'right' : 'left'} and '
-                      '${_lensOy.abs().toStringAsFixed(0)} px '
-                      '${_lensOy >= 0 ? 'below' : 'above'} the middle. '
-                  : '';
-              summary =
-                  'Stored camera: long side ${field.toStringAsFixed(1)}°, '
-                  'distortion ${lens.describe()}. '
-                  '$center'
-                  'A later solve reuses this and does not need named stars.';
-            } else if (lens == null) {
-              summary =
-                  'No camera calibration is stored. Solve the plate, or place named stars, then calibrate. '
-                  'A later solve can omit the names.';
-            } else {
-              summary = 'Distortion ${lens.describe()} is stored. '
-                  'Calibrate again so the field of view is stored too.';
-            }
-            return AlertDialog(
-              backgroundColor: const Color(0xFF161B22),
-              title: const Text('Parameters'),
-              content: SizedBox(
-                width: 360,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      summary,
-                      style: const TextStyle(color: Color(0xFFF0F6FC)),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Magnitude limit ${_magLimit.toStringAsFixed(1)}',
-                      style: const TextStyle(color: Color(0xFFF0F6FC)),
-                    ),
-                    Slider(
-                      min: 1,
-                      max: wideIdentifyMag,
-                      divisions: ((wideIdentifyMag - 1) * 10).round(),
-                      value: _magLimit.clamp(1.0, wideIdentifyMag).toDouble(),
-                      label: _magLimit.toStringAsFixed(1),
-                      onChanged: (value) {
-                        setDialog(() {
-                          _magLimit = value;
-                        });
-                        _storeMagLimit(value);
-                      },
-                    ),
-                    const Text(
-                      'Stars fainter than this are not named and are not drawn.',
-                      style: TextStyle(color: Color(0xFF8B949E), fontSize: 12),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () async {
-                        await _calibrateLens();
-                        setDialog(() {});
-                      },
-                      child: const Text('Calibrate lens'),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: lens == null && field == null
-                          ? null
-                          : () async {
-                              await _clearLens();
-                              setDialog(() {});
+    final index = TextEditingController(text: _stellarIndex);
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialog) {
+              return AlertDialog(
+                backgroundColor: const Color(0xFF161B22),
+                title: const Text('Parameters'),
+                content: SizedBox(
+                  width: 400,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          _solver == _Solver.stellar
+                              ? 'Solve uses StellarSolver.'
+                              : 'Solve uses Tetra.',
+                          style: const TextStyle(
+                            color: Color(0xFF8B949E),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          'Tetra',
+                          style:
+                              TextStyle(color: Color(0xFFF0F6FC), fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Magnitude limit ${_magLimit.toStringAsFixed(1)}',
+                          style: const TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        Slider(
+                          min: 1,
+                          max: wideIdentifyMag,
+                          divisions: ((wideIdentifyMag - 1) * 10).round(),
+                          value:
+                              _magLimit.clamp(1.0, wideIdentifyMag).toDouble(),
+                          label: _magLimit.toStringAsFixed(1),
+                          onChanged: (value) {
+                            setDialog(() => _magLimit = value);
+                            _storeMagLimit(value);
+                          },
+                        ),
+                        const Text(
+                          'Tetra leaves a fainter star unnamed. The mark stays on the photo.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Pattern stars $_tetraPattern',
+                          style: const TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        Slider(
+                          min: 4,
+                          max: 30,
+                          divisions: 26,
+                          value: _tetraPattern.clamp(4, 30).toDouble(),
+                          label: '$_tetraPattern',
+                          onChanged: (value) {
+                            setDialog(() => _tetraPattern = value.round());
+                            _storeTetra();
+                          },
+                        ),
+                        const Text(
+                          'Tetra builds its pattern from this many of the brightest detections. A higher number tries more combinations.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Solve time $_tetraSeconds s',
+                          style: const TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        Slider(
+                          min: 1,
+                          max: 30,
+                          divisions: 29,
+                          value: _tetraSeconds.clamp(1, 30).toDouble(),
+                          label: '$_tetraSeconds s',
+                          onChanged: (value) {
+                            setDialog(() => _tetraSeconds = value.round());
+                            _storeTetra();
+                          },
+                        ),
+                        const Text(
+                          'Tetra stops searching when this time is up. A pattern found earlier is kept.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Cedar sigma ${_cedarSigma.toStringAsFixed(1)}',
+                          style: const TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        Slider(
+                          min: 4,
+                          max: 15,
+                          divisions: 22,
+                          value: _cedarSigma.clamp(4.0, 15.0).toDouble(),
+                          label: _cedarSigma.toStringAsFixed(1),
+                          onChanged: (value) {
+                            setDialog(() => _cedarSigma = value);
+                            _storeCedar();
+                          },
+                        ),
+                        const Text(
+                          'A higher sigma keeps only the stars that stand further above the noise.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Cedar binning',
+                          style: TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            for (final bin in const [1, 2, 4])
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(bin == 1 ? 'Full' : '$bin×$bin'),
+                                  selected: _cedarBinning == bin,
+                                  onSelected: (_) {
+                                    setDialog(() => _cedarBinning = bin);
+                                    _storeCedar();
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Binning finds broader stars. The mark is still placed on the full photo.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Stars to keep $_cedarMax',
+                          style: const TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        Slider(
+                          min: 20,
+                          max: 100,
+                          divisions: 8,
+                          value: _cedarMax.clamp(20, 100).toDouble(),
+                          label: '$_cedarMax',
+                          onChanged: (value) {
+                            setDialog(() => _cedarMax = value.round());
+                            _storeCedar();
+                          },
+                        ),
+                        const Text(
+                          'Cedar returns the brightest stars first. Only this many are placed.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'StellarSolver',
+                          style:
+                              TextStyle(color: Color(0xFFF0F6FC), fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: index,
+                          style: const TextStyle(
+                            color: Color(0xFFF0F6FC),
+                            fontSize: 13,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Index folder',
+                            isDense: true,
+                            labelStyle: TextStyle(
+                              color: Color(0xFF8B949E),
+                              fontSize: 12,
+                            ),
+                          ),
+                          onChanged: (value) {
+                            _stellarIndex = value;
+                            _storeStellar();
+                          },
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () async {
+                              final picked = await _pickFolder();
+                              if (picked == null) return;
+                              index.text = picked;
+                              setDialog(() => _stellarIndex = picked);
+                              _storeStellar();
                             },
-                      child: const Text('Clear lens calibration'),
+                            child: const Text('Browse'),
+                          ),
+                        ),
+                        const Text(
+                          'The folder of Astrometry.net index files. StellarSolver reads the photo with its own star extractor.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Scale tolerance ${(_stellarScale * 100).round()}%',
+                          style: const TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        Slider(
+                          min: 0.05,
+                          max: 0.50,
+                          divisions: 45,
+                          value: _stellarScale.clamp(0.05, 0.50).toDouble(),
+                          label: '${(_stellarScale * 100).round()}%',
+                          onChanged: (value) {
+                            setDialog(() => _stellarScale = value);
+                            _storeStellar();
+                          },
+                        ),
+                        Text(
+                          _scaleBand(),
+                          style: const TextStyle(
+                            color: Color(0xFF8B949E),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Downsample',
+                          style: TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            for (final factor in const [1, 2, 4])
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label:
+                                      Text(factor == 1 ? 'Full' : '$factor×'),
+                                  selected: _stellarDownsample == factor,
+                                  onSelected: (_) {
+                                    setDialog(
+                                        () => _stellarDownsample = factor);
+                                    _storeStellar();
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'The photo is reduced by this factor while solving. The marks are placed on the full photo.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Solve time $_stellarSeconds s',
+                          style: const TextStyle(color: Color(0xFFF0F6FC)),
+                        ),
+                        Slider(
+                          min: 1,
+                          max: 120,
+                          divisions: 119,
+                          value: _stellarSeconds.clamp(1, 120).toDouble(),
+                          label: '$_stellarSeconds s',
+                          onChanged: (value) {
+                            setDialog(() => _stellarSeconds = value.round());
+                            _storeStellar();
+                          },
+                        ),
+                        const Text(
+                          'StellarSolver stops when this time is up. Names use the Tetra magnitude limit. A fainter match stays numbered.',
+                          style:
+                              TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      index.dispose();
+    }
   }
 
   void _say(String line) {
     setState(() => _log.add(line));
     _scrollLog();
+  }
+
+  /// Center, roll, residual, and solve time, in the same shape for both solvers.
+  String _solutionTail({
+    required double? raDeg,
+    required double? decDeg,
+    required int epoch,
+    required double jd,
+    required double? rollDeg,
+    required double? rmseArcsec,
+    required double? elapsedMs,
+  }) {
+    if (raDeg == null || decDeg == null) return '';
+    final now = equatorialEquinoxToJNow(raDeg / 15.0, decDeg, epoch, jd);
+    final rollText =
+        rollDeg == null ? '' : ', roll ${rollDeg.toStringAsFixed(1)}°';
+    final residual = rmseArcsec == null
+        ? ''
+        : ', residual ${(rmseArcsec / 60).toStringAsFixed(1)}\'';
+    final timeText =
+        elapsedMs == null ? '' : ', ${elapsedMs.toStringAsFixed(0)} ms';
+    return ' Center ${_clockHours(now.$1)}, ${_signedDegrees(now.$2)}$rollText$residual$timeText.';
   }
 
   void _scrollLog() {
@@ -709,136 +712,378 @@ class _StarPickPageState extends State<StarPickPage> {
     });
   }
 
+  /// Tetra solves the Cedar marks and names the stars it matched.
+  Future<void> _identifyWithTetra() async {
+    final photo = _photoPath;
+    if (photo == null) return;
+    final script = File('tool/tetra_solve.py');
+    if (!script.existsSync()) {
+      _say('Tetra is not next to the star picker.');
+      return;
+    }
+    ProcessResult result;
+    try {
+      result = await Process.run(
+        'python',
+        [
+          script.absolute.path,
+          _starsPath(photo),
+          '$_tetraPattern',
+          '$_tetraSeconds',
+        ],
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+    } catch (error) {
+      _say('Tetra could not be started ($error).');
+      return;
+    }
+    final raw = (result.stdout as String).trim();
+    Map<String, dynamic> payload;
+    try {
+      payload = jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      final err = (result.stderr as String).trim();
+      final detail = err.isEmpty ? raw : err;
+      _say(
+          'Tetra did not return a solution.${detail.isEmpty ? '' : ' $detail'}');
+      return;
+    }
+    if (payload['ok'] != true) {
+      final reason = payload['reason']?.toString() ?? '';
+      _say(
+          'Tetra did not match these clicks${reason.isEmpty ? '' : ' ($reason)'}.');
+      return;
+    }
+    final epoch = (payload['epoch_equinox'] as num?)?.round() ?? 2000;
+    final jd = julianDate(DateTime.now().toUtc());
+    final rows = payload['stars'];
+    if (rows is! List) return;
+    final next = List<PlacedStar>.from(_placed);
+    final used = <int>{};
+    final names = <String>[];
+    var accepted = 0;
+    var fainter = 0;
+    for (final item in rows) {
+      if (item is! Map) continue;
+      final index = (item['index'] as num?)?.toInt();
+      final raDeg = (item['ra_deg'] as num?)?.toDouble();
+      final decDeg = (item['dec_deg'] as num?)?.toDouble();
+      if (index == null ||
+          index < 0 ||
+          index >= next.length ||
+          next[index].named ||
+          raDeg == null ||
+          decDeg == null) {
+        continue;
+      }
+      final now = equatorialEquinoxToJNow(raDeg / 15.0, decDeg, epoch, jd);
+      var best = -1;
+      var bestSep = 0.3;
+      for (var i = 0; i < _identify.length; i++) {
+        if (used.contains(i)) continue;
+        final sep = sphereSeparationDeg(
+          now.$1,
+          now.$2,
+          _identify[i].raH,
+          _identify[i].decD,
+        );
+        if (sep < bestSep) {
+          bestSep = sep;
+          best = i;
+        }
+      }
+      final old = next[index];
+      final mag = best >= 0
+          ? _identifyMags[best]
+          : (item['mag'] as num?)?.toDouble() ?? old.mag;
+      accepted++;
+      if (mag > _magLimit) {
+        fainter++;
+        continue;
+      }
+      if (best >= 0) {
+        used.add(best);
+        next[index] = PlacedStar(
+          name: _identifyNames[best],
+          mag: _identifyMags[best],
+          raH: _identify[best].raH,
+          decD: _identify[best].decD,
+          x: old.x,
+          y: old.y,
+          named: true,
+          refined: old.refined,
+        );
+      } else {
+        final cat = item['cat'];
+        next[index] = PlacedStar(
+          name: cat == null ? 'Tetra' : 'HR $cat',
+          mag: mag,
+          raH: now.$1,
+          decD: now.$2,
+          x: old.x,
+          y: old.y,
+          named: true,
+          refined: old.refined,
+        );
+      }
+      names.add(next[index].name);
+    }
+    final center = _solutionTail(
+      raDeg: (payload['ra_deg'] as num?)?.toDouble(),
+      decDeg: (payload['dec_deg'] as num?)?.toDouble(),
+      epoch: epoch,
+      jd: jd,
+      rollDeg: (payload['roll_deg'] as num?)?.toDouble(),
+      rmseArcsec: (payload['rmse_arcsec'] as num?)?.toDouble(),
+      elapsedMs: (payload['ms'] as num?)?.toDouble(),
+    );
+    if (accepted < 3) {
+      _say(
+          'Tetra matched ${payload['matches']} stars, and $accepted of them are in the catalog.$center');
+      return;
+    }
+    setState(() => _placed
+      ..clear()
+      ..addAll(next));
+    _saveStars();
+    final hidden = fainter == 0
+        ? ''
+        : ' Magnitude ${_magLimit.toStringAsFixed(1)} left $fainter fainter stars unnamed.';
+    _say('Tetra named ${names.join(', ')}.$center$hidden');
+  }
+
+  /// StellarSolver extracts the stars itself and names catalog matches.
+  Future<void> _solveWithStellar() async {
+    final jpeg = _jpeg;
+    if (jpeg == null) {
+      _say('Open a photo first.');
+      return;
+    }
+    final index = _stellarIndex.trim();
+    if (index.isEmpty) {
+      _say('Choose the folder of Astrometry.net index files in Parameters.');
+      return;
+    }
+    if (!Directory(index).existsSync()) {
+      _say('The index folder is not there.');
+      return;
+    }
+    final widthDeg = _widthFieldDeg();
+    if (widthDeg == null || widthDeg <= 0) {
+      _say('Enter the field of the long side, in degrees.');
+      return;
+    }
+    final script = File('tool/stellar_solve.py');
+    if (!script.existsSync()) {
+      _say('StellarSolver is not next to the star picker.');
+      return;
+    }
+    final low = widthDeg * (1 - _stellarScale);
+    final high = widthDeg * (1 + _stellarScale);
+    final temp = File(
+      '${Directory.systemTemp.path}${Platform.pathSeparator}teenastro-stellar-${DateTime.now().microsecondsSinceEpoch}.jpg',
+    );
+    setState(() {
+      _log.add(
+        'StellarSolver is extracting stars, downsample $_stellarDownsample, '
+        'width ${low.toStringAsFixed(1)}° to ${high.toStringAsFixed(1)}°, limit $_stellarSeconds s.',
+      );
+    });
+    _scrollLog();
+    try {
+      await temp.writeAsBytes(jpeg, flush: true);
+    } catch (error) {
+      _say('The photo could not be prepared for StellarSolver ($error).');
+      return;
+    }
+    ProcessResult result;
+    try {
+      result = await Process.run(
+        'python',
+        [
+          script.absolute.path,
+          temp.path,
+          index,
+          '$low',
+          '$high',
+          '$_stellarDownsample',
+          '$_stellarSeconds',
+        ],
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+    } catch (error) {
+      _say('StellarSolver could not be started ($error).');
+      return;
+    } finally {
+      try {
+        if (temp.existsSync()) temp.deleteSync();
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    final raw = (result.stdout as String).trim();
+    Map<String, dynamic> payload;
+    try {
+      payload = jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      final err = (result.stderr as String).trim();
+      final detail = err.isEmpty ? raw : err;
+      _say(
+          'StellarSolver did not return a solution.${detail.isEmpty ? '' : ' $detail'}');
+      return;
+    }
+    if (payload['ok'] != true) {
+      final reason = payload['reason']?.toString() ?? '';
+      _say(
+          'StellarSolver did not solve this photo${reason.isEmpty ? '' : ' ($reason)'}.');
+      return;
+    }
+    _applyStellar(payload);
+  }
+
+  void _applyStellar(Map<String, dynamic> payload) {
+    final epoch = (payload['epoch_equinox'] as num?)?.round() ?? 2000;
+    final jd = julianDate(DateTime.now().toUtc());
+    final rows = payload['stars'];
+    final stars = rows is List ? rows : const <dynamic>[];
+    final next = <PlacedStar>[];
+    final used = <int>{};
+    final names = <String>[];
+    final seps = <double>[];
+    var fainter = 0;
+    var number = 0;
+    for (final item in stars) {
+      if (item is! Map) continue;
+      final x = (item['x'] as num?)?.toDouble();
+      final y = (item['y'] as num?)?.toDouble();
+      if (x == null || y == null) continue;
+      number++;
+      var placed = PlacedStar(
+        name: '$number',
+        mag: 0,
+        raH: 0,
+        decD: 0,
+        x: x,
+        y: y,
+        named: false,
+        refined: true,
+      );
+      final raDeg = (item['ra_deg'] as num?)?.toDouble();
+      final decDeg = (item['dec_deg'] as num?)?.toDouble();
+      if (raDeg != null && decDeg != null && _identify.isNotEmpty) {
+        final now = equatorialEquinoxToJNow(raDeg / 15.0, decDeg, epoch, jd);
+        var best = -1;
+        var bestSep = 0.3;
+        for (var i = 0; i < _identify.length; i++) {
+          if (used.contains(i)) continue;
+          final sep = sphereSeparationDeg(
+            now.$1,
+            now.$2,
+            _identify[i].raH,
+            _identify[i].decD,
+          );
+          if (sep < bestSep) {
+            bestSep = sep;
+            best = i;
+          }
+        }
+        if (best >= 0) {
+          seps.add(bestSep);
+          final mag = _identifyMags[best];
+          if (mag > _magLimit) {
+            fainter++;
+          } else {
+            used.add(best);
+            placed = PlacedStar(
+              name: _identifyNames[best],
+              mag: mag,
+              raH: _identify[best].raH,
+              decD: _identify[best].decD,
+              x: x,
+              y: y,
+              named: true,
+              refined: true,
+            );
+            names.add(placed.name);
+          }
+        }
+      }
+      next.add(placed);
+    }
+    var sum = 0.0;
+    for (final sep in seps) {
+      final arcsec = sep * 3600;
+      sum += arcsec * arcsec;
+    }
+    final computed = seps.isEmpty ? null : math.sqrt(sum / seps.length);
+    final reported = (payload['rmse_arcsec'] as num?)?.toDouble();
+    final center = _solutionTail(
+      raDeg: (payload['ra_deg'] as num?)?.toDouble(),
+      decDeg: (payload['dec_deg'] as num?)?.toDouble(),
+      epoch: epoch,
+      jd: jd,
+      rollDeg: (payload['roll_deg'] as num?)?.toDouble(),
+      rmseArcsec: reported != null && reported > 0 ? reported : computed,
+      elapsedMs: (payload['ms'] as num?)?.toDouble(),
+    );
+    setState(() => _placed
+      ..clear()
+      ..addAll(next));
+    _saveStars();
+    final hidden = fainter == 0
+        ? ''
+        : ' Magnitude ${_magLimit.toStringAsFixed(1)} left $fainter fainter stars unnamed.';
+    final lead = names.isEmpty
+        ? 'StellarSolver placed ${next.length} stars.'
+        : 'StellarSolver named ${names.join(', ')}.';
+    _say('$lead$center$hidden');
+  }
+
   Future<void> _solve() async {
     if (_jpeg == null) {
       _say('Open a photo first.');
       return;
     }
-    final namedCount = _placed.where((s) => s.named).length;
-    if (namedCount < 3 && _placed.length < 4) {
-      _say('Place 3 named stars for a pose, or mark at least 4 stars.');
-      return;
-    }
     final typedFov = double.tryParse(_fov.text.trim().replaceAll(',', '.'));
-    final calibrated = _lensK1 != null && _lensFov != null && namedCount < 3;
-    final fov = calibrated ? _lensFov : typedFov;
-    if (fov == null || fov <= 0) {
+    if (typedFov == null || typedFov <= 0) {
       _say('Enter the field of the long side, in degrees.');
       return;
     }
-    if (namedCount >= 3) {
-      final sentence = _poseSentence(
-        [
-          for (final s in _placed)
-            if (s.named) s
-        ],
-        fov,
-      );
-      if (sentence != null) _say(sentence);
-    }
-    final hintRa = parseMountHours(_ra.text.trim());
-    final hintDec = parseMountDeg(_dec.text.trim());
-    if (_placed.length < 4) return;
-    if (hintRa == null || hintDec == null) {
-      _say('Enter the right ascension and declination to search around.');
+    if (_solver == _Solver.stellar) {
+      setState(() {
+        _busy = true;
+        _extracting = true;
+      });
+      await _solveWithStellar();
+      if (!mounted) return;
+      setState(() => _busy = false);
       return;
     }
-    final lat = _lat.text.trim().isEmpty
-        ? null
-        : double.tryParse(_lat.text.trim().replaceAll(',', '.'));
-    final lst =
-        _lst.text.trim().isEmpty ? null : parseMountHours(_lst.text.trim());
-    if ((lat == null) != (lst == null)) {
-      _say(
-          'Latitude and sidereal time are used together. One of them is missing, so the horizon check is skipped.');
-    }
-    if (_catalog.isEmpty) {
-      _say('The star catalog is not loaded.');
-      return;
-    }
-    _saveStars();
     setState(() {
       _busy = true;
-      _notInCatalog.clear();
-      _missing.clear();
-      _matched.clear();
-      _log.add('Solving ${_placed.length} stars…');
-      for (final s in _placed) {
-        _log.add(
-            '  ${s.named ? s.name : 'Unnamed ${s.name}'}  x ${s.x.toStringAsFixed(0)}  y ${s.y.toStringAsFixed(0)}');
-      }
+      _extracting = true;
+    });
+    final extracted = await _extractStars();
+    if (!mounted || !extracted) return;
+    if (_placed.length < 4) {
+      setState(() {
+        _busy = false;
+        _extracting = false;
+      });
+      _say('Cedar placed ${_placed.length} stars. Tetra needs at least 4.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _extracting = false;
+      _log.add(
+          'Tetra is solving from the $_tetraPattern brightest, limit $_tetraSeconds s…');
     });
     _scrollLog();
-    await Future<void>.delayed(Duration.zero);
-    try {
-      final result = await compute(runPickedSolve, <String, Object?>{
-        'xs': [for (final s in _placed) s.x],
-        'ys': [for (final s in _placed) s.y],
-        'markNames': [for (final s in _placed) s.name],
-        'markNamed': [for (final s in _placed) s.named],
-        'markRa': [for (final s in _placed) s.raH],
-        'markDec': [for (final s in _placed) s.decD],
-        'ra': [for (final s in _catalog) s.raH],
-        'dec': [for (final s in _catalog) s.decD],
-        'catalogNames': _catalogNames,
-        'catalogMags': _catalogMags,
-        'identifyRa': [for (final s in _identify) s.raH],
-        'identifyDec': [for (final s in _identify) s.decD],
-        'identifyNames': _identifyNames,
-        'identifyMags': _identifyMags,
-        'hintRa': hintRa,
-        'hintDec': hintDec,
-        'width': _imageW,
-        'height': _imageH,
-        'fov': fov,
-        'distortion': _lensK1,
-        'distortionK2': _lensK2,
-        'distortionK3': _lensK3,
-        'originX': _storedOriginX,
-        'originY': _storedOriginY,
-        'calibrated': calibrated,
-        'magLimit': _magLimit,
-        'lat': lat,
-        'lst': lst,
-      });
-      final lines = [
-        for (final line in result['trace'] as List) line.toString(),
-      ];
-      if (!mounted) return;
-      final solvedRa = result['raH'];
-      final solvedDec = result['decD'];
-      final raText = solvedRa is num ? _clockHours(solvedRa.toDouble()) : null;
-      final decText =
-          solvedDec is num ? _signedDegrees(solvedDec.toDouble()) : null;
-      if (raText != null && decText != null) {
-        _ra.text = raText;
-        _dec.text = decText;
-        _saveStars();
-      }
-      setState(() {
-        _busy = false;
-        _notInCatalog
-          ..clear()
-          ..addAll(_pins(result['notInCatalog']));
-        _missing
-          ..clear()
-          ..addAll(_pins(result['missing']));
-        _matched
-          ..clear()
-          ..addAll(_pins(result['matched']));
-        _log.addAll(lines);
-        if (raText != null && decText != null) {
-          _log.add('Search center $raText, $decText.');
-        }
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _log.add('The solve stopped: $error');
-      });
-    }
-    _scrollLog();
+    await _identifyWithTetra();
+    if (!mounted) return;
+    setState(() => _busy = false);
   }
 
   img.Image? _sourceImage() {
@@ -849,14 +1094,6 @@ class _StarPickPageState extends State<StarPickPage> {
     final decoded = img.decodeImage(bytes);
     _source = decoded;
     return decoded;
-  }
-
-  ({double x, double y, bool refined}) _centerOf(double x, double y) {
-    final src = _sourceImage();
-    if (src == null) return (x: x, y: y, refined: false);
-    final mid = starMiddle(src, x, y);
-    if (mid == null) return (x: x, y: y, refined: false);
-    return (x: mid.x, y: mid.y, refined: true);
   }
 
   PlacedStar? _refinedStar(PlacedStar star, img.Image src) {
@@ -878,7 +1115,6 @@ class _StarPickPageState extends State<StarPickPage> {
     final src = _sourceImage();
     if (src == null) {
       _say('The picture could not be read, so the unrefined stars were left.');
-      _estimateField();
       return;
     }
     var pending = 0;
@@ -897,126 +1133,132 @@ class _StarPickPageState extends State<StarPickPage> {
         _placed[i] = next;
         done++;
       }
-      if (done > 0) {
-        _notInCatalog.clear();
-        _missing.clear();
-        _matched.clear();
-      }
       _log.add(
         'Centered $done of $pending stars that were not refined. '
         '$missed had no star nearby.',
       );
     });
-    _estimateField();
     _saveStars();
     _scrollLog();
   }
 
-  void _centerStars() {
-    if (_jpeg == null || _placed.isEmpty) {
-      _say('Open a photo and place stars first.');
-      return;
+  /// Cedar finds the stars. The marks replace whatever was clicked before.
+  Future<bool> _extractStars() async {
+    final limit = _cedarMax;
+    final photo = _photoPath;
+    if (photo == null || _jpeg == null) {
+      _say('Open a photo first.');
+      return false;
     }
-    final src = _sourceImage();
-    if (src == null) {
-      _say('The picture could not be read.');
-      return;
-    }
-    var moved = 0;
-    var missed = 0;
-    setState(() {
-      for (var i = 0; i < _placed.length; i++) {
-        final star = _placed[i];
-        final next = _refinedStar(star, src);
-        if (next == null) {
-          missed++;
-          continue;
-        }
-        final dx = next.x - star.x;
-        final dy = next.y - star.y;
-        final shifted = dx * dx + dy * dy >= 0.25;
-        if (!shifted && star.refined) continue;
-        _placed[i] = next;
-        if (shifted) moved++;
+    final script = File('tool/cedar_extract.py');
+    if (!script.existsSync()) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _extracting = false;
+        });
       }
-      _notInCatalog.clear();
-      _missing.clear();
-      _matched.clear();
+      _say('Cedar is not next to the star picker.');
+      return false;
+    }
+    _saveStars();
+    setState(() {
       _log.add(
-        'Centered $moved of ${_placed.length} stars on the bright middle. '
-        '$missed had no star nearby.',
+        'Cedar is extracting stars, sigma ${_cedarSigma.toStringAsFixed(1)}, '
+        '${_cedarBinning == 1 ? 'full image' : '$_cedarBinning×$_cedarBinning binning'}.',
       );
     });
-    _estimateField();
-    _saveStars();
     _scrollLog();
-  }
-
-  void _onTap(Offset local, double viewW, double viewH) {
-    if (_jpeg == null || viewW < 2 || viewH < 2) return;
-    final image = Offset(
-      local.dx / viewW * _imageW,
-      local.dy / viewH * _imageH,
-    );
-    if (image.dx < 0 ||
-        image.dy < 0 ||
-        image.dx > _imageW ||
-        image.dy > _imageH) {
-      return;
-    }
-    final spot = _centerOf(image.dx, image.dy);
-    final unnamed = _selected == 'Unnamed';
-    final chosen = unnamed ? null : _named(_selected);
-    final hit = 16 * _imageW / viewW;
-    var nearest = -1;
-    var best = hit * hit;
-    for (var i = 0; i < _placed.length; i++) {
-      final d = (Offset(_placed[i].x, _placed[i].y) - image).distanceSquared;
-      if (d <= best) {
-        best = d;
-        nearest = i;
+    ProcessResult result;
+    try {
+      result = await Process.run(
+        'python',
+        [
+          script.absolute.path,
+          _starsPath(photo),
+          _cedarSigma.toString(),
+          '$_cedarBinning',
+          '$limit',
+        ],
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _extracting = false;
+        });
       }
+      _say('Cedar could not be started ($error).');
+      return false;
     }
+    if (!mounted) return false;
+    final raw = (result.stdout as String).trim();
+    Map<String, dynamic> payload;
+    try {
+      payload = jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      final err = (result.stderr as String).trim();
+      final detail = err.isEmpty ? raw : err;
+      setState(() {
+        _busy = false;
+        _extracting = false;
+      });
+      _say('Cedar did not return stars.${detail.isEmpty ? '' : ' $detail'}');
+      return false;
+    }
+    if (payload['ok'] != true) {
+      setState(() {
+        _busy = false;
+        _extracting = false;
+      });
+      final reason = payload['reason']?.toString() ?? '';
+      _say(reason.isEmpty ? 'Cedar found no stars.' : reason);
+      return false;
+    }
+    final stars = payload['stars'];
+    if (stars is! List || stars.isEmpty) {
+      setState(() {
+        _busy = false;
+        _extracting = false;
+      });
+      _say('Cedar found no stars.');
+      return false;
+    }
+    final placed = <PlacedStar>[];
+    for (var i = 0; i < stars.length; i++) {
+      final star = stars[i];
+      if (star is! Map) continue;
+      final x = (star['x'] as num?)?.toDouble();
+      final y = (star['y'] as num?)?.toDouble();
+      if (x == null || y == null) continue;
+      placed.add(PlacedStar(
+        name: '${i + 1}',
+        mag: 0,
+        raH: 0,
+        decD: 0,
+        x: x,
+        y: y,
+        named: false,
+        refined: true,
+      ));
+    }
+    final found = (payload['found'] as num?)?.toInt() ?? placed.length;
+    final noise = (payload['noise'] as num?)?.toDouble();
     setState(() {
-      _notInCatalog.clear();
-      _missing.clear();
-      _matched.clear();
-      if (nearest >= 0) {
-        final gone = _placed.removeAt(nearest);
-        final label = gone.named ? gone.name : 'Unnamed ${gone.name}';
-        _log.add('$label removed. ${_placed.length} stars placed.');
-      } else if (unnamed) {
-        final n = _nextUnnamed();
-        _placed.add(PlacedStar(
-          name: '$n',
-          mag: 0,
-          raH: 0,
-          decD: 0,
-          x: spot.x,
-          y: spot.y,
-          named: false,
-          refined: spot.refined,
-        ));
-        _log.add('Unnamed star $n placed. ${_placed.length} stars placed.');
-      } else if (chosen == null) {
-        _log.add('Choose a star name, or Unnamed.');
-      } else {
-        _placed.removeWhere((s) => s.named && s.name == chosen.name);
-        _placed.add(PlacedStar(
-          name: chosen.name,
-          mag: chosen.mag,
-          raH: chosen.raH,
-          decD: chosen.decD,
-          x: spot.x,
-          y: spot.y,
-          refined: spot.refined,
-        ));
-        _log.add('${chosen.name} placed. ${_placed.length} stars placed.');
-      }
+      _placed
+        ..clear()
+        ..addAll(placed);
+      _extracting = false;
+      _log.add(
+        'Cedar placed ${placed.length} of $found stars'
+        '${noise == null ? '' : ', noise ${noise.toStringAsFixed(1)}'}.',
+      );
     });
-    _estimateField();
     _saveStars();
     _scrollLog();
+    return true;
   }
 
   @override
@@ -1051,62 +1293,24 @@ class _StarPickPageState extends State<StarPickPage> {
       maxScale: 8,
       constrained: false,
       boundaryMargin: const EdgeInsets.all(200),
-      child: GestureDetector(
-        onTapUp: (d) => _onTap(d.localPosition, viewW, viewH),
-        child: SizedBox(
-          width: viewW,
-          height: viewH,
-          child: Stack(
-            children: [
-              Image.memory(jpeg, width: viewW, height: viewH, fit: BoxFit.fill),
-              CustomPaint(
-                size: Size(viewW, viewH),
-                painter: _ResidualPainter(
-                  pins: _matched,
-                  imageW: _imageW,
-                  imageH: _imageH,
-                ),
-              ),
-              for (final star in _missing) _skyMark(star, viewW, viewH),
-              for (var i = 0; i < _placed.length; i++) _mark(i, viewW, viewH),
-            ],
-          ),
+      child: SizedBox(
+        width: viewW,
+        height: viewH,
+        child: Stack(
+          children: [
+            Image.memory(jpeg, width: viewW, height: viewH, fit: BoxFit.fill),
+            for (var i = 0; i < _placed.length; i++) _mark(i, viewW, viewH),
+          ],
         ),
       ),
     );
   }
 
-  _Pin? _alignedPin(PlacedStar star) {
-    for (final pin in _matched) {
-      if ((pin.x - star.x).abs() < 1 && (pin.y - star.y).abs() < 1) {
-        return pin;
-      }
-    }
-    return null;
-  }
-
-  String? _alignedName(PlacedStar star) => _alignedPin(star)?.name;
-
-  bool _missedCatalog(PlacedStar star) {
-    for (final pin in _notInCatalog) {
-      if ((pin.x - star.x).abs() < 1 && (pin.y - star.y).abs() < 1) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   Widget _mark(int index, double viewW, double viewH) {
     final star = _placed[index];
-    final missed = _missedCatalog(star);
-    final alignedPin = _alignedPin(star);
-    final aligned = alignedPin?.name;
-    final residual = alignedPin?.arcmin;
-    final color = missed
-        ? const Color(0xFFFF5A5A)
-        : aligned != null
-            ? const Color(0xFF3DDC84)
-            : const Color(0xFFF0C040);
+    const color = Color(0xFFF0C040);
+    const namedColor = Color(0xFF3DDC84);
+    final ink = star.named ? namedColor : color;
     final x = star.x / _imageW * viewW;
     final y = star.y / _imageH * viewH;
     return Positioned(
@@ -1122,18 +1326,17 @@ class _StarPickPageState extends State<StarPickPage> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: color, width: 1.5),
+                border: Border.all(color: ink, width: 1.5),
               ),
               child: star.named
                   ? null
                   : Text(
                       star.name,
-                      style: TextStyle(color: color, fontSize: 9),
+                      style: TextStyle(color: ink, fontSize: 9),
                     ),
             ),
-            if (star.named || missed || aligned != null)
-              const SizedBox(width: 4),
-            if (star.named || missed || aligned != null)
+            if (star.named) const SizedBox(width: 4),
+            if (star.named)
               DecoratedBox(
                 decoration: BoxDecoration(
                   color: const Color(0xCC0D1117),
@@ -1143,54 +1346,11 @@ class _StarPickPageState extends State<StarPickPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   child: Text(
-                    missed
-                        ? (star.named ? star.name : 'U${star.name}')
-                        : residual == null
-                            ? (aligned ?? star.name)
-                            : '${aligned ?? star.name}  ${residual.toStringAsFixed(1)}\'',
-                    style: TextStyle(color: color, fontSize: 12),
+                    star.name,
+                    style: TextStyle(color: ink, fontSize: 12),
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _skyMark(_Pin star, double viewW, double viewH) {
-    final x = star.x / _imageW * viewW;
-    final y = star.y / _imageH * viewH;
-    return Positioned(
-      left: x - 8,
-      top: y - 8,
-      child: IgnorePointer(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF6CB6FF), width: 1.5),
-              ),
-            ),
-            const SizedBox(width: 4),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: const Color(0xCC0D1117),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                child: Text(
-                  star.name,
-                  style:
-                      const TextStyle(color: Color(0xFF6CB6FF), fontSize: 12),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -1206,104 +1366,68 @@ class _StarPickPageState extends State<StarPickPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Star pick',
+              'Photo solve',
               style: TextStyle(fontSize: 18, color: Color(0xFFF0F6FC)),
             ),
             const SizedBox(height: 8),
             FilledButton(
                 onPressed: _busy ? null : _open,
                 child: const Text('Open photo')),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: _placed.isEmpty
-                      ? null
-                      : () {
-                          setState(() {
-                            _notInCatalog.clear();
-                            _missing.clear();
-                            _matched.clear();
-                            final gone = _placed.removeLast();
-                            final label =
-                                gone.named ? gone.name : 'Unnamed ${gone.name}';
-                            _log.add('$label removed.');
-                          });
-                          _estimateField();
-                          _saveStars();
-                        },
-                  child: const Text('Undo'),
-                ),
-                TextButton(
-                  onPressed: _placed.isEmpty
-                      ? null
-                      : () {
-                          setState(() {
-                            _placed.clear();
-                            _notInCatalog.clear();
-                            _missing.clear();
-                            _matched.clear();
-                            _log.add('Marks cleared.');
-                          });
-                          _saveStars();
-                        },
-                  child: const Text('Clear'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            DropdownButton<String>(
-              value: _selected == 'Unnamed' ||
-                      _bright.any((s) => s.name == _selected)
-                  ? _selected
-                  : null,
-              isExpanded: true,
-              hint: const Text('Star to place'),
-              dropdownColor: const Color(0xFF161B22),
-              style: const TextStyle(color: Color(0xFFF0F6FC), fontSize: 14),
-              items: [
-                const DropdownMenuItem(
-                  value: 'Unnamed',
-                  child: Text('Unnamed'),
-                ),
-                for (final s in _bright)
-                  DropdownMenuItem(
-                    value: s.name,
-                    child: Text('${s.name}   ${s.mag.toStringAsFixed(1)}'),
-                  ),
-              ],
-              onChanged: (name) => setState(() => _selected = name),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _placed.isEmpty
+                    ? null
+                    : () {
+                        setState(() {
+                          _placed.clear();
+                          _log.add('Marks cleared.');
+                        });
+                        _saveStars();
+                      },
+                child: const Text('Clear'),
+              ),
             ),
             _field(_fov, 'Field of the long side (°)', '70'),
-            _field(_ra, 'Search around right ascension', '18:36:56'),
-            _field(_dec, 'Search around declination', '+38:47'),
-            _field(_lat, 'Latitude, optional', '47.3'),
-            _field(_lst, 'Sidereal time, optional', '22:34:45'),
+            const Text(
+              'Solver',
+              style: TextStyle(color: Color(0xFFF0F6FC)),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                for (final solver in _Solver.values)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(
+                        solver == _Solver.tetra ? 'Tetra' : 'StellarSolver',
+                      ),
+                      selected: _solver == solver,
+                      onSelected: _busy ? null : (_) => _chooseSolver(solver),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
             FilledButton(
               onPressed: _busy ? null : _solve,
-              child: Text(_busy ? 'Solving…' : 'Solve'),
-            ),
-            const SizedBox(height: 6),
-            OutlinedButton(
-              onPressed: _busy ? null : _centerStars,
-              child: const Text('Center stars'),
+              child: Text(
+                  _busy ? (_extracting ? 'Extracting…' : 'Solving…') : 'Solve'),
             ),
             const SizedBox(height: 6),
             OutlinedButton(
               onPressed: _busy ? null : _openParameters,
               child: const Text('Parameters'),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'A green mark stays on the click. The arrow is the residual toward the catalog star, drawn 8 times longer, and the number is its length in arcminutes. Red marks were not in the catalog. Blue marks are catalog stars that were not clicked.',
-              style: TextStyle(color: Color(0xFF8B949E), fontSize: 12),
+            const SizedBox(height: 8),
+            Text(
+              _solver == _Solver.stellar
+                  ? 'StellarSolver reads the photo and names catalog matches. A numbered mark was left unmatched.'
+                  : 'Cedar places the stars. Tetra names the ones it matches. A numbered mark was left unmatched.',
+              style: const TextStyle(color: Color(0xFF8B949E), fontSize: 12),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Solver',
-              style: TextStyle(color: Color(0xFFF0F6FC)),
-            ),
-            const SizedBox(height: 6),
             Expanded(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -1373,102 +1497,6 @@ String _signedDegrees(double degrees) {
   return '$sign${d.toString().padLeft(2, '0')}*${m.toString().padLeft(2, '0')}';
 }
 
-class _Pin {
-  final String name;
-  final double x;
-  final double y;
-  final double? arcmin;
-  final double? vx;
-  final double? vy;
-  const _Pin(this.name, this.x, this.y, {this.arcmin, this.vx, this.vy});
-}
-
-List<_Pin> _pins(Object? raw) {
-  if (raw is! List) return const [];
-  double? opt(Object? value) => value is num ? value.toDouble() : null;
-  return [
-    for (final item in raw)
-      if (item is Map)
-        _Pin(
-          (item['name'] ?? '').toString(),
-          (item['x'] as num).toDouble(),
-          (item['y'] as num).toDouble(),
-          arcmin: opt(item['arcmin']),
-          vx: opt(item['vx']),
-          vy: opt(item['vy']),
-        ),
-  ];
-}
-
-/// Residual from the click toward the catalog star, drawn longer than true
-/// so a few arcminutes stay visible. The circle itself is not moved.
-class _ResidualPainter extends CustomPainter {
-  final List<_Pin> pins;
-  final double imageW;
-  final double imageH;
-  const _ResidualPainter({
-    required this.pins,
-    required this.imageW,
-    required this.imageH,
-  });
-
-  static const gain = 8.0;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (imageW < 2 || imageH < 2) return;
-    final sx = size.width / imageW;
-    final sy = size.height / imageH;
-    final paint = Paint()
-      ..color = const Color(0xFF3DDC84)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    for (final pin in pins) {
-      final vx = pin.vx;
-      final vy = pin.vy;
-      if (vx == null || vy == null) continue;
-      final dx = vx * sx * gain;
-      final dy = vy * sy * gain;
-      if (dx * dx + dy * dy < 4) continue;
-      final start = Offset(pin.x * sx, pin.y * sy);
-      final tip = start + Offset(dx, dy);
-      canvas.drawLine(start, tip, paint);
-      final ang = math.atan2(dy, dx);
-      const head = 8.0;
-      const wing = 0.45;
-      canvas.drawLine(
-        tip,
-        tip +
-            Offset(
-              head * math.cos(ang + math.pi - wing),
-              head * math.sin(ang + math.pi - wing),
-            ),
-        paint,
-      );
-      canvas.drawLine(
-        tip,
-        tip +
-            Offset(
-              head * math.cos(ang + math.pi + wing),
-              head * math.sin(ang + math.pi + wing),
-            ),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ResidualPainter old) => true;
-}
-
-class NamedStar {
-  final String name;
-  final double mag;
-  final double raH;
-  final double decD;
-  const NamedStar(this.name, this.mag, this.raH, this.decD);
-}
-
 class PlacedStar {
   final String name;
   final double mag;
@@ -1498,186 +1526,73 @@ String _starsPath(String photoPath) {
   return '$base.stars.json';
 }
 
-Map<String, Object?> runPickedSolve(Map<String, Object?> raw) {
-  double numOf(Object? value) => (value as num).toDouble();
-  double? opt(Object? value) => value == null ? null : numOf(value);
-  List<double> nums(Object? value) =>
-      [for (final item in value as List) (item as num).toDouble()];
-  List<String> words(Object? value) =>
-      [for (final item in value as List) item.toString()];
-  final xs = nums(raw['xs']);
-  final ys = nums(raw['ys']);
-  final ras = nums(raw['ra']);
-  final decs = nums(raw['dec']);
-  final identifyRa = raw['identifyRa'];
-  final identifyDec = raw['identifyDec'];
-  final identifyNameRaw = raw['identifyNames'];
-  final hasIdentify = identifyRa is List &&
-      identifyDec is List &&
-      identifyNameRaw is List &&
-      identifyRa.length == identifyDec.length &&
-      identifyRa.length == identifyNameRaw.length &&
-      identifyRa.isNotEmpty;
-  final identifyCatalog = hasIdentify
-      ? <FinderStar>[
-          for (var i = 0; i < identifyRa.length; i++)
-            FinderStar(
-              (identifyRa[i] as num).toDouble(),
-              (identifyDec[i] as num).toDouble(),
-            ),
-        ]
-      : null;
-  final identifyLabels = hasIdentify ? words(identifyNameRaw) : null;
-  final identifyMagRaw = raw['identifyMags'];
-  final identifyMagList =
-      hasIdentify && identifyMagRaw is List ? nums(identifyMagRaw) : null;
-  final trace = <String>[];
-  final lat = opt(raw['lat']);
-  final lst = opt(raw['lst']);
-  final storedK1 = opt(raw['distortion']);
-  final storedLens = storedK1 == null
-      ? null
-      : LensTerms(
-          storedK1,
-          opt(raw['distortionK2']) ?? 0,
-          opt(raw['distortionK3']) ?? 0,
-        );
-  final originX = opt(raw['originX']);
-  final originY = opt(raw['originY']);
-  final markNamed = raw['markNamed'];
-  final namedCount =
-      markNamed is List ? markNamed.where((item) => item == true).length : 0;
-  if (namedCount >= 3) {
-    final markNames = words(raw['markNames']);
-    final markRa = nums(raw['markRa']);
-    final markDec = nums(raw['markDec']);
-    final report = solveWideField(
-      marks: [
-        for (var i = 0; i < xs.length; i++)
-          (
-            name: markNames[i],
-            named: markNamed is List && markNamed[i] == true,
-            raH: markRa[i],
-            decD: markDec[i],
-            x: xs[i],
-            y: ys[i],
-          ),
-      ],
-      catalog: [
-        for (var i = 0; i < ras.length; i++) FinderStar(ras[i], decs[i]),
-      ],
-      catalogNames: words(raw['catalogNames']),
-      catalogMags: nums(raw['catalogMags']),
-      identifyCatalog: identifyCatalog,
-      identifyNames: identifyLabels,
-      identifyMags: identifyMagList,
-      magnitudeLimit: opt(raw['magLimit']),
-      width: numOf(raw['width']),
-      height: numOf(raw['height']),
-      fovDeg: numOf(raw['fov']),
-      distortion: storedLens,
-      originX: originX,
-      originY: originY,
-      trace: trace,
-    );
-    final solution = report.solution;
-    return {
-      'trace': trace,
-      if (solution != null) 'raH': solution.raH,
-      if (solution != null) 'decD': solution.decD,
-      'notInCatalog': [
-        for (final s in report.notInCatalog)
-          {'name': s.label, 'x': s.x, 'y': s.y},
-      ],
-      'missing': [
-        for (final s in report.missing) {'name': s.name, 'x': s.x, 'y': s.y},
-      ],
-      'matched': [
-        for (final s in report.matched)
-          {
-            'name': s.name,
-            'x': s.x,
-            'y': s.y,
-            'arcmin': s.arcmin,
-            'vx': s.vx,
-            'vy': s.vy,
-          },
-      ],
-    };
-  }
-  final markNames = words(raw['markNames']);
-  final markRa = nums(raw['markRa']);
-  final markDec = nums(raw['markDec']);
-  final report = solveWideFromHint(
-    marks: [
-      for (var i = 0; i < xs.length; i++)
-        (
-          name: markNames[i],
-          named: markNamed is List && markNamed[i] == true,
-          raH: markRa[i],
-          decD: markDec[i],
-          x: xs[i],
-          y: ys[i],
-        ),
-    ],
-    catalog: [
-      for (var i = 0; i < ras.length; i++) FinderStar(ras[i], decs[i]),
-    ],
-    catalogNames: words(raw['catalogNames']),
-    catalogMags: nums(raw['catalogMags']),
-    identifyCatalog: identifyCatalog,
-    identifyNames: identifyLabels,
-    identifyMags: identifyMagList,
-    magnitudeLimit: opt(raw['magLimit']),
-    width: numOf(raw['width']),
-    height: numOf(raw['height']),
-    fovDeg: numOf(raw['fov']),
-    distortion: storedLens,
-    calibrated: raw['calibrated'] == true,
-    originX: originX,
-    originY: originY,
-    hintRa: numOf(raw['hintRa']),
-    hintDec: numOf(raw['hintDec']),
-    latDeg: lat != null && lst != null ? lat : null,
-    lstH: lat != null && lst != null ? lst : null,
-    trace: trace,
-  );
-  final solution = report.solution;
-  return {
-    'trace': trace,
-    if (solution != null) 'raH': solution.raH,
-    if (solution != null) 'decD': solution.decD,
-    'notInCatalog': [
-      for (final s in report.notInCatalog)
-        {'name': s.label, 'x': s.x, 'y': s.y},
-    ],
-    'missing': [
-      for (final s in report.missing) {'name': s.name, 'x': s.x, 'y': s.y},
-    ],
-    'matched': [
-      for (final s in report.matched)
-        {
-          'name': s.name,
-          'x': s.x,
-          'y': s.y,
-          'arcmin': s.arcmin,
-          'vx': s.vx,
-          'vy': s.vy,
-        },
-    ],
-  };
-}
-
 /// Upright JPEG plus its pixel size. Coordinates match the picture on screen.
-(Uint8List, int, int)? _orientPhoto(Uint8List bytes) {
+({
+  Uint8List jpeg,
+  int width,
+  int height,
+  double? longSideDeg,
+  String? cameraNote,
+})? _orientPhoto(Uint8List bytes) {
   final decoded = img.decodeImage(bytes);
   if (decoded == null) return null;
+  final camera = _cameraField(decoded);
   final frame = img.bakeOrientation(decoded);
   return (
-    Uint8List.fromList(img.encodeJpg(frame, quality: 85)),
-    frame.width,
-    frame.height,
+    jpeg: Uint8List.fromList(img.encodeJpg(frame, quality: 85)),
+    width: frame.width,
+    height: frame.height,
+    longSideDeg: camera?.fov,
+    cameraNote: camera?.line,
   );
+}
+
+/// Long-side field from the 35 mm equivalent focal length.
+///
+/// The equivalent length matches the diagonal of a 36×24 mm frame to the
+/// diagonal of this photo, so a 4:3 phone frame is not treated as 3:2 film.
+({double fov, String line})? _cameraField(img.Image image) {
+  final focal35 = image.exif.exifIfd['FocalLengthIn35mmFilm']?.toDouble() ?? 0;
+  if (focal35 <= 0) return null;
+  final zoom = image.exif.exifIfd['DigitalZoomRatio']?.toDouble() ?? 1;
+  final focal = zoom > 1 ? focal35 * zoom : focal35;
+  final long = math.max(image.width, image.height).toDouble();
+  final short = math.min(image.width, image.height).toDouble();
+  final diag = math.sqrt(long * long + short * short);
+  const filmDiag = 43.26661530556787;
+  final halfLong = filmDiag / 2 * (long / diag);
+  final fov = 2 * math.atan(halfLong / focal) * 180 / math.pi;
+  final lens = image.exif.exifIfd['FocalLength']?.toDouble() ?? 0;
+  final make = image.exif.imageIfd['Make']?.toString().trim() ?? '';
+  final model = image.exif.imageIfd['Model']?.toString().trim() ?? '';
+  final camera = [make, model].where((part) => part.isNotEmpty).join(' ');
+  final lensText = lens <= 0
+      ? '${focal35.toStringAsFixed(0)} mm equivalent'
+      : '${lens.toStringAsFixed(2)} mm, ${focal35.toStringAsFixed(0)} mm equivalent';
+  final who = camera.isEmpty ? lensText : '$camera, $lensText';
+  final zoomText = zoom > 1 ? ', digital zoom ${zoom.toStringAsFixed(1)}×' : '';
+  return (
+    fov: fov,
+    line: '$who$zoomText. Long side ${fov.toStringAsFixed(1)}°.'
+  );
+}
+
+Future<String?> _pickFolder() async {
+  const command = r'''
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = "Astrometry.net index files"
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+  [Console]::Out.WriteLine($dialog.SelectedPath)
+}
+''';
+  final result = await Process.run(
+    'powershell',
+    ['-NoProfile', '-STA', '-Command', command],
+  );
+  final path = (result.stdout as String).trim();
+  if (path.isEmpty || !Directory(path).existsSync()) return null;
+  return path;
 }
 
 Future<String?> _pickPhoto() async {

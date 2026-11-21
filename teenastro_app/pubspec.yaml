@@ -40,3 +40,4 @@ flutter:
     - assets/catalogs/
     - assets/data/
     - assets/icon/
+    - tool/stellar/indexes/
