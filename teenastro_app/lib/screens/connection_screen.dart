@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/night_view_provider.dart';
+import '../services/finder_sky.dart';
+import 'finder_shell.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
@@ -65,6 +68,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
       return;
     }
 
+    await ref.read(finderSkyProvider.notifier).stop();
     final ok = await client.connect(ip, port);
 
     if (ok && mounted) {
@@ -83,6 +87,15 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
         _error = client.lastError.isNotEmpty ? client.lastError : 'Connection failed';
       });
     }
+  }
+
+  /// The phone alone: plate solves feed the planetarium and SkySafari.
+  Future<void> _useAsFinder() async {
+    ref.read(mountStateProvider.notifier).stopPolling();
+    final client = ref.read(lx200ClientProvider);
+    if (client.isConnected) await client.disconnect();
+    await ref.read(finderSkyProvider.notifier).start();
+    if (mounted) context.go(FinderShell.camera);
   }
 
   Color get _statusColor {
@@ -108,8 +121,11 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final night = ref.watch(nightViewProvider);
     return Scaffold(
-      body: Center(
+      body: Stack(
+        children: [
+          Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -192,6 +208,21 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                   label: Text(_connecting ? 'Connecting...' : 'Connect'),
                 ),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  key: const Key('use_as_finder_btn'),
+                  onPressed: _connecting ? null : _useAsFinder,
+                  icon: const Icon(Icons.photo_camera),
+                  label: const Text('Use as finder'),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text('No TeenAstro: the phone camera finds where the telescope points',
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center),
               if (_error.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Container(
@@ -214,6 +245,20 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
             ],
           ),
         ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 4,
+            right: 4,
+            child: IconButton(
+              tooltip: night ? 'Day view' : 'Night view',
+              icon: Icon(
+                night ? Icons.wb_sunny_outlined : Icons.nightlight_round,
+                color: TA.textHigh,
+              ),
+              onPressed: () => ref.read(nightViewProvider.notifier).toggle(),
+            ),
+          ),
+        ],
       ),
     );
   }

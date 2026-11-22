@@ -16,7 +16,10 @@ import '../services/catalog_service.dart';
 import '../services/lx200_tcp_client.dart';
 import '../providers/last_goto_route_provider.dart';
 import '../providers/planetarium_settings_provider.dart';
-import '../services/mount_state_provider.dart';
+import '../providers/night_view_provider.dart';
+import '../services/finder_sky.dart';
+import '../services/phone_finder.dart' show sphereSeparationDeg;
+import '../widgets/push_to_card.dart';
 import '../theme.dart';
 
 // ---------------------------------------------------------------------------
@@ -96,7 +99,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || ref.read(finderSkyProvider).active) return;
       ref.read(lastGotoTabRouteProvider.notifier).state = '/planetarium';
     });
     final saved = ref.read(planetariumSettingsProvider);
@@ -375,7 +378,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   static const double _centerOnObjectZoom = 10.0;
 
   void _centerOnObject(_SkyObject obj) {
-    final state = ref.read(mountStateProvider);
+    final state = ref.read(skyStateProvider);
     final jd = julianDate(DateTime.now().toUtc());
     // Display always JNow.
     final double dispRa, dispDec;
@@ -415,9 +418,9 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   }
 
   void _recenterOnTelescope() {
-    final state = ref.read(mountStateProvider);
+    final state = ref.read(skyStateProvider);
     final size = context.size;
-    if (size == null) return;
+    if (size == null || state.ra == '?' || state.dec == '?') return;
     final lst = _parseLST(state.siderealTime);
     final raH = _parseLST(state.ra);
     final decDeg = _parseCoord(state.dec);
@@ -477,7 +480,8 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(mountStateProvider);
+    final state = ref.watch(skyStateProvider);
+    final finderMode = ref.watch(finderSkyProvider.select((s) => s.active));
     final settings = ref.watch(planetariumSettingsProvider);
 
     if (_stars == null) {
@@ -561,6 +565,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                     settings: settings,
                     selectedObject: _selectedObject,
                     nightMode: TA.isNight,
+                    finderMode: finderMode,
                   ),
                 ),
               ),
@@ -582,8 +587,15 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.arrow_back, color: TA.text, size: 20),
-                          onPressed: () => context.go('/goto'),
+                          tooltip: finderMode ? 'Exit finder' : null,
+                          icon: Icon(finderMode ? Icons.logout : Icons.arrow_back,
+                              color: TA.text, size: 20),
+                          onPressed: finderMode
+                              ? () async {
+                                  await ref.read(finderSkyProvider.notifier).stop();
+                                  if (context.mounted) context.go('/connect');
+                                }
+                              : () => context.go('/goto'),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.black45,
                             minimumSize: const Size(36, 36),
@@ -609,20 +621,43 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                     ),
                   ),
 
-                  // Top-right: layer toggle
+                  // Top-right: night view and layer toggle
                   Positioned(
                     top: MediaQuery.of(context).padding.top + 4,
                     right: 4,
-                    child: IconButton(
-                      icon: Icon(Icons.layers, color: TA.text, size: 20),
-                      onPressed: () => setState(() {
-                        _showLayers = !_showLayers;
-                        _showSearch = false;
-                      }),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.black45,
-                        minimumSize: const Size(36, 36),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: ref.watch(nightViewProvider)
+                              ? 'Day view'
+                              : 'Night view',
+                          icon: Icon(
+                            ref.watch(nightViewProvider)
+                                ? Icons.wb_sunny_outlined
+                                : Icons.nightlight_round,
+                            color: TA.text,
+                            size: 20,
+                          ),
+                          onPressed: () =>
+                              ref.read(nightViewProvider.notifier).toggle(),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black45,
+                            minimumSize: const Size(36, 36),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.layers, color: TA.text, size: 20),
+                          onPressed: () => setState(() {
+                            _showLayers = !_showLayers;
+                            _showSearch = false;
+                          }),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black45,
+                            minimumSize: const Size(36, 36),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -669,6 +704,14 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
               ),
             ),
           ),
+
+          if (finderMode && !_showSearch)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 48,
+              left: 0,
+              right: 0,
+              child: const Center(child: PushToCard()),
+            ),
 
           // Search overlay (always interactive)
           if (_showSearch)
@@ -826,6 +869,7 @@ class _SkyRenderer extends CustomPainter {
   final PlanetariumSettings settings;
   final _SkyObject? selectedObject;
   final bool nightMode;
+  final bool finderMode;
 
   _SkyRenderer({
     required this.stars,
@@ -840,6 +884,7 @@ class _SkyRenderer extends CustomPainter {
     required this.settings,
     this.selectedObject,
     this.nightMode = false,
+    this.finderMode = false,
   });
 
   // Display always JNow (no epoch toggle).
@@ -948,6 +993,7 @@ class _SkyRenderer extends CustomPainter {
     _drawPlanets(canvas, proj);
 
     // 10. Telescope crosshair
+    if (finderMode) _drawPushLine(canvas, proj);
     _drawCrosshair(canvas, proj);
 
     // 11. Target marker
@@ -1365,7 +1411,29 @@ class _SkyRenderer extends CustomPainter {
     }
   }
 
+  /// From the solved crosshair to the push-to target.
+  void _drawPushLine(Canvas canvas, _Proj proj) {
+    if (state.ra == '?' || state.dec == '?') return;
+    if (state.targetRa.isEmpty || state.targetDec.isEmpty) return;
+    final jd = julianDate(DateTime.now().toUtc());
+    final (fromRa, fromDec) =
+        _mountCoords(_parseLST(state.ra), _parseCoord(state.dec), jd);
+    final (toRa, toDec) =
+        _mountCoords(_parseLST(state.targetRa), _parseCoord(state.targetDec), jd);
+    final a = proj.project(fromRa, fromDec, clipHorizon: false);
+    final b = proj.project(toRa, toDec, clipHorizon: false);
+    if (a == null || b == null) return;
+    canvas.drawLine(
+      a,
+      b,
+      Paint()
+        ..color = TA.success.withValues(alpha: 0.7)
+        ..strokeWidth = 1.2,
+    );
+  }
+
   void _drawCrosshair(Canvas canvas, _Proj proj) {
+    if (state.ra == '?' || state.dec == '?') return;
     final jd = julianDate(DateTime.now().toUtc());
     final (raH, scopeDec) = _mountCoords(_parseLST(state.ra), _parseCoord(state.dec), jd);
 
@@ -1710,9 +1778,48 @@ class _ObjectInfoPanel extends ConsumerWidget {
     );
   }
 
+  static bool _haveMount(BuildContext context, LX200TcpClient client) {
+    if (client.isConnected) return true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: const Text('No mount is connected'), backgroundColor: TA.error),
+    );
+    return false;
+  }
+
+  /// Finder mode: the object becomes the push-to target.
+  Widget _targetButton(WidgetRef ref, FinderSky finder) {
+    final double ra, dec;
+    if (object.isJNow) {
+      ra = object.ra;
+      dec = object.dec;
+    } else {
+      (ra, dec) = equatorialEquinoxToJNow(
+          object.ra, object.dec, 2000, julianDate(DateTime.now().toUtc()));
+    }
+    final isTarget = finder.hasTarget &&
+        finder.targetName == object.name &&
+        sphereSeparationDeg(ra, dec, finder.targetRa!, finder.targetDec!) < 0.05;
+    final notifier = ref.read(finderSkyProvider.notifier);
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(0, 34),
+          backgroundColor: isTarget ? TA.surfaceVariant : null,
+        ),
+        icon: Icon(isTarget ? Icons.close : Icons.near_me, size: 14),
+        label: Text(isTarget ? 'Clear target' : 'Set target'),
+        onPressed: () => isTarget
+            ? notifier.clearTarget()
+            : notifier.setTarget(ra, dec, object.name),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mountState = ref.watch(mountStateProvider);
+    final mountState = ref.watch(skyStateProvider);
+    final finder = ref.watch(finderSkyProvider);
     final client = ref.read(lx200ClientProvider);
     final slewing = mountState.isSlewing;
 
@@ -1780,6 +1887,9 @@ class _ObjectInfoPanel extends ConsumerWidget {
           const SizedBox(height: 2),
           _coordLines(altStr),
           const SizedBox(height: 8),
+          if (finder.active)
+            _targetButton(ref, finder)
+          else
           Row(
             children: [
               Expanded(
@@ -1801,6 +1911,7 @@ class _ObjectInfoPanel extends ConsumerWidget {
                         ),
                         icon: const Icon(Icons.my_location, size: 14),
                         onPressed: () async {
+                          if (!_haveMount(context, client)) return;
                           String raStr;
                           String decStr;
                           if (object.isJNow) {
@@ -1841,6 +1952,7 @@ class _ObjectInfoPanel extends ConsumerWidget {
                   onPressed: slewing
                       ? null
                       : () async {
+                          if (!_haveMount(context, client)) return;
                           String raStr;
                           String decStr;
                           if (object.isJNow) {

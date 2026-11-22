@@ -12,6 +12,7 @@ import 'screens/tracking_screen.dart';
 import 'screens/alignment_screen.dart';
 import 'screens/planetarium_screen.dart';
 import 'screens/phone_finder_screen.dart';
+import 'screens/finder_shell.dart';
 import 'screens/settings_screen.dart';
 import 'providers/last_goto_route_provider.dart';
 
@@ -31,6 +32,14 @@ final _router = GoRouter(
         GoRoute(path: '/alignment', builder: (_, __) => const AlignmentScreen()),
         GoRoute(path: '/finder', builder: (_, __) => const PhoneFinderScreen()),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      ],
+    ),
+    ShellRoute(
+      builder: (context, state, child) =>
+          FinderShell(location: state.uri.toString(), child: child),
+      routes: [
+        GoRoute(path: FinderShell.sky, builder: (_, __) => const PlanetariumScreen()),
+        GoRoute(path: FinderShell.camera, builder: (_, __) => const PhoneFinderScreen()),
       ],
     ),
   ],

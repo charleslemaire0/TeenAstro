@@ -6,12 +6,15 @@ import android.hardware.camera2.CameraManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.view.TextureRegistry
 import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.max
 
 class MainActivity : FlutterActivity() {
     private val skyCapture by lazy { ManualSkyCapture(this) }
+    private val infinityPreview by lazy { InfinityPreview(this) }
+    private var previewEntry: TextureRegistry.SurfaceTextureEntry? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -29,6 +32,45 @@ class MainActivity : FlutterActivity() {
                         result.success(deg)
                     }
                 }
+                "listBackCameras" -> {
+                    result.success(listBackCameras())
+                }
+                "previewStart" -> {
+                    val id = call.argument<String>("cameraId")
+                    if (id.isNullOrEmpty()) {
+                        result.error("unavailable", "No camera", null)
+                        return@setMethodCallHandler
+                    }
+                    Thread {
+                        runOnUiThread {
+                            stopPreviewLocked()
+                            val entry = flutterEngine.renderer.createSurfaceTexture()
+                            previewEntry = entry
+                            Thread {
+                                val ok = infinityPreview.start(id, entry.surfaceTexture())
+                                runOnUiThread {
+                                    if (!ok) {
+                                        stopPreviewLocked()
+                                        result.error("unavailable", "The camera preview failed", null)
+                                    } else {
+                                        result.success(
+                                            mapOf(
+                                                "textureId" to entry.id(),
+                                                "width" to infinityPreview.previewWidth,
+                                                "height" to infinityPreview.previewHeight,
+                                                "sensorOrientation" to infinityPreview.sensorOrientation,
+                                            ),
+                                        )
+                                    }
+                                }
+                            }.start()
+                        }
+                    }.start()
+                }
+                "previewStop" -> {
+                    stopPreviewLocked()
+                    result.success(null)
+                }
                 "manualOpen" -> {
                     val id = call.argument<String>("cameraId")
                     if (id.isNullOrEmpty()) {
@@ -36,6 +78,9 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
                     Thread {
+                        runOnUiThread { stopPreviewLocked() }
+                        // Let the preview camera release before opening the still session.
+                        Thread.sleep(200)
                         val opened = skyCapture.open(id)
                         runOnUiThread {
                             if (!opened) {
@@ -81,9 +126,41 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun stopPreviewLocked() {
+        infinityPreview.stop()
+        try {
+            previewEntry?.release()
+        } catch (_: Exception) {
+        }
+        previewEntry = null
+    }
+
     override fun onDestroy() {
+        stopPreviewLocked()
         skyCapture.release()
         super.onDestroy()
+    }
+
+    private fun listBackCameras(): List<Map<String, Any>> {
+        val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val out = mutableListOf<Map<String, Any>>()
+        for (id in manager.cameraIdList) {
+            val chars = try {
+                manager.getCameraCharacteristics(id)
+            } catch (_: Exception) {
+                continue
+            }
+            val facing = chars.get(CameraCharacteristics.LENS_FACING)
+                ?: continue
+            if (facing != CameraCharacteristics.LENS_FACING_BACK) continue
+            out.add(
+                mapOf(
+                    "id" to id,
+                    "sensorOrientation" to (chars.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 90),
+                ),
+            )
+        }
+        return out
     }
 
     /// Degrees across the longer side of the sensor for this camera id.

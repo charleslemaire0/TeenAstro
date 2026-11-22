@@ -121,6 +121,19 @@ class ManualSkyCapture(context: Context) {
             imageReader.close()
             return false
         }
+        // Drive the lens to infinity before the first still.
+        try {
+            val prep = camera!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                addTarget(imageReader.surface)
+                put(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+                put(CaptureRequest.LENS_FOCUS_DISTANCE, 0f)
+                put(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+            }.build()
+            made!!.setRepeatingRequest(prep, null, handler)
+            Thread.sleep(350)
+            made!!.stopRepeating()
+        } catch (_: Exception) {
+        }
         device = camera
         session = made
         reader = imageReader

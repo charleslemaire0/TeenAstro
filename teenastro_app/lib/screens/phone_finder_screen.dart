@@ -2,12 +2,13 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
-import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:teenastro_app/models/catalog_entry.dart';
 import 'package:teenastro_app/models/equinox_precession.dart';
 import 'package:teenastro_app/models/lx200_commands.dart';
@@ -15,13 +16,16 @@ import 'package:teenastro_app/models/mount_config.dart';
 import 'package:teenastro_app/models/mount_state.dart';
 import 'package:teenastro_app/models/planet_positions.dart';
 import 'package:teenastro_app/services/cedar_native.dart';
+import 'package:teenastro_app/services/finder_sky.dart';
 import 'package:teenastro_app/services/lx200_tcp_client.dart';
 import 'package:teenastro_app/services/mount_state_provider.dart';
 import 'package:teenastro_app/services/phone_finder.dart';
 import 'package:teenastro_app/services/phone_finder_store.dart';
 import 'package:teenastro_app/services/stellar_solver.dart';
 import 'package:teenastro_app/services/tetra_solver.dart';
+import 'package:teenastro_app/providers/night_view_provider.dart';
 import 'package:teenastro_app/theme.dart';
+import 'package:teenastro_app/widgets/push_to_card.dart';
 
 /// Plate solve from the phone camera. The hardware efinder is not used.
 class PhoneFinderScreen extends ConsumerStatefulWidget {
@@ -33,7 +37,7 @@ class PhoneFinderScreen extends ConsumerStatefulWidget {
 
 class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   final _store = PhoneFinderStore();
-  CameraController? _cam;
+  static const _cameraChannel = MethodChannel('com.teenastro/camera');
   FinderCones _cones = const FinderCones();
   double _fov = 60;
   bool _auto = false;
@@ -52,8 +56,20 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   int? _shutterUs;
   int? _iso;
   String _exposureNote = '';
+  bool _live = false;
+  int _liveSeconds = PhoneFinderStore.liveDefaultSeconds;
+  DateTime? _liveUntil;
+  int _sensorDeg = 90;
+  int? _previewTextureId;
+  int _previewW = 0;
+  int _previewH = 0;
+  ui.Image? _shotImage;
+  StarFrame? _shotFrame;
+  String _shotNote = '';
+  bool _showPhoto = true;
 
   bool get _hasCamera => !kIsWeb && Platform.isAndroid;
+  bool get _previewLive => _previewTextureId != null;
 
   @override
   void initState() {
@@ -67,8 +83,10 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final auto = await _store.loadAutoSync();
     final limit = await _store.loadRecenterArcmin();
     final solver = await _store.loadSolver();
+    final liveSeconds = await _store.loadLiveSeconds();
     if (!mounted) return;
     setState(() {
+      _liveSeconds = liveSeconds;
       _cones = cones;
       _fov = fov;
       _auto = auto;
@@ -81,7 +99,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   /// Longer-side field of the camera, from its focal length and sensor size.
   Future<double?> _lensField(String cameraId) async {
     try {
-      final value = await const MethodChannel('com.teenastro/camera')
+      final value = await _cameraChannel
           .invokeMethod<num>('longerSideFov', {'cameraId': cameraId});
       final deg = value?.toDouble();
       if (deg == null || deg < 5 || deg > 170) return null;
@@ -93,56 +111,79 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
 
   Future<void> _openCamera() async {
     try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) {
+      final listed =
+          await _cameraChannel.invokeMethod<List<dynamic>>('listBackCameras');
+      if (listed == null || listed.isEmpty) {
         if (mounted) setState(() => _cameraError = 'No camera on this phone');
         return;
       }
-      final back = cameras.cast<CameraDescription?>().firstWhere(
-            (c) => c!.lensDirection == CameraLensDirection.back,
-            orElse: () => cameras.first,
-          )!;
-      final measured = await _lensField(back.name);
-      final cam = CameraController(
-        back,
-        ResolutionPreset.medium,
-        enableAudio: false,
+      final back = Map<String, dynamic>.from(listed.first as Map);
+      final id = back['id'] as String;
+      final measured = await _lensField(id);
+      final started = await _cameraChannel.invokeMethod<Map<dynamic, dynamic>>(
+        'previewStart',
+        {'cameraId': id},
       );
-      await cam.initialize();
       if (!mounted) {
-        await cam.dispose();
+        await _cameraChannel.invokeMethod<void>('previewStop');
         return;
       }
-      try {
-        await cam.setExposureMode(ExposureMode.auto);
-        await cam.setFlashMode(FlashMode.off);
-      } catch (_) {}
+      if (started == null) {
+        setState(() => _cameraError = 'Camera unavailable');
+        return;
+      }
       if (measured != null) await _store.saveFov(measured);
       setState(() {
-        _cam = cam;
-        _cameraId = back.name;
+        _cameraId = id;
+        _previewTextureId = (started['textureId'] as num).toInt();
+        _previewW = (started['width'] as num?)?.toInt() ?? 0;
+        _previewH = (started['height'] as num?)?.toInt() ?? 0;
+        _sensorDeg = (started['sensorOrientation'] as num?)?.toInt() ??
+            (back['sensorOrientation'] as num?)?.toInt() ??
+            90;
         _cameraError = null;
         if (measured != null) {
           _fov = measured;
           _fovMeasured = true;
         }
       });
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => _cameraError = 'Camera unavailable');
+    }
+  }
+
+  Future<void> _stopPreview() async {
+    try {
+      await _cameraChannel.invokeMethod<void>('previewStop');
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _previewTextureId = null);
+    } else {
+      _previewTextureId = null;
     }
   }
 
   @override
   void dispose() {
+    _live = false;
     _stopAlign = true;
-    _cam?.dispose();
+    _cameraChannel.invokeMethod<void>('previewStop');
     _tetra?.close();
+    _shotImage?.dispose();
     super.dispose();
+  }
+
+  String _liveLabel(int seconds) {
+    if (seconds % 60 == 0) {
+      final m = seconds ~/ 60;
+      return m == 1 ? '1 min' : '$m min';
+    }
+    return '$seconds s';
   }
 
   /// Null when the axis is above the horizon, or when the site is unknown.
   String? _belowHorizon(double raH, double decD) {
-    final state = ref.read(mountStateProvider);
+    final state = ref.read(skyStateProvider);
     final lst = parseMountHours(state.siderealTime);
     if (lst == null) return null;
     final alt = altitudeDeg(state.latitude, lst, raH, decD);
@@ -150,15 +191,17 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     return 'The solution is below the horizon (${alt.toStringAsFixed(0)}°)';
   }
 
-  (double, double)? _mountPointing() {
-    final state = ref.read(mountStateProvider);
+  (double, double)? _mountPointing() => _pointingOf(ref.read(mountStateProvider));
+
+  /// StellarSolver's search hint: the mount, or the last finder solve.
+  (double, double)? _hintPointing() => _pointingOf(ref.read(skyStateProvider));
+
+  (double, double)? _pointingOf(MountState state) {
     final ra = parseMountHours(state.ra);
     final dec = parseMountDeg(state.dec);
     if (ra == null || dec == null) return null;
     return (ra, dec);
   }
-
-  static const _cameraChannel = MethodChannel('com.teenastro/camera');
 
   Uint8List? _jpegBytes(Object? raw) {
     if (raw is Uint8List) return raw;
@@ -201,15 +244,36 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         }
       });
 
+  /// Show a captured photo with its extracted stars.
+  Future<void> _showShot(Uint8List jpeg, StarFrame frame, String note) async {
+    try {
+      final codec = await ui.instantiateImageCodec(
+        jpeg,
+        targetWidth: math.min(frame.width.round(), 1600),
+      );
+      final image = (await codec.getNextFrame()).image;
+      if (!mounted) {
+        image.dispose();
+        return;
+      }
+      final old = _shotImage;
+      setState(() {
+        _shotImage = image;
+        _shotFrame = frame;
+        _shotNote = note;
+        _showPhoto = true;
+      });
+      old?.dispose();
+    } catch (_) {}
+  }
+
   /// Lengthen the shutter, then the ISO, until the frame holds about 30 stars.
   /// The preview is released so the shutter time can be set directly.
   Future<StarFrame?> _captureForStars() async {
     final id = _cameraId;
     if (id == null) return null;
-    final preview = _cam;
-    if (mounted) setState(() => _cam = null);
-    await preview?.dispose();
-    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await _stopPreview();
+    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     Map<dynamic, dynamic>? limits;
     for (var attempt = 0; attempt < 3 && limits == null; attempt++) {
@@ -276,6 +340,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         final frame = bytes == null ? null : await _cedarFrame(bytes);
         if (frame == null) continue;
         final count = frame.stars.length;
+        _showShot(bytes!, frame, shown);
         final gap = (count - targetStarCount).abs();
         if (gap < bestGap) {
           bestGap = gap;
@@ -391,8 +456,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   }
 
   Future<FinderSolution?> _solve() async {
-    final cam = _cam;
-    if (cam == null || !cam.value.isInitialized) {
+    if (_cameraId == null) {
       setState(() => _status = 'The phone camera is not ready');
       return null;
     }
@@ -435,7 +499,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       } else {
         if (mounted) setState(() => _status = 'StellarSolver…');
         await Future<void>.delayed(Duration.zero);
-        final pointing = _mountPointing();
+        final pointing = _hintPointing();
         final hint = pointing == null
             ? null
             : equatorialJNowToEquinox(
@@ -480,6 +544,10 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   }
 
   Future<void> _onSolve({required bool sync, required bool aim}) async {
+    if ((aim || sync) && !ref.read(lx200ClientProvider).isConnected) {
+      setState(() => _status = 'Mount is not connected');
+      return;
+    }
     if (aim) {
       final go = await showDialog<bool>(
         context: context,
@@ -542,6 +610,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       }
       final residual = (shown.rmsDeg * 60).toStringAsFixed(1);
       if (!sync) {
+        ref.read(finderSkyProvider.notifier).publishSolve(shown.raH, shown.decD);
         setState(() =>
             _status = 'Solved ${shown.matches} stars, residual $residual\''
                 '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}. '
@@ -556,6 +625,37 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
               '${_exposureNote.isEmpty ? '' : ', $_exposureNote'}');
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Solve again and again until [_liveSeconds] have passed or Live is turned off.
+  Future<void> _runLive() async {
+    if (!_hasCamera || _cameraId == null) {
+      setState(() => _status = 'The phone camera is used on Android');
+      return;
+    }
+    setState(() {
+      _live = true;
+      _liveUntil = DateTime.now().add(Duration(seconds: _liveSeconds));
+    });
+    try {
+      while (mounted && _live && DateTime.now().isBefore(_liveUntil!)) {
+        await _onSolve(sync: false, aim: false);
+        if (!mounted || !_live) break;
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    } finally {
+      final timedOut = _live;
+      if (mounted) {
+        setState(() {
+          _live = false;
+          _liveUntil = null;
+          if (timedOut) {
+            _status =
+                'Live stopped after ${_liveLabel(_liveSeconds)}. $_status';
+          }
+        });
+      }
     }
   }
 
@@ -728,7 +828,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   }
 
   Future<void> _runAlign(int stars) async {
-    if (!_hasCamera || _cam == null) {
+    if (!_hasCamera || _cameraId == null) {
       setState(() => _status = 'The phone camera is used on Android');
       return;
     }
@@ -920,241 +1020,516 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       if (ra == null || dec == null) return;
       _afterSlew(ra, dec);
     });
-    final preview = _cam;
+    final sky = ref.watch(finderSkyProvider);
+    final mount = ref.read(lx200ClientProvider).isConnected;
     return Column(
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          color: TA.surface,
-          child: Row(
-            children: [
-              Icon(Icons.photo_camera, size: 16, color: TA.accent),
-              const SizedBox(width: 8),
-              Text('Phone finder',
-                  style: TextStyle(
-                      color: TA.textHigh,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
-        Expanded(
-          child: preview != null && preview.value.isInitialized
-              ? CameraPreview(preview)
-              : Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      _cameraError ??
-                          (_hasCamera
-                              ? 'Opening the camera…'
-                              : 'The phone camera is used on Android.'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: TA.textSecondary),
-                    ),
-                  ),
-                ),
-        ),
-        ConstrainedBox(
-          constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.5),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Text('Solver',
-                        style:
-                            TextStyle(color: TA.textSecondary, fontSize: 12)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SegmentedButton<PhoneSolver>(
-                        segments: const [
-                          ButtonSegment(
-                              value: PhoneSolver.tetra, label: Text('Tetra')),
-                          ButtonSegment(
-                              value: PhoneSolver.stellar,
-                              label: Text('StellarSolver')),
-                        ],
-                        selected: {_solver},
-                        showSelectedIcon: false,
-                        onSelectionChanged: _busy
-                            ? null
-                            : (picked) {
-                                final solver = picked.first;
-                                setState(() => _solver = solver);
-                                _store.saveSolver(solver);
-                              },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                if (_fovMeasured)
-                  Text(
-                    'Field ${_fov.round()}°',
-                    style: TextStyle(color: TA.text, fontFamily: 'monospace'),
-                  )
-                else
-                  Row(
-                    children: [
-                      Text('Field',
-                          style:
-                              TextStyle(color: TA.textSecondary, fontSize: 12)),
-                      Expanded(
-                        child: Slider(
-                          value: _fov.roundToDouble().clamp(15, 90),
-                          min: 15,
-                          max: 90,
-                          divisions: 75,
-                          label: '${_fov.round()}°',
-                          onChanged:
-                              _busy ? null : (v) => setState(() => _fov = v),
-                          onChangeEnd: (v) => _store.saveFov(v),
-                        ),
-                      ),
-                      Text('${_fov.round()}°',
-                          style: TextStyle(
-                              color: TA.text, fontFamily: 'monospace')),
-                    ],
-                  ),
-                Text(
-                  _cones.isZero
-                      ? 'Hz Cone 0.0\'   Ve Cone 0.0\''
-                      : 'Hz Cone ${formatArcmin(_cones.hzRad)}   '
-                          'Ve Cone ${formatArcmin(_cones.veRad)}',
-                  style: TextStyle(color: TA.textHigh, fontFamily: 'monospace'),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Auto sync',
-                        style: TextStyle(color: TA.text),
-                      ),
-                    ),
-                    Switch(
-                      value: _auto,
-                      onChanged: _busy
-                          ? null
-                          : (on) {
-                              setState(() => _auto = on);
-                              _store.saveAutoSync(on);
-                            },
-                    ),
-                  ],
-                ),
-                if (_auto)
-                  Row(
-                    children: [
-                      Text('Recenter',
-                          style:
-                              TextStyle(color: TA.textSecondary, fontSize: 12)),
-                      Expanded(
-                        child: Slider(
-                          value: _limitArcmin.toDouble(),
-                          min: 2,
-                          max: 60,
-                          divisions: 58,
-                          label: "$_limitArcmin'",
-                          onChanged: _busy
-                              ? null
-                              : (v) => setState(() => _limitArcmin = v.round()),
-                          onChangeEnd: (v) =>
-                              _store.saveRecenterArcmin(v.round()),
-                        ),
-                      ),
-                      Text("$_limitArcmin'",
-                          style: TextStyle(
-                              color: TA.text, fontFamily: 'monospace')),
-                    ],
-                  ),
-                if (_status.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(_status,
-                        style:
-                            TextStyle(color: TA.textSecondary, fontSize: 12)),
-                  ),
-                const SizedBox(height: 8),
-                _aligning
-                    ? OutlinedButton(
-                        onPressed: () {
-                          _stopAlign = true;
-                          ref
-                              .read(lx200ClientProvider)
-                              .sendCommand(LX200.stopAll);
-                        },
-                        child: const Text('Stop'),
-                      )
-                    : OutlinedButton(
-                        onPressed: _busy
-                            ? null
-                            : () async {
-                                final stars = await _askAlignStars();
-                                if (stars == null || !mounted) return;
-                                await _runAlign(stars);
-                              },
-                        child: const Text('Align'),
-                      ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _onSolve(sync: false, aim: false),
-                        child: const Text('Solve'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _onSolve(sync: true, aim: false),
-                        child: const Text('Solve & Sync'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _onSolve(sync: false, aim: true),
-                        child: const Text('Aim'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () async {
-                                await _store.clearCones();
-                                setState(() {
-                                  _cones = const FinderCones();
-                                  _status = 'Cones cleared';
-                                });
-                              },
-                        child: const Text('Clear cones'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+        _header(sky),
+        Expanded(child: _view()),
+        _actions(sky, mount),
       ],
     );
   }
+
+  Widget _header(FinderSky sky) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 0, 0, 0),
+      color: TA.surface,
+      child: Row(
+        children: [
+          Icon(Icons.photo_camera, size: 16, color: TA.accent),
+          const SizedBox(width: 8),
+          Text('Phone finder',
+              style: TextStyle(
+                  color: TA.textHigh, fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: sky.active
+                ? Text(
+                    sky.serverError ??
+                        'SkySafari ${sky.serverAddress ?? 'starting…'}',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: sky.serverError == null ? TA.textSecondary : TA.error,
+                        fontSize: 11,
+                        fontFamily: 'monospace'),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          if (sky.active && !sky.hasSite)
+            Tooltip(
+              message: 'Site missing',
+              child: Icon(Icons.location_off, size: 18, color: TA.warning),
+            ),
+          IconButton(
+            tooltip: ref.watch(nightViewProvider) ? 'Day view' : 'Night view',
+            icon: Icon(
+              ref.watch(nightViewProvider)
+                  ? Icons.wb_sunny_outlined
+                  : Icons.nightlight_round,
+              color: TA.textHigh,
+            ),
+            onPressed: () => ref.read(nightViewProvider.notifier).toggle(),
+          ),
+          IconButton(
+            tooltip: 'Parameters',
+            icon: Icon(Icons.tune, color: TA.textHigh),
+            onPressed: _openSettings,
+          ),
+          if (sky.active)
+            IconButton(
+              tooltip: 'Exit finder',
+              icon: Icon(Icons.logout, color: TA.textHigh),
+              onPressed: () async {
+                setState(() => _live = false);
+                await ref.read(finderSkyProvider.notifier).stop();
+                if (mounted) context.go('/connect');
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// The camera, or the last photo with the stars Cedar found in it.
+  Widget _view() {
+    final shot = _shotImage;
+    final frame = _shotFrame;
+    final live = _previewLive;
+    final photo = shot != null && frame != null && (_showPhoto || !live);
+    final Widget base;
+    if (photo) {
+      base = CustomPaint(
+        size: Size.infinite,
+          painter: _ShotPainter(
+          image: shot,
+          frame: frame,
+          quarterTurns: _sensorDeg ~/ 90,
+          ring: TA.success,
+        ),
+      );
+    } else if (live) {
+      base = Center(
+        child: AspectRatio(
+          aspectRatio: _previewW > 0 && _previewH > 0
+              ? (_sensorDeg % 180 == 0
+                  ? _previewW / _previewH
+                  : _previewH / _previewW)
+              : 3 / 4,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox(
+              width: (_sensorDeg % 180 == 0 ? _previewW : _previewH).toDouble(),
+              height: (_sensorDeg % 180 == 0 ? _previewH : _previewW).toDouble(),
+              child: RotatedBox(
+                quarterTurns: _sensorDeg ~/ 90,
+                child: Texture(textureId: _previewTextureId!),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      base = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            _cameraError ??
+                (_hasCamera
+                    ? 'Opening the camera…'
+                    : 'The phone camera is used on Android.'),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: TA.textSecondary),
+          ),
+        ),
+      );
+    }
+    final overlay = TextStyle(
+        color: TA.textHigh, fontSize: 12, fontFamily: 'monospace');
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: Colors.black, child: base),
+        if (photo)
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                  color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+              child: Text('${frame.stars.length} stars  $_shotNote',
+                  style: overlay),
+            ),
+          ),
+        if (shot != null && live)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: IconButton(
+              tooltip: _showPhoto ? 'Camera' : 'Last photo',
+              style: IconButton.styleFrom(backgroundColor: Colors.black54),
+              icon: Icon(_showPhoto ? Icons.videocam : Icons.photo,
+                  color: TA.textHigh),
+              onPressed: () => setState(() => _showPhoto = !_showPhoto),
+            ),
+          ),
+        const Positioned(
+          top: 48,
+          left: 0,
+          right: 0,
+          child: Center(child: PushToCard()),
+        ),
+        if (_status.isNotEmpty)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              color: Colors.black54,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Text(_status, style: overlay),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _actions(FinderSky sky, bool mount) {
+    final idle = !_busy && !_live;
+    final solve = OutlinedButton(
+      onPressed: idle ? () => _onSolve(sync: false, aim: false) : null,
+      child: const Text('Solve'),
+    );
+    final List<Widget> rest;
+    if (sky.active) {
+      final left = _liveUntil == null
+          ? _liveSeconds
+          : math.max(0, _liveUntil!.difference(DateTime.now()).inSeconds);
+      rest = [
+        Expanded(
+          child: _live
+              ? FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: TA.error),
+                  onPressed: () => setState(() => _live = false),
+                  icon: const Icon(Icons.stop),
+                  label: Text('Stop live (${_liveLabel(left)})'),
+                )
+              : FilledButton.icon(
+                  onPressed: _busy ? null : _runLive,
+                  icon: const Icon(Icons.play_arrow),
+                  label: Text('Live ${_liveLabel(_liveSeconds)}'),
+                ),
+        ),
+      ];
+    } else {
+      rest = [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: idle && mount ? () => _onSolve(sync: true, aim: false) : null,
+            child: const Text('Solve & Sync'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _aligning
+              ? OutlinedButton(
+                  onPressed: () {
+                    _stopAlign = true;
+                    ref.read(lx200ClientProvider).sendCommand(LX200.stopAll);
+                  },
+                  child: const Text('Stop'),
+                )
+              : OutlinedButton(
+                  onPressed: idle && mount
+                      ? () async {
+                          final stars = await _askAlignStars();
+                          if (stars == null || !mounted) return;
+                          await _runAlign(stars);
+                        }
+                      : null,
+                  child: const Text('Align'),
+                ),
+        ),
+      ];
+    }
+    return Container(
+      color: TA.surface,
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      child: Row(children: [
+        Expanded(child: solve),
+        const SizedBox(width: 8),
+        ...rest,
+      ]),
+    );
+  }
+
+  Future<void> _openSettings() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: TA.surface,
+      builder: (_) => Consumer(
+        builder: (ctx, ref, _) {
+          final sky = ref.watch(finderSkyProvider);
+          final mount = ref.read(lx200ClientProvider).isConnected;
+          return StatefulBuilder(
+            builder: (ctx, setSheet) {
+              void update(VoidCallback change) {
+                setState(change);
+                setSheet(() {});
+              }
+
+              return SafeArea(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(ctx).height * 0.8),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    child: _settings(ctx, sky, mount, update),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _settings(BuildContext ctx, FinderSky sky, bool mount,
+      void Function(VoidCallback) update) {
+    final label = TextStyle(color: TA.textSecondary, fontSize: 12);
+    final value = TextStyle(color: TA.text, fontFamily: 'monospace');
+    Widget section(String title) => Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 4),
+          child: Text(title,
+              style: TextStyle(
+                  color: TA.accent, fontSize: 13, fontWeight: FontWeight.w600)),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('Parameters',
+            style: TextStyle(
+                color: TA.textHigh, fontSize: 16, fontWeight: FontWeight.w600)),
+        section('Display'),
+        Row(children: [
+          Expanded(
+            child: Text('Night view', style: TextStyle(color: TA.text)),
+          ),
+          Switch(
+            value: ref.watch(nightViewProvider),
+            onChanged: (on) =>
+                ref.read(nightViewProvider.notifier).setEnabled(on),
+          ),
+        ]),
+        section('Solver'),
+        SegmentedButton<PhoneSolver>(
+          segments: const [
+            ButtonSegment(value: PhoneSolver.tetra, label: Text('Tetra')),
+            ButtonSegment(
+                value: PhoneSolver.stellar, label: Text('StellarSolver')),
+          ],
+          selected: {_solver},
+          showSelectedIcon: false,
+          onSelectionChanged: _busy
+              ? null
+              : (picked) {
+                  final solver = picked.first;
+                  update(() => _solver = solver);
+                  _store.saveSolver(solver);
+                },
+        ),
+        section('Field'),
+        if (_fovMeasured)
+          Text('${_fov.round()}° (measured from the lens)', style: value)
+        else
+          Row(children: [
+            Expanded(
+              child: Slider(
+                value: _fov.roundToDouble().clamp(15, 90),
+                min: 15,
+                max: 90,
+                divisions: 75,
+                label: '${_fov.round()}°',
+                onChanged: _busy ? null : (v) => update(() => _fov = v),
+                onChangeEnd: (v) => _store.saveFov(v),
+              ),
+            ),
+            Text('${_fov.round()}°', style: value),
+          ]),
+        if (sky.active) ...[
+          section('Live'),
+          Row(children: [
+            Text('Run for', style: label),
+            Expanded(
+              child: Slider(
+                value: _liveSeconds.toDouble(),
+                min: PhoneFinderStore.liveMinSeconds.toDouble(),
+                max: PhoneFinderStore.liveMaxSeconds.toDouble(),
+                divisions: (PhoneFinderStore.liveMaxSeconds -
+                        PhoneFinderStore.liveMinSeconds) ~/
+                    10,
+                label: _liveLabel(_liveSeconds),
+                onChanged: _live
+                    ? null
+                    : (v) => update(() => _liveSeconds = (v / 10).round() * 10),
+                onChangeEnd: (v) =>
+                    _store.saveLiveSeconds((v / 10).round() * 10),
+              ),
+            ),
+            Text(_liveLabel(_liveSeconds), style: value),
+          ]),
+          section('Site'),
+          Row(children: [
+            Expanded(child: Text(_siteText(sky), style: value)),
+            TextButton(
+              onPressed: sky.locating
+                  ? null
+                  : () => ref.read(finderSkyProvider.notifier).locate(),
+              child: const Text('Locate'),
+            ),
+          ]),
+          section('SkySafari'),
+          Text(
+            sky.serverError ??
+                'Meade LX200 Classic over Wi-Fi\n${sky.serverAddress ?? 'starting…'}',
+            style: value,
+          ),
+        ],
+        section('Telescope cones'),
+        Text(
+          _cones.isZero
+              ? 'Hz Cone 0.0\'   Ve Cone 0.0\''
+              : 'Hz Cone ${formatArcmin(_cones.hzRad)}   '
+                  'Ve Cone ${formatArcmin(_cones.veRad)}',
+          style: value,
+        ),
+        Row(children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: !_busy && !_live && mount
+                  ? () {
+                      Navigator.pop(ctx);
+                      _onSolve(sync: false, aim: true);
+                    }
+                  : null,
+              child: const Text('Aim'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextButton(
+              onPressed: _busy || _live
+                  ? null
+                  : () async {
+                      await _store.clearCones();
+                      update(() {
+                        _cones = const FinderCones();
+                        _status = 'Cones cleared';
+                      });
+                    },
+              child: const Text('Clear cones'),
+            ),
+          ),
+        ]),
+        if (mount) ...[
+          section('Auto sync'),
+          Row(children: [
+            Expanded(
+                child: Text('Solve and sync after each goto',
+                    style: TextStyle(color: TA.text))),
+            Switch(
+              value: _auto,
+              onChanged: _busy
+                  ? null
+                  : (on) {
+                      update(() => _auto = on);
+                      _store.saveAutoSync(on);
+                    },
+            ),
+          ]),
+          if (_auto)
+            Row(children: [
+              Text('Recenter', style: label),
+              Expanded(
+                child: Slider(
+                  value: _limitArcmin.toDouble(),
+                  min: 2,
+                  max: 60,
+                  divisions: 58,
+                  label: "$_limitArcmin'",
+                  onChanged: _busy
+                      ? null
+                      : (v) => update(() => _limitArcmin = v.round()),
+                  onChangeEnd: (v) => _store.saveRecenterArcmin(v.round()),
+                ),
+              ),
+              Text("$_limitArcmin'", style: value),
+            ]),
+        ],
+      ],
+    );
+  }
+
+  String _siteText(FinderSky sky) {
+    if (!sky.hasSite) return sky.locating ? 'Locating…' : 'Site missing';
+    final lat = sky.latDeg!;
+    final lon = sky.lonEastDeg!;
+    final source = switch (sky.siteSource) {
+      'gps' => 'GPS',
+      'ip' => 'network',
+      _ => 'saved',
+    };
+    return '${lat.abs().toStringAsFixed(2)}°${lat >= 0 ? 'N' : 'S'} '
+        '${lon.abs().toStringAsFixed(2)}°${lon >= 0 ? 'E' : 'W'} ($source)';
+  }
+}
+
+/// The photo, turned upright, with a ring on each star Cedar extracted.
+class _ShotPainter extends CustomPainter {
+  final ui.Image image;
+  final StarFrame frame;
+  final int quarterTurns;
+  final Color ring;
+
+  _ShotPainter({
+    required this.image,
+    required this.frame,
+    required this.quarterTurns,
+    required this.ring,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final turned = quarterTurns.isOdd;
+    final w = frame.width;
+    final h = frame.height;
+    final scale = math.min(size.width / (turned ? h : w), size.height / (turned ? w : h));
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.rotate(quarterTurns * math.pi / 2);
+    canvas.scale(scale);
+    canvas.drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      Rect.fromCenter(center: Offset.zero, width: w, height: h),
+      Paint()..filterQuality = FilterQuality.medium,
+    );
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5 / scale
+      ..color = ring;
+    for (final s in frame.stars) {
+      canvas.drawCircle(Offset(s.x - w / 2, s.y - h / 2), 9 / scale, paint);
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_ShotPainter old) =>
+      old.image != image || old.frame != frame || old.quarterTurns != quarterTurns;
 }

@@ -12,6 +12,24 @@ class PhoneFinderStore {
   static const _auto = 'phone_finder_auto_sync';
   static const _limit = 'phone_finder_recenter_arcmin';
   static const _solver = 'phone_finder_solver';
+  static const _liveSeconds = 'phone_finder_live_seconds';
+
+  static const liveMinSeconds = 30;
+  static const liveMaxSeconds = 180;
+  static const liveDefaultSeconds = 60;
+
+  /// How long Live keeps solving, in seconds.
+  Future<int> loadLiveSeconds() async {
+    final p = await SharedPreferences.getInstance();
+    return (p.getInt(_liveSeconds) ?? liveDefaultSeconds)
+        .clamp(liveMinSeconds, liveMaxSeconds);
+  }
+
+  Future<void> saveLiveSeconds(int seconds) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(
+        _liveSeconds, seconds.clamp(liveMinSeconds, liveMaxSeconds));
+  }
 
   Future<PhoneSolver> loadSolver() async {
     final p = await SharedPreferences.getInstance();
