@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -94,6 +95,24 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     ref.read(mountStateProvider.notifier).stopPolling();
     final client = ref.read(lx200ClientProvider);
     if (client.isConnected) await client.disconnect();
+    // Ask for the camera first; site GPS is requested after the session starts.
+    try {
+      final allowed = await const MethodChannel('com.teenastro/camera')
+          .invokeMethod<bool>('ensureCameraPermission');
+      if (allowed != true) {
+        if (mounted) {
+          setState(() => _error =
+              'Camera permission is required to use the phone as a finder');
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error =
+            'Camera permission is required to use the phone as a finder');
+      }
+      return;
+    }
     await ref.read(finderSkyProvider.notifier).start();
     if (mounted) context.go(FinderShell.camera);
   }

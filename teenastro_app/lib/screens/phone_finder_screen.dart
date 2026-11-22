@@ -111,6 +111,24 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
 
   Future<void> _openCamera() async {
     try {
+      if (mounted) {
+        setState(() {
+          _cameraError = null;
+          _status = 'Asking for the camera…';
+        });
+      }
+      final allowed =
+          await _cameraChannel.invokeMethod<bool>('ensureCameraPermission');
+      if (allowed != true) {
+        if (mounted) {
+          setState(() {
+            _cameraError =
+                'Camera permission is required. Allow the camera, then open Finder again.';
+            _status = '';
+          });
+        }
+        return;
+      }
       final listed =
           await _cameraChannel.invokeMethod<List<dynamic>>('listBackCameras');
       if (listed == null || listed.isEmpty) {
@@ -142,13 +160,27 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
             (back['sensorOrientation'] as num?)?.toInt() ??
             90;
         _cameraError = null;
+        _status = '';
         if (measured != null) {
           _fov = measured;
           _fovMeasured = true;
         }
       });
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _cameraError = e.code == 'permission'
+            ? 'Camera permission is required. Allow the camera, then open Finder again.'
+            : (e.message ?? 'Camera unavailable');
+        _status = '';
+      });
     } catch (_) {
-      if (mounted) setState(() => _cameraError = 'Camera unavailable');
+      if (mounted) {
+        setState(() {
+          _cameraError = 'Camera unavailable';
+          _status = '';
+        });
+      }
     }
   }
 
