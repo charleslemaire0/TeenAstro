@@ -25,10 +25,10 @@ if not hasattr(np, "math"):
 
 HERE = Path(__file__).resolve().parent / "tetra"
 CATALOG = HERE / "bsc5"
-DATABASE = HERE / "phone90.npz"
+DATABASE = HERE / "phone55.npz"
 BSC5_URL = "http://tdc-www.harvard.edu/catalogs/BSC5"
-# Patterns may span the diagonal of a phone frame whose long side is about 70°.
-MAX_FOV_DEG = 90.0
+# Horizontal field of a phone frame whose long side is about 70°.
+MAX_FOV_DEG = 55.0
 STAR_MAX_MAG = 7.0
 
 
@@ -55,6 +55,63 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001 — the app shows this reason
         payload = {"ok": False, "reason": str(exc)}
     print(json.dumps(payload))
+
+
+def solve_frames(
+    frames: list,
+    fov_long: float,
+    full_width: float,
+    full_height: float,
+    pattern_stars: int = 8,
+    timeout_s: float = 0.8,
+) -> dict:
+    """Solve crops that are already extracted, each one cold.
+
+    Every frame is {"dx", "width", "height", "stars": [{"x", "y"}, ...]} with
+    the stars brightest first. No field, distortion, or match is carried from
+    one frame to the next.
+    """
+    if fov_long <= 0 or full_width < 2 or full_height < 2:
+        return {"ok": False, "reason": "The long-side field is missing."}
+    load_tetra()
+    full_long = max(full_width, full_height)
+    focal = (full_long / 2) / math.tan(fov_long * math.pi / 360)
+    out = []
+    for frame in frames:
+        dx = int(frame.get("dx") or 0)
+        width = float(frame["width"])
+        height = float(frame["height"])
+        stars = frame.get("stars") or []
+        if len(stars) < 4:
+            out.append({"ok": False, "dx": dx, "ms": 0.0, "reason": "Fewer than 4 stars in the crop."})
+            continue
+        crop_long = max(width, height)
+        crop_field = 2 * math.atan((crop_long / 2) / focal) * 180 / math.pi
+        fov_horizontal = crop_field * width / crop_long
+        ranked = [
+            {"index": index, "x": float(star["x"]), "y": float(star["y"])}
+            for index, star in enumerate(stars)
+        ]
+        centroids = np.array([[item["y"], item["x"]] for item in ranked], dtype=np.float64)
+        started = time.perf_counter()
+        solution = solve_centroids(
+            centroids, (height, width), fov_horizontal, pattern_stars, timeout_s
+        )
+        solve_ms = (time.perf_counter() - started) * 1000.0
+        if solution is None or solution.get("RA") is None:
+            reason = (
+                "Tetra stopped at the time limit before a pattern matched."
+                if solution is not None and solution.get("timed_out")
+                else "Tetra found no pattern in these clicks."
+            )
+            out.append({"ok": False, "dx": dx, "ms": solve_ms, "reason": reason})
+            continue
+        packed = pack_solution(solution, ranked)
+        packed["dx"] = dx
+        packed["ms"] = solve_ms
+        out.append(packed)
+    solved = sum(1 for frame in out if frame.get("ok"))
+    return {"ok": True, "solved": solved, "missed": len(out) - solved, "frames": out}
 
 
 def solve_sidecar(path: Path, pattern_stars: int = 12, timeout_s: float = 10.0) -> dict:
@@ -132,54 +189,88 @@ def aperture_flux(gray, x: float, y: float, radius: int = 8) -> float:
     return float(patch.sum() - np.median(patch) * patch.size)
 
 
+# Eight stars is Tetra's own fast search: 70 patterns, and it returns on the first match.
+_FAST_STARS = 8
+_SOLVER = None
+
+
 def solve_centroids(
-    centroids, size, fov_horizontal: float, pattern_stars: int = 12, timeout_s: float = 10.0
+    centroids,
+    size,
+    fov_horizontal: float,
+    pattern_stars: int = 8,
+    timeout_s: float = 0.4,
+    distortion=None,
+    fov_max_error: float = 20,
+    locked: bool = False,
 ):
     t3 = load_tetra()
-    attempts = (
-        {"distortion": (-0.25, 0.05), "fov_max_error": 12},
-        {"distortion": None, "fov_max_error": 15},
-    )
-    best = None
-    checking = min(max(4, min(pattern_stars, 30)), len(centroids))
-    budget = min(30.0, max(1.0, float(timeout_s)))
-    deadline = time.perf_counter() + budget
-    for attempt in attempts:
-        remaining_ms = (deadline - time.perf_counter()) * 1000
-        if remaining_ms < 50:
-            break
-        solution = t3.solve_from_centroids(
-            centroids,
-            size,
-            fov_estimate=fov_horizontal,
-            fov_max_error=attempt["fov_max_error"],
-            pattern_checking_stars=checking,
-            match_radius=0.02,
-            distortion=attempt["distortion"],
-            solve_timeout=remaining_ms,
-            return_matches=True,
+    checking = min(_FAST_STARS, max(4, int(pattern_stars)), len(centroids))
+    # A scalar distortion keeps each pattern to one hash. A range multiplies them.
+    # The second guess is a phone lens, used only when the first pass misses.
+    # A few percent of distortion widens the hash enough for a phone lens.
+    # One scalar misses this frame; a wide range spends more than a second.
+    # A locked frame already knows the lens, so one scalar is enough.
+    if distortion is None:
+        passes = (
+            {"distortion": (-0.05, 0.05), "share": 1.0},
         )
-        if solution.get("RA") is None:
-            continue
-        if best is None or (solution["Matches"], -solution["RMSE"]) > (
-            best["Matches"],
-            -best["RMSE"],
-        ):
+    else:
+        passes = ({"distortion": distortion, "share": 1.0},)
+    # The field box is the long side. A value near the horizontal field
+    # projects the stars at the wrong scale, so the catalog field is tried too.
+    estimates = [fov_horizontal]
+    if not locked and abs(fov_horizontal - MAX_FOV_DEG) > 5:
+        estimates.append(MAX_FOV_DEG)
+    budget = float(timeout_s) if locked else min(0.8, max(0.25, float(timeout_s)))
+    deadline = time.perf_counter() + budget
+    best = None
+    slice_budget = budget / len(estimates)
+    floor_ms = 8 if locked else 40
+    for estimate in estimates:
+        for attempt in passes:
+            remaining_ms = (deadline - time.perf_counter()) * 1000
+            slice_ms = min(remaining_ms, slice_budget * attempt["share"] * 1000)
+            if slice_ms < floor_ms:
+                break
+            solution = t3.solve_from_centroids(
+                centroids,
+                size,
+                fov_estimate=estimate,
+                fov_max_error=fov_max_error,
+                pattern_checking_stars=checking,
+                match_radius=0.03,
+                distortion=attempt["distortion"],
+                solve_timeout=slice_ms,
+                return_matches=True,
+            )
+            if solution.get("RA") is None:
+                continue
             best = solution
-        if solution["Matches"] >= 8 and solution["RMSE"] < 300:
             break
-    if best is None and time.perf_counter() >= deadline - 0.05:
-        return {"RA": None, "timed_out": True}
+        if best is not None:
+            break
+    if best is None:
+        return {
+            "RA": None,
+            "timed_out": time.perf_counter() >= deadline - 0.03,
+        }
     return best
 
 
 def load_tetra():
+    global _SOLVER
+    if _SOLVER is not None:
+        return _SOLVER
     path = DATABASE
-    ensure_database(path, 40)
+    ensure_database(path, 30)
     from tetra3 import Tetra3
 
     solver = Tetra3(path)
+    import scipy.stats  # noqa: F401 — first solve would otherwise pay this import
+
     logging.getLogger("tetra3.Tetra3").setLevel(logging.ERROR)
+    _SOLVER = solver
     return solver
 
 
@@ -197,24 +288,27 @@ def ensure_database(path: Path, verification: int) -> None:
     from tetra3 import Tetra3
 
     print(
-        f"Building the Tetra catalog for a 90° field, {verification} verification stars…",
+        f"Building the Tetra catalog for a {MAX_FOV_DEG:.0f}° field, {verification} verification stars…",
         file=sys.stderr,
     )
     solver = Tetra3(load_database=None)
     logging.getLogger("tetra3.Tetra3").setLevel(logging.INFO)
-    temporary = path.with_name(path.name + ".building")
+    # Tetra replaces the suffix with .npz, so the temporary name has one suffix.
+    temporary = path.with_name(path.stem + "-building")
     solver.generate_database(
         max_fov=MAX_FOV_DEG,
         star_catalog="bsc5",
         star_max_magnitude=STAR_MAX_MAG,
-        pattern_stars_per_fov=12,
+        pattern_stars_per_fov=10,
         verification_stars_per_fov=verification,
+        save_largest_edge=True,
         save_as=temporary,
     )
+    written = temporary.with_suffix(".npz")
     if path.exists():
-        temporary.unlink(missing_ok=True)
+        written.unlink(missing_ok=True)
         return
-    temporary.replace(path)
+    written.replace(path)
 
 
 def pack_solution(solution: dict, ranked: list[dict]) -> dict:

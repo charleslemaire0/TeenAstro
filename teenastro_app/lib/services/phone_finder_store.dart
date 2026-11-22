@@ -1,6 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'phone_finder.dart';
 
+/// Plate solver used on the camera frame.
+enum PhoneSolver { tetra, stellar }
+
 /// Cones and frame size kept on the phone. No efinder is involved.
 class PhoneFinderStore {
   static const _hz = 'phone_finder_hz_rad';
@@ -8,6 +11,19 @@ class PhoneFinderStore {
   static const _fov = 'phone_finder_fov_deg';
   static const _auto = 'phone_finder_auto_sync';
   static const _limit = 'phone_finder_recenter_arcmin';
+  static const _solver = 'phone_finder_solver';
+
+  Future<PhoneSolver> loadSolver() async {
+    final p = await SharedPreferences.getInstance();
+    return p.getString(_solver) == PhoneSolver.stellar.name
+        ? PhoneSolver.stellar
+        : PhoneSolver.tetra;
+  }
+
+  Future<void> saveSolver(PhoneSolver solver) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_solver, solver.name);
+  }
 
   Future<FinderCones> loadCones() async {
     final p = await SharedPreferences.getInstance();

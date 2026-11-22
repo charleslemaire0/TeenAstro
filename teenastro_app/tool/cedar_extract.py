@@ -65,24 +65,20 @@ def load_gray(photo: Path, width: int, height: int):
     return image.convert("L")
 
 
-def main() -> int:
-    if len(sys.argv) != 5:
-        fail("Cedar needs the photo, sigma, binning, and a star limit.")
-        return 2
-    sidecar = Path(sys.argv[1])
-    sigma = float(sys.argv[2])
-    binning = int(sys.argv[3])
-    limit = int(sys.argv[4])
+def extract_sidecar(sidecar: Path, sigma: float, binning: int, limit: int) -> dict:
+    """Centroids for one photo. Cedar stays running between calls."""
     if binning not in (1, 2, 4):
-        fail("Cedar binning is 1, 2, or 4.")
-        return 2
+        return {"ok": False, "reason": "Cedar binning is 1, 2, or 4."}
     try:
-        side = json.loads(sidecar.read_text(encoding="utf-8"))
+        side = json.loads(Path(sidecar).read_text(encoding="utf-8"))
         photo = Path(side["photo"])
         gray = load_gray(photo, int(side["width"]), int(side["height"]))
     except Exception as error:
-        fail(str(error))
-        return 1
+        return {"ok": False, "reason": str(error)}
+    return _extract_gray(gray, sigma, binning, limit)
+
+
+def _extract_gray(gray, sigma: float, binning: int, limit: int) -> dict:
 
     try:
         import grpc
@@ -90,8 +86,7 @@ def main() -> int:
         import cedar_detect_pb2
         import cedar_detect_pb2_grpc
     except ImportError as error:
-        fail(f"Cedar's client is not installed ({error}).")
-        return 1
+        return {"ok": False, "reason": f"Cedar's client is not installed ({error})."}
 
     request = cedar_detect_pb2.CentroidsRequest(
         input_image=cedar_detect_pb2.Image(
@@ -111,8 +106,7 @@ def main() -> int:
         ("grpc.max_receive_message_length", 64 * 1024 * 1024),
     ]
     if not _cedar_ready(grpc, options, 0.4) and not _start_cedar(grpc, options):
-        fail("Cedar is not running on localhost port 50051.")
-        return 1
+        return {"ok": False, "reason": "Cedar is not running on localhost port 50051."}
     try:
         with grpc.insecure_channel("localhost:50051", options=options) as channel:
             grpc.channel_ready_future(channel).result(timeout=5)
@@ -120,8 +114,7 @@ def main() -> int:
             result = stub.ExtractCentroids(request, timeout=60)
     except grpc.RpcError as error:
         detail = error.details() or error.code().name
-        fail(f"Cedar refused the photo ({detail}).")
-        return 1
+        return {"ok": False, "reason": f"Cedar refused the photo ({detail})."}
 
     stars = []
     for star in result.star_candidates:
@@ -131,18 +124,30 @@ def main() -> int:
         stars.append({"x": pos.x, "y": pos.y, "brightness": star.brightness})
         if len(stars) >= limit:
             break
-    json.dump(
-        {
-            "ok": True,
-            "count": len(stars),
-            "found": len(result.star_candidates),
-            "noise": result.noise_estimate,
-            "stars": stars,
-        },
-        sys.stdout,
-    )
+    return {
+        "ok": True,
+        "count": len(stars),
+        "found": len(result.star_candidates),
+        "noise": result.noise_estimate,
+        "stars": stars,
+    }
+
+
+def main() -> int:
+    if len(sys.argv) != 5:
+        fail("Cedar needs the photo, sigma, binning, and a star limit.")
+        return 2
+    try:
+        sigma = float(sys.argv[2])
+        binning = int(sys.argv[3])
+        limit = int(sys.argv[4])
+    except ValueError:
+        fail("Cedar's sigma, binning, or star limit is not a number.")
+        return 2
+    payload = extract_sidecar(Path(sys.argv[1]), sigma, binning, limit)
+    json.dump(payload, sys.stdout)
     sys.stdout.write("\n")
-    return 0
+    return 0 if payload.get("ok") else 1
 
 
 if __name__ == "__main__":

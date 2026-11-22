@@ -400,6 +400,112 @@ def _pack_solution(stars, solution) -> dict:
     }
 
 
+def solve_image(
+    image: Path,
+    index: Path,
+    low: float,
+    high: float,
+    downsample: int,
+    seconds: int,
+) -> dict:
+    """One plate, through stellarsolver-json. The caller owns the file."""
+    exe = find_exe()
+    if exe is None:
+        return {"ok": False, "reason": "stellarsolver-json is not next to the star picker."}
+    started = time.perf_counter()
+    try:
+        result = subprocess.run(
+            [str(exe), str(image), str(index), str(low), str(high), str(downsample), str(seconds)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=seconds + 30,
+        )
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "reason": "StellarSolver stopped at the time limit."}
+    except OSError as exc:
+        return {"ok": False, "reason": f"StellarSolver could not be started ({exc})."}
+    payload = parse_json(result.stdout or "")
+    if payload is None:
+        detail = (result.stderr or result.stdout or "").strip()
+        return {
+            "ok": False,
+            "reason": "StellarSolver did not return a solution."
+            if not detail
+            else f"StellarSolver did not return a solution. {detail}",
+        }
+    if payload.get("ok") is True and payload.get("ms") is None:
+        payload["ms"] = (time.perf_counter() - started) * 1000.0
+    return payload
+
+
+def solve_sweep(
+    photo: Path,
+    fov_long: float,
+    shift: int,
+    index: Path,
+    scale: float = 0.18,
+    downsample: int = 2,
+    seconds: int = 23,
+    orient: bool = True,
+) -> dict:
+    """Solve a 10% crop slide as one job.
+
+    The picture is cropped once per pixel and handed to StellarSolver.
+    Scale is the image width of that crop, plus or minus ``scale``.
+    """
+    from PIL import Image, ImageOps
+
+    if fov_long <= 0:
+        return {"ok": False, "reason": "The long-side field is missing."}
+    shift = int(shift)
+    if not photo.is_file():
+        return {"ok": False, "reason": "The photo is not there."}
+    if not index.is_dir():
+        return {"ok": False, "reason": "The index folder is not there."}
+    image = Image.open(photo)
+    if orient:
+        image = ImageOps.exif_transpose(image)
+    image = image.convert("RGB")
+    width, height = image.size
+    crop_w = width - shift
+    if crop_w < 32 or shift < 1:
+        return {"ok": False, "reason": "The photo is too small to slide a crop."}
+    width_deg = fov_long * crop_w / max(crop_w, height)
+    low = width_deg * (1 - scale)
+    high = width_deg * (1 + scale)
+    if low <= 0 or high <= low:
+        return {"ok": False, "reason": "The scale range is not usable."}
+    temp = Path(os.environ.get("TEMP", ".")) / "teenastro-stellar-sweep.jpg"
+    frames = []
+    for dx in range(shift + 1):
+        image.crop((dx, 0, dx + crop_w, height)).save(temp, quality=90)
+        payload = solve_image(temp, index, low, high, downsample, seconds)
+        payload["dx"] = dx
+        # The window only needs the plate. Star lists would be tens of megabytes.
+        payload.pop("stars", None)
+        frames.append(payload)
+        if dx % 20 == 0:
+            print(
+                f"stellar dx {dx} ms {payload.get('ms')} ok {payload.get('ok')}",
+                file=sys.stderr,
+                flush=True,
+            )
+    try:
+        temp.unlink()
+    except OSError:
+        pass
+    solved = sum(1 for frame in frames if frame.get("ok"))
+    return {
+        "ok": True,
+        "solved": solved,
+        "missed": len(frames) - solved,
+        "width_deg": width_deg,
+        "frames": frames,
+    }
+
+
 def find_exe() -> Path | None:
     env = os.environ.get("STELLARSOLVER_JSON", "").strip()
     if env and Path(env).is_file():

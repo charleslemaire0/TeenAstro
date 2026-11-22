@@ -1,0 +1,23 @@
+[package]
+name = "cedar_native"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# src/cedar is CedarDetect by Steven Rosenthal, commit 2f403b8 of
+# https://github.com/smroid/cedar-detect, under src/cedar/LICENSE.md.
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+image = { version = "0.25.6", default-features = false, features = ["jpeg", "png"] }
+imageproc = { version = "0.27.0", default-features = false }
+log = "0.4.19"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "unwind"

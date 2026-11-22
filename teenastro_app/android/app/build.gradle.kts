@@ -69,6 +69,14 @@ android {
             isShrinkResources = true
         }
     }
+
+    // libtetra.so, the C++ Tetra solver loaded through dart:ffi.
+    externalNativeBuild {
+        cmake {
+            path = file("../../native/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
 }
 
 flutter {

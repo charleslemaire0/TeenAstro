@@ -120,6 +120,9 @@ int main(int argc, char *argv[]) {
     object.insert(QStringLiteral("ra_deg"), solution.ra);
     object.insert(QStringLiteral("dec_deg"), solution.dec);
     object.insert(QStringLiteral("roll_deg"), solution.orientation);
+    // fieldWidth and fieldHeight are arcminutes, measured through the middle.
+    object.insert(QStringLiteral("fov_width_deg"), solution.fieldWidth / 60.0);
+    object.insert(QStringLiteral("fov_height_deg"), solution.fieldHeight / 60.0);
     object.insert(QStringLiteral("ms"), elapsed_ms);
     object.insert(QStringLiteral("epoch_equinox"), 2000);
     object.insert(QStringLiteral("stars"), stars);

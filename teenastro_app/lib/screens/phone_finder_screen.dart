@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -18,6 +19,7 @@ import 'package:teenastro_app/services/mount_state_provider.dart';
 import 'package:teenastro_app/services/phone_finder.dart';
 import 'package:teenastro_app/services/phone_finder_store.dart';
 import 'package:teenastro_app/services/stellar_solver.dart';
+import 'package:teenastro_app/services/tetra_solver.dart';
 import 'package:teenastro_app/theme.dart';
 
 /// Plate solve from the phone camera. The hardware efinder is not used.
@@ -43,6 +45,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   String? _cameraError;
   bool _fovMeasured = false;
   List<StellarIndex>? _indexes;
+  PhoneSolver _solver = PhoneSolver.tetra;
+  TetraSolver? _tetra;
   String? _cameraId;
   int? _shutterUs;
   int? _iso;
@@ -61,12 +65,14 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final fov = await _store.loadFov();
     final auto = await _store.loadAutoSync();
     final limit = await _store.loadRecenterArcmin();
+    final solver = await _store.loadSolver();
     if (!mounted) return;
     setState(() {
       _cones = cones;
       _fov = fov;
       _auto = auto;
       _limitArcmin = limit;
+      _solver = solver;
     });
     if (_hasCamera) await _openCamera();
   }
@@ -129,6 +135,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   void dispose() {
     _stopAlign = true;
     _cam?.dispose();
+    _tetra?.close();
     super.dispose();
   }
 
@@ -302,6 +309,52 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     }
   }
 
+  /// The C++ Tetra catalog, copied once from the app assets.
+  Future<TetraSolver?> _loadTetra() async {
+    final cached = _tetra;
+    if (cached != null) return cached;
+    try {
+      final data = await rootBundle.load('assets/tetra/phone55.tetra');
+      final bytes =
+          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      final opened = await Isolate.run(() {
+        final tetra = TetraSolver.openBytes(bytes);
+        return tetra == null ? null : (tetra.address, tetra.maxFovDeg);
+      });
+      if (opened == null) return null;
+      final tetra = TetraSolver.attach(opened.$1, opened.$2);
+      if (!mounted) {
+        tetra.close();
+        return null;
+      }
+      _tetra = tetra;
+      return tetra;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Lost-in-space solve of the frame's stars. The result is J2000.
+  Future<FinderSolution?> _solveTetra(TetraSolver tetra, StarFrame frame) {
+    final address = tetra.address;
+    final catalogFov = tetra.maxFovDeg;
+    final stars = [for (final s in frame.stars) (x: s.x, y: s.y)];
+    final width = frame.width;
+    final height = frame.height;
+    final longSide = math.max(width, height);
+    final focal = (longSide / 2) / math.tan(_fov * math.pi / 360);
+    final fovHorizontal = 2 * math.atan((width / 2) / focal) * 180 / math.pi;
+    return Isolate.run(() {
+      final result = TetraSolver.attach(address, catalogFov).solve(
+        stars: stars,
+        width: width,
+        height: height,
+        fovHorizontalDeg: fovHorizontal,
+      );
+      return result.solved ? result.toFinderSolution() : null;
+    });
+  }
+
   Future<FinderSolution?> _solve() async {
     final cam = _cam;
     if (cam == null || !cam.value.isInitialized) {
@@ -313,8 +366,13 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       _status = 'Capturing…';
     });
     try {
-      final indexes = await _loadIndexes();
-      if (indexes == null) {
+      final tetra = _solver == PhoneSolver.tetra ? await _loadTetra() : null;
+      final indexes = _solver == PhoneSolver.stellar ? await _loadIndexes() : null;
+      if (_solver == PhoneSolver.tetra && tetra == null) {
+        setState(() => _status = 'The Tetra catalog is not in the app');
+        return null;
+      }
+      if (_solver == PhoneSolver.stellar && indexes == null) {
         setState(
             () => _status = 'The StellarSolver indexes are not in the app');
         return null;
@@ -329,31 +387,43 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
             : 'Not enough stars (${frame.stars.length})$exposure');
         return null;
       }
-      if (mounted) setState(() => _status = 'StellarSolver…');
-      await Future<void>.delayed(Duration.zero);
-      final pointing = _mountPointing();
-      final hint = pointing == null
-          ? null
-          : equatorialJNowToEquinox(
-              pointing.$1,
-              pointing.$2,
-              2000,
-              julianDate(DateTime.now().toUtc()),
-            );
-      final outcome = solveStellarField(
-        stars: frame.stars,
-        indexes: indexes,
-        width: frame.width,
-        height: frame.height,
-        longSideDeg: _fov,
-        hintRaH: hint?.$1,
-        hintDecD: hint?.$2,
-      );
-      final solved = outcome.solution;
-      if (solved == null) {
-        setState(() => _status =
-            outcome.reason ?? 'StellarSolver found no match in this photo');
-        return null;
+      final FinderSolution? solved;
+      if (tetra != null) {
+        if (mounted) setState(() => _status = 'Tetra…');
+        solved = await _solveTetra(tetra, frame);
+        if (solved == null) {
+          if (mounted) {
+            setState(() => _status = 'Tetra found no match in this photo');
+          }
+          return null;
+        }
+      } else {
+        if (mounted) setState(() => _status = 'StellarSolver…');
+        await Future<void>.delayed(Duration.zero);
+        final pointing = _mountPointing();
+        final hint = pointing == null
+            ? null
+            : equatorialJNowToEquinox(
+                pointing.$1,
+                pointing.$2,
+                2000,
+                julianDate(DateTime.now().toUtc()),
+              );
+        final outcome = solveStellarField(
+          stars: frame.stars,
+          indexes: indexes!,
+          width: frame.width,
+          height: frame.height,
+          longSideDeg: _fov,
+          hintRaH: hint?.$1,
+          hintDecD: hint?.$2,
+        );
+        solved = outcome.solution;
+        if (solved == null) {
+          setState(() => _status =
+              outcome.reason ?? 'StellarSolver found no match in this photo');
+          return null;
+        }
       }
       final now = equatorialEquinoxToJNow(
         solved.raH,
@@ -859,6 +929,35 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Row(
+                  children: [
+                    Text('Solver',
+                        style:
+                            TextStyle(color: TA.textSecondary, fontSize: 12)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SegmentedButton<PhoneSolver>(
+                        segments: const [
+                          ButtonSegment(
+                              value: PhoneSolver.tetra, label: Text('Tetra')),
+                          ButtonSegment(
+                              value: PhoneSolver.stellar,
+                              label: Text('StellarSolver')),
+                        ],
+                        selected: {_solver},
+                        showSelectedIcon: false,
+                        onSelectionChanged: _busy
+                            ? null
+                            : (picked) {
+                                final solver = picked.first;
+                                setState(() => _solver = solver);
+                                _store.saveSolver(solver);
+                              },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 if (_fovMeasured)
                   Text(
                     'Field ${_fov.round()}°',

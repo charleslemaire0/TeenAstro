@@ -1,7 +1,9 @@
-// Cedar finds the stars for Tetra. StellarSolver solves the photo itself.
+// Cedar finds the stars for Tetra, both native. StellarSolver solves the photo itself.
 //   flutter run -d windows -t tool/star_pick.dart
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -12,6 +14,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:teenastro_app/models/equinox_precession.dart';
 import 'package:teenastro_app/models/planet_positions.dart';
 import 'package:teenastro_app/services/phone_finder.dart';
+import 'package:teenastro_app/services/tetra_solver.dart';
+
+import 'cedar_native.dart';
+import 'field_size.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +74,7 @@ class _StarPickPageState extends State<StarPickPage> {
   List<String> _identifyNames = const [];
   List<double> _identifyMags = const [];
   String? _photoPath;
+  CedarPhoto? _cedar;
   Uint8List? _jpeg;
   img.Image? _source;
   double _imageW = 0;
@@ -77,14 +84,24 @@ class _StarPickPageState extends State<StarPickPage> {
   double _cedarSigma = 8;
   int _cedarBinning = 2;
   int _cedarMax = 80;
-  int _tetraPattern = 12;
-  int _tetraSeconds = 10;
+  int _tetraPattern = 8;
+  int _tetraMs = 400;
+  TetraSolver? _tetra;
   _Solver _solver = _Solver.tetra;
   String _stellarIndex = '';
   double _stellarScale = 0.20;
   int _stellarDownsample = 2;
   int _stellarSeconds = 30;
   bool _extracting = false;
+  bool _sweep = false;
+  double _originX = 0;
+  double _originY = 0;
+  double _frameW = 0;
+  double _frameH = 0;
+
+  double get _plateW => _frameW >= 2 ? _frameW : _imageW;
+
+  double get _plateH => _frameH >= 2 ? _frameH : _imageH;
   final _log = <String>[
     'Open a photo, then press Solve. Tetra uses Cedar. StellarSolver reads the photo itself.',
   ];
@@ -96,10 +113,13 @@ class _StarPickPageState extends State<StarPickPage> {
     _fov.addListener(_saveStars);
     _loadCatalog();
     _loadSettings();
+    _openTetra();
   }
 
   @override
   void dispose() {
+    _tetra?.close();
+    _cedar?.close();
     _fov.dispose();
     _view.dispose();
     _logScroll.dispose();
@@ -142,9 +162,25 @@ class _StarPickPageState extends State<StarPickPage> {
     if (picked == null) return;
     _say('Reading the photo…');
     setState(() => _busy = true);
+    final previous = _cedar;
+    _cedar = null;
+    previous?.close();
+    final cedarOpening = _openCedar(picked);
     final bytes = await File(picked).readAsBytes();
     final oriented = await compute(_orientPhoto, bytes);
-    if (!mounted) return;
+    final cedar = await cedarOpening;
+    if (!mounted) {
+      cedar?.close();
+      return;
+    }
+    if (cedar != null &&
+        oriented != null &&
+        (cedar.width != oriented.width || cedar.height != oriented.height)) {
+      cedar.close();
+      _cedar = null;
+    } else {
+      _cedar = cedar;
+    }
     if (oriented == null) {
       setState(() => _busy = false);
       _say('The picture could not be read.');
@@ -157,6 +193,11 @@ class _StarPickPageState extends State<StarPickPage> {
       _imageW = oriented.width.toDouble();
       _imageH = oriented.height.toDouble();
       _placed.clear();
+      _originX = 0;
+      _originY = 0;
+      _frameW = 0;
+      _frameH = 0;
+      _sweep = false;
       _view.value = Matrix4.identity();
       _busy = false;
     });
@@ -170,6 +211,17 @@ class _StarPickPageState extends State<StarPickPage> {
     _fov.text = fov.toStringAsFixed(1);
     _say(oriented.cameraNote ??
         'Long side ${fov.toStringAsFixed(1)}° from the camera.');
+  }
+
+  /// Cedar decodes its own gray copy, off the window's thread.
+  Future<CedarPhoto?> _openCedar(String path) async {
+    if (!CedarPhoto.available) return null;
+    final opened = await Isolate.run(() {
+      final photo = CedarPhoto.open(path);
+      return photo == null ? null : (photo.address, photo.width, photo.height);
+    });
+    if (opened == null) return null;
+    return CedarPhoto.attach(opened.$1, opened.$2, opened.$3);
   }
 
   void _loadStars(String photoPath) {
@@ -298,8 +350,10 @@ class _StarPickPageState extends State<StarPickPage> {
         _cedarBinning = binning!;
       }
       if (maxStars != null) _cedarMax = maxStars.clamp(20, 100);
-      if (pattern != null) _tetraPattern = pattern.clamp(4, 30);
-      if (seconds != null) _tetraSeconds = seconds.clamp(1, 30);
+      if (pattern != null) _tetraPattern = pattern.clamp(4, 8);
+      if (seconds != null && seconds > 30) {
+        _tetraMs = seconds.clamp(200, 800);
+      }
       if (which == 'stellar') _solver = _Solver.stellar;
       if (stellarIndex != null) _stellarIndex = stellarIndex;
       if (stellarScale != null) {
@@ -322,7 +376,7 @@ class _StarPickPageState extends State<StarPickPage> {
   Future<void> _storeTetra() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_tetraPatternPref, _tetraPattern);
-    await prefs.setInt(_tetraSecondsPref, _tetraSeconds);
+    await prefs.setInt(_tetraSecondsPref, _tetraMs);
   }
 
   Future<void> _storeCedar() async {
@@ -435,9 +489,9 @@ class _StarPickPageState extends State<StarPickPage> {
                         ),
                         Slider(
                           min: 4,
-                          max: 30,
-                          divisions: 26,
-                          value: _tetraPattern.clamp(4, 30).toDouble(),
+                          max: 8,
+                          divisions: 4,
+                          value: _tetraPattern.clamp(4, 8).toDouble(),
                           label: '$_tetraPattern',
                           onChanged: (value) {
                             setDialog(() => _tetraPattern = value.round());
@@ -445,28 +499,28 @@ class _StarPickPageState extends State<StarPickPage> {
                           },
                         ),
                         const Text(
-                          'Tetra builds its pattern from this many of the brightest detections. A higher number tries more combinations.',
+                          'Tetra tries every set of four among these brightest stars. Eight is its fast search, seventy patterns, and it stops at the first match.',
                           style:
                               TextStyle(color: Color(0xFF8B949E), fontSize: 12),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Solve time $_tetraSeconds s',
+                          'Solve time ${(_tetraMs / 1000).toStringAsFixed(1)} s',
                           style: const TextStyle(color: Color(0xFFF0F6FC)),
                         ),
                         Slider(
-                          min: 1,
-                          max: 30,
-                          divisions: 29,
-                          value: _tetraSeconds.clamp(1, 30).toDouble(),
-                          label: '$_tetraSeconds s',
+                          min: 200,
+                          max: 800,
+                          divisions: 6,
+                          value: _tetraMs.clamp(200, 800).toDouble(),
+                          label: '${(_tetraMs / 1000).toStringAsFixed(1)} s',
                           onChanged: (value) {
-                            setDialog(() => _tetraSeconds = value.round());
+                            setDialog(() => _tetraMs = value.round());
                             _storeTetra();
                           },
                         ),
                         const Text(
-                          'Tetra stops searching when this time is up. A pattern found earlier is kept.',
+                          'Tetra gives up when this time is up. A match returns immediately.',
                           style:
                               TextStyle(color: Color(0xFF8B949E), fontSize: 12),
                         ),
@@ -683,13 +737,14 @@ class _StarPickPageState extends State<StarPickPage> {
     _scrollLog();
   }
 
-  /// Center, roll, residual, and solve time, in the same shape for both solvers.
+  /// Center, roll, field, residual, and solve time, in the same shape for both solvers.
   String _solutionTail({
     required double? raDeg,
     required double? decDeg,
     required int epoch,
     required double jd,
     required double? rollDeg,
+    required double? fieldDeg,
     required double? rmseArcsec,
     required double? elapsedMs,
   }) {
@@ -697,12 +752,61 @@ class _StarPickPageState extends State<StarPickPage> {
     final now = equatorialEquinoxToJNow(raDeg / 15.0, decDeg, epoch, jd);
     final rollText =
         rollDeg == null ? '' : ', roll ${rollDeg.toStringAsFixed(1)}°';
+    final fieldText =
+        fieldDeg == null ? '' : ', long side ${fieldDeg.toStringAsFixed(1)}°';
     final residual = rmseArcsec == null
         ? ''
         : ', residual ${(rmseArcsec / 60).toStringAsFixed(1)}\'';
     final timeText =
         elapsedMs == null ? '' : ', ${elapsedMs.toStringAsFixed(0)} ms';
-    return ' Center ${_clockHours(now.$1)}, ${_signedDegrees(now.$2)}$rollText$residual$timeText.';
+    return ' Center ${_clockHours(now.$1)}, ${_signedDegrees(now.$2)}$rollText$fieldText$residual$timeText.';
+  }
+
+  /// Longer side of a solved plate. StellarSolver's own width and height win.
+  /// Otherwise the matched stars determine the scale.
+  double? _solvedLongSide(Map<String, dynamic> payload) {
+    final widthDeg = (payload['fov_width_deg'] as num?)?.toDouble();
+    final heightDeg = (payload['fov_height_deg'] as num?)?.toDouble();
+    if (widthDeg != null &&
+        heightDeg != null &&
+        widthDeg > 0 &&
+        heightDeg > 0) {
+      return math.max(widthDeg, heightDeg);
+    }
+    final horizontal = (payload['fov_deg'] as num?)?.toDouble();
+    if (horizontal != null &&
+        horizontal > 0 &&
+        _plateW >= 2 &&
+        _plateH >= 2) {
+      return longSideFromWidthDeg(horizontal, _plateW, _plateH);
+    }
+    final centerRa = (payload['ra_deg'] as num?)?.toDouble();
+    final centerDec = (payload['dec_deg'] as num?)?.toDouble();
+    final rows = payload['stars'];
+    if (centerRa == null ||
+        centerDec == null ||
+        rows is! List ||
+        _plateW < 2 ||
+        _plateH < 2) {
+      return null;
+    }
+    final stars = <SkyPixel>[];
+    for (final item in rows) {
+      if (item is! Map) continue;
+      final x = (item['x'] as num?)?.toDouble();
+      final y = (item['y'] as num?)?.toDouble();
+      final ra = (item['ra_deg'] as num?)?.toDouble();
+      final dec = (item['dec_deg'] as num?)?.toDouble();
+      if (x == null || y == null || ra == null || dec == null) continue;
+      stars.add(SkyPixel(x, y, ra, dec));
+    }
+    return longSideFieldDeg(
+      centerRaDeg: centerRa,
+      centerDecDeg: centerDec,
+      width: _plateW,
+      height: _plateH,
+      stars: stars,
+    );
   }
 
   void _scrollLog() {
@@ -712,54 +816,40 @@ class _StarPickPageState extends State<StarPickPage> {
     });
   }
 
-  /// Tetra solves the Cedar marks and names the stars it matched.
-  Future<void> _identifyWithTetra() async {
-    final photo = _photoPath;
-    if (photo == null) return;
-    final script = File('tool/tetra_solve.py');
-    if (!script.existsSync()) {
-      _say('Tetra is not next to the star picker.');
-      return;
-    }
-    ProcessResult result;
+  /// The C++ Tetra catalog, read once off the window's thread.
+  Future<void> _openTetra() async {
+    const path = 'assets/tetra/phone55.tetra';
     try {
-      result = await Process.run(
-        'python',
-        [
-          script.absolute.path,
-          _starsPath(photo),
-          '$_tetraPattern',
-          '$_tetraSeconds',
-        ],
-        stdoutEncoding: utf8,
-        stderrEncoding: utf8,
-      );
+      final opened = await Isolate.run(() {
+        final tetra = TetraSolver.openFile(path);
+        return tetra == null ? null : (tetra.address, tetra.maxFovDeg);
+      });
+      if (!mounted) return;
+      if (opened == null) {
+        _say('Tetra could not read $path.');
+        return;
+      }
+      _tetra = TetraSolver.attach(opened.$1, opened.$2);
+      _say('Tetra is ready, catalog field ${opened.$2.toStringAsFixed(0)}°.');
     } catch (error) {
-      _say('Tetra could not be started ($error).');
-      return;
+      if (mounted) {
+        _say('tool/tetra/tetra.dll could not be loaded ($error). Run native/build_windows.ps1.');
+      }
     }
-    final raw = (result.stdout as String).trim();
-    Map<String, dynamic> payload;
-    try {
-      payload = jsonDecode(raw) as Map<String, dynamic>;
-    } catch (_) {
-      final err = (result.stderr as String).trim();
-      final detail = err.isEmpty ? raw : err;
-      _say(
-          'Tetra did not return a solution.${detail.isEmpty ? '' : ' $detail'}');
-      return;
-    }
-    if (payload['ok'] != true) {
-      final reason = payload['reason']?.toString() ?? '';
-      _say(
-          'Tetra did not match these clicks${reason.isEmpty ? '' : ' ($reason)'}.');
-      return;
-    }
+  }
+
+  /// Names the marks Tetra matched. The coordinates stay those of [stars].
+  ({List<PlacedStar> stars, String line, int accepted}) _nameTetra(
+    List<PlacedStar> stars,
+    Map<String, dynamic> payload,
+  ) {
     final epoch = (payload['epoch_equinox'] as num?)?.round() ?? 2000;
     final jd = julianDate(DateTime.now().toUtc());
     final rows = payload['stars'];
-    if (rows is! List) return;
-    final next = List<PlacedStar>.from(_placed);
+    final next = List<PlacedStar>.from(stars);
+    if (rows is! List) {
+      return (stars: next, line: '', accepted: 0);
+    }
     final used = <int>{};
     final names = <String>[];
     var accepted = 0;
@@ -835,22 +925,17 @@ class _StarPickPageState extends State<StarPickPage> {
       epoch: epoch,
       jd: jd,
       rollDeg: (payload['roll_deg'] as num?)?.toDouble(),
+      fieldDeg: _solvedLongSide(payload),
       rmseArcsec: (payload['rmse_arcsec'] as num?)?.toDouble(),
       elapsedMs: (payload['ms'] as num?)?.toDouble(),
     );
-    if (accepted < 3) {
-      _say(
-          'Tetra matched ${payload['matches']} stars, and $accepted of them are in the catalog.$center');
-      return;
-    }
-    setState(() => _placed
-      ..clear()
-      ..addAll(next));
-    _saveStars();
     final hidden = fainter == 0
         ? ''
         : ' Magnitude ${_magLimit.toStringAsFixed(1)} left $fainter fainter stars unnamed.';
-    _say('Tetra named ${names.join(', ')}.$center$hidden');
+    final lead = accepted < 3
+        ? 'Tetra matched ${payload['matches']} stars, and $accepted of them are in the catalog.'
+        : 'Tetra named ${names.join(', ')}.';
+    return (stars: next, line: ' $lead$center$hidden', accepted: accepted);
   }
 
   /// StellarSolver extracts the stars itself and names catalog matches.
@@ -1024,6 +1109,7 @@ class _StarPickPageState extends State<StarPickPage> {
       epoch: epoch,
       jd: jd,
       rollDeg: (payload['roll_deg'] as num?)?.toDouble(),
+      fieldDeg: _solvedLongSide(payload),
       rmseArcsec: reported != null && reported > 0 ? reported : computed,
       elapsedMs: (payload['ms'] as num?)?.toDouble(),
     );
@@ -1077,13 +1163,121 @@ class _StarPickPageState extends State<StarPickPage> {
     setState(() {
       _busy = true;
       _extracting = false;
-      _log.add(
-          'Tetra is solving from the $_tetraPattern brightest, limit $_tetraSeconds s…');
+      _sweep = true;
+    });
+    await _sweepCrop(typedFov);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _sweep = false;
+    });
+  }
+
+  /// A 90% crop slides one pixel at a time, up to 10% of the width.
+  /// Every crop is extracted and solved from scratch, as a live frame would be.
+  Future<void> _sweepCrop(double longSideDeg) async {
+    final cedar = _cedar;
+    final shiftMax = (_imageW * 0.10).round();
+    final cropW = _imageW - shiftMax;
+    final cropH = _imageH;
+    if (cedar == null) {
+      _say('Cedar could not read this photo.');
+      return;
+    }
+    if (cropW < 32 || shiftMax < 1) {
+      _say('The photo is too small to slide a crop.');
+      return;
+    }
+    final tetra = _tetra;
+    if (tetra == null) {
+      _say('Tetra is not ready.');
+      return;
+    }
+    final positions = shiftMax + 1;
+    _say(
+      'Cedar and Tetra are solving $positions crops of '
+      '${cropW.round()}×${cropH.round()}, each from scratch.',
+    );
+    final batch = await _solveCrops(
+      cedar,
+      tetra,
+      shiftMax,
+      cropW.round(),
+      cropH.round(),
+      longSideDeg,
+    );
+    if (!_sweep || !mounted) return;
+    final crops = batch.crops;
+    final frames = batch.frames;
+    final extractS = batch.extractMs / 1000;
+    final solveS = batch.solveMs / 1000;
+    final cedarMs = [
+      for (final crop in crops)
+        if (crop != null) crop.ms,
+    ]..sort();
+    final cedarMedian = cedarMs.isEmpty ? 0.0 : cedarMs[cedarMs.length ~/ 2];
+    final tetraMs = [
+      for (final frame in frames)
+        if (frame['ok'] == true) (frame['ms'] as num).toDouble(),
+    ]..sort();
+    final tetraMedian = tetraMs.isEmpty ? 0.0 : tetraMs[tetraMs.length ~/ 2];
+    _say(
+      'Cedar took ${extractS.toStringAsFixed(1)} s and Tetra '
+      '${solveS.toStringAsFixed(1)} s. Playing the slide back.',
+    );
+    var solved = 0;
+    var missed = 0;
+    for (final frame in frames) {
+      if (!_sweep || !mounted) break;
+      final dx = (frame['dx'] as num?)?.toInt() ?? 0;
+      final crop = dx >= 0 && dx < crops.length ? crops[dx] : null;
+      final inside = crop == null ? <PlacedStar>[] : _cedarMarks(crop);
+      setState(() {
+        _originX = dx.toDouble();
+        _originY = 0;
+        _frameW = cropW;
+        _frameH = cropH;
+      });
+      if (frame['ok'] == true) {
+        solved++;
+        final named = _nameTetra(inside, Map<String, dynamic>.from(frame));
+        setState(() => _placed
+          ..clear()
+          ..addAll(named.stars));
+        _slideStatus('Slide $dx/$shiftMax px.${named.line}');
+      } else {
+        missed++;
+        final reason = frame['reason']?.toString() ?? '';
+        setState(() => _placed
+          ..clear()
+          ..addAll(inside));
+        _slideStatus(
+          'Slide $dx/$shiftMax px. No match${reason.isEmpty ? '' : ' ($reason)'}.',
+        );
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+    }
+    if (!mounted) return;
+    final timing = 'Cedar ${extractS.toStringAsFixed(1)} s '
+        '(${cedarMedian.toStringAsFixed(0)} ms per crop), '
+        'C++ Tetra ${solveS.toStringAsFixed(1)} s '
+        '(${tetraMedian.toStringAsFixed(1)} ms median per solve).';
+    _say(
+      _sweep
+          ? 'The crop travelled $shiftMax px. Tetra solved $solved frames and missed $missed. $timing'
+          : 'The slide stopped. Tetra solved $solved frames and missed $missed. $timing',
+    );
+  }
+
+  void _slideStatus(String line) {
+    setState(() {
+      if (_log.isNotEmpty && _log.last.startsWith('Slide ')) {
+        _log[_log.length - 1] = line;
+      } else {
+        _log.add(line);
+      }
     });
     _scrollLog();
-    await _identifyWithTetra();
-    if (!mounted) return;
-    setState(() => _busy = false);
   }
 
   img.Image? _sourceImage() {
@@ -1144,21 +1338,19 @@ class _StarPickPageState extends State<StarPickPage> {
 
   /// Cedar finds the stars. The marks replace whatever was clicked before.
   Future<bool> _extractStars() async {
-    final limit = _cedarMax;
-    final photo = _photoPath;
-    if (photo == null || _jpeg == null) {
+    final cedar = _cedar;
+    if (_photoPath == null || _jpeg == null) {
       _say('Open a photo first.');
       return false;
     }
-    final script = File('tool/cedar_extract.py');
-    if (!script.existsSync()) {
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _extracting = false;
-        });
-      }
-      _say('Cedar is not next to the star picker.');
+    if (cedar == null) {
+      setState(() {
+        _busy = false;
+        _extracting = false;
+      });
+      _say(CedarPhoto.available
+          ? 'Cedar could not read this photo.'
+          : 'tool/cedar/cedar_native.dll is missing. Build tool/cedar_native.');
       return false;
     }
     _saveStars();
@@ -1169,56 +1361,10 @@ class _StarPickPageState extends State<StarPickPage> {
       );
     });
     _scrollLog();
-    ProcessResult result;
-    try {
-      result = await Process.run(
-        'python',
-        [
-          script.absolute.path,
-          _starsPath(photo),
-          _cedarSigma.toString(),
-          '$_cedarBinning',
-          '$limit',
-        ],
-        stdoutEncoding: utf8,
-        stderrEncoding: utf8,
-      );
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _extracting = false;
-        });
-      }
-      _say('Cedar could not be started ($error).');
-      return false;
-    }
+    final crops = await _extractCrops(cedar, const [0], cedar.width, cedar.height);
     if (!mounted) return false;
-    final raw = (result.stdout as String).trim();
-    Map<String, dynamic> payload;
-    try {
-      payload = jsonDecode(raw) as Map<String, dynamic>;
-    } catch (_) {
-      final err = (result.stderr as String).trim();
-      final detail = err.isEmpty ? raw : err;
-      setState(() {
-        _busy = false;
-        _extracting = false;
-      });
-      _say('Cedar did not return stars.${detail.isEmpty ? '' : ' $detail'}');
-      return false;
-    }
-    if (payload['ok'] != true) {
-      setState(() {
-        _busy = false;
-        _extracting = false;
-      });
-      final reason = payload['reason']?.toString() ?? '';
-      _say(reason.isEmpty ? 'Cedar found no stars.' : reason);
-      return false;
-    }
-    final stars = payload['stars'];
-    if (stars is! List || stars.isEmpty) {
+    final crop = crops.first;
+    if (crop == null || crop.stars.isEmpty) {
       setState(() {
         _busy = false;
         _extracting = false;
@@ -1226,40 +1372,148 @@ class _StarPickPageState extends State<StarPickPage> {
       _say('Cedar found no stars.');
       return false;
     }
-    final placed = <PlacedStar>[];
-    for (var i = 0; i < stars.length; i++) {
-      final star = stars[i];
-      if (star is! Map) continue;
-      final x = (star['x'] as num?)?.toDouble();
-      final y = (star['y'] as num?)?.toDouble();
-      if (x == null || y == null) continue;
-      placed.add(PlacedStar(
-        name: '${i + 1}',
-        mag: 0,
-        raH: 0,
-        decD: 0,
-        x: x,
-        y: y,
-        named: false,
-        refined: true,
-      ));
-    }
-    final found = (payload['found'] as num?)?.toInt() ?? placed.length;
-    final noise = (payload['noise'] as num?)?.toDouble();
+    final placed = _cedarMarks(crop);
     setState(() {
       _placed
         ..clear()
         ..addAll(placed);
       _extracting = false;
       _log.add(
-        'Cedar placed ${placed.length} of $found stars'
-        '${noise == null ? '' : ', noise ${noise.toStringAsFixed(1)}'}.',
+        'Cedar placed ${placed.length} of ${crop.found} stars, '
+        'noise ${crop.noise.toStringAsFixed(1)}, ${crop.ms.toStringAsFixed(0)} ms.',
       );
     });
     _saveStars();
     _scrollLog();
     return true;
   }
+
+  /// One Cedar call per crop origin, on another isolate so the window keeps drawing.
+  Future<List<CedarCrop?>> _extractCrops(
+    CedarPhoto cedar,
+    List<int> origins,
+    int cropW,
+    int cropH,
+  ) {
+    final address = cedar.address;
+    final width = cedar.width;
+    final height = cedar.height;
+    final sigma = _cedarSigma;
+    final binning = _cedarBinning;
+    final limit = _cedarMax;
+    return Isolate.run(() {
+      final photo = CedarPhoto.attach(address, width, height);
+      return [
+        for (final dx in origins)
+          photo.extract(
+            x0: dx,
+            y0: 0,
+            cropWidth: cropW,
+            cropHeight: cropH,
+            sigma: sigma,
+            binning: binning,
+            maxStars: limit,
+          ),
+      ];
+    });
+  }
+
+  /// Every crop extracted then solved cold, on another isolate. Frames carry
+  /// the payload [_nameTetra] reads, plus dx, ok, ms and reason.
+  Future<
+      ({
+        List<CedarCrop?> crops,
+        List<Map<String, dynamic>> frames,
+        double extractMs,
+        double solveMs,
+      })> _solveCrops(
+    CedarPhoto cedar,
+    TetraSolver tetra,
+    int shiftMax,
+    int cropW,
+    int cropH,
+    double longSideDeg,
+  ) {
+    final address = cedar.address;
+    final width = cedar.width;
+    final height = cedar.height;
+    final tetraAddress = tetra.address;
+    final tetraFov = tetra.maxFovDeg;
+    final sigma = _cedarSigma;
+    final binning = _cedarBinning;
+    final limit = _cedarMax;
+    final pattern = _tetraPattern;
+    final timeoutMs = _tetraMs.toDouble();
+    final fullLong = math.max(width, height).toDouble();
+    final focal = (fullLong / 2) / math.tan(longSideDeg * math.pi / 360);
+    final cropLong = math.max(cropW, cropH).toDouble();
+    final cropField = 2 * math.atan((cropLong / 2) / focal) * 180 / math.pi;
+    final fovHorizontal = cropField * cropW / cropLong;
+    return Isolate.run(() {
+      final photo = CedarPhoto.attach(address, width, height);
+      final solver = TetraSolver.attach(tetraAddress, tetraFov);
+      final crops = <CedarCrop?>[];
+      final frames = <Map<String, dynamic>>[];
+      var extractMs = 0.0;
+      var solveMs = 0.0;
+      for (var dx = 0; dx <= shiftMax; dx++) {
+        final watch = Stopwatch()..start();
+        final crop = photo.extract(
+          x0: dx,
+          y0: 0,
+          cropWidth: cropW,
+          cropHeight: cropH,
+          sigma: sigma,
+          binning: binning,
+          maxStars: limit,
+        );
+        extractMs += watch.elapsedMicroseconds / 1000;
+        crops.add(crop);
+        if (crop == null || crop.stars.length < 4) {
+          frames.add({
+            'dx': dx,
+            'ok': false,
+            'ms': 0.0,
+            'reason': 'Fewer than 4 stars in the crop.',
+          });
+          continue;
+        }
+        final result = solver.solve(
+          stars: [for (final star in crop.stars) (x: star.x, y: star.y)],
+          width: cropW.toDouble(),
+          height: cropH.toDouble(),
+          fovHorizontalDeg: fovHorizontal,
+          patternStars: pattern,
+          timeoutMs: timeoutMs,
+        );
+        solveMs += result.ms;
+        frames.add({
+          ...result.toPayload(),
+          'dx': dx,
+          if (!result.solved)
+            'reason': result.timedOut
+                ? 'Tetra stopped at the time limit before a pattern matched.'
+                : 'Tetra found no pattern in these stars.',
+        });
+      }
+      return (crops: crops, frames: frames, extractMs: extractMs, solveMs: solveMs);
+    });
+  }
+
+  /// Marks in crop pixels, brightest aperture first, which is Tetra's order.
+  List<PlacedStar> _cedarMarks(CedarCrop crop) => [
+        for (var i = 0; i < crop.stars.length; i++)
+          PlacedStar(
+            name: '${i + 1}',
+            mag: crop.stars[i].brightness,
+            raH: 0,
+            decD: 0,
+            x: crop.stars[i].x,
+            y: crop.stars[i].y,
+            named: false,
+            refined: true,
+          ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -1283,10 +1537,12 @@ class _StarPickPageState extends State<StarPickPage> {
         ),
       );
     }
-    final long = math.max(_imageW, _imageH);
+    final frameW = _frameW >= 2 ? _frameW : _imageW;
+    final frameH = _frameH >= 2 ? _frameH : _imageH;
+    final long = math.max(frameW, frameH);
     final scale = 900 / long;
-    final viewW = _imageW * scale;
-    final viewH = _imageH * scale;
+    final viewW = frameW * scale;
+    final viewH = frameH * scale;
     return InteractiveViewer(
       transformationController: _view,
       minScale: 0.4,
@@ -1296,23 +1552,43 @@ class _StarPickPageState extends State<StarPickPage> {
       child: SizedBox(
         width: viewW,
         height: viewH,
-        child: Stack(
-          children: [
-            Image.memory(jpeg, width: viewW, height: viewH, fit: BoxFit.fill),
-            for (var i = 0; i < _placed.length; i++) _mark(i, viewW, viewH),
-          ],
+        child: ClipRect(
+          child: Stack(
+            children: [
+              Positioned(
+                left: -_originX * scale,
+                top: -_originY * scale,
+                width: _imageW * scale,
+                height: _imageH * scale,
+                child: Image.memory(
+                  jpeg,
+                  width: _imageW * scale,
+                  height: _imageH * scale,
+                  fit: BoxFit.fill,
+                ),
+              ),
+              for (var i = 0; i < _placed.length; i++)
+                _mark(i, viewW, viewH, frameW, frameH),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _mark(int index, double viewW, double viewH) {
+  Widget _mark(
+    int index,
+    double viewW,
+    double viewH,
+    double frameW,
+    double frameH,
+  ) {
     final star = _placed[index];
     const color = Color(0xFFF0C040);
     const namedColor = Color(0xFF3DDC84);
     final ink = star.named ? namedColor : color;
-    final x = star.x / _imageW * viewW;
-    final y = star.y / _imageH * viewH;
+    final x = star.x / frameW * viewW;
+    final y = star.y / frameH * viewH;
     return Positioned(
       left: x - 8,
       top: y - 8,
@@ -1411,9 +1687,20 @@ class _StarPickPageState extends State<StarPickPage> {
             ),
             const SizedBox(height: 8),
             FilledButton(
-              onPressed: _busy ? null : _solve,
-              child: Text(
-                  _busy ? (_extracting ? 'Extracting…' : 'Solving…') : 'Solve'),
+              onPressed: _busy && !_sweep
+                  ? null
+                  : () {
+                      if (_sweep) {
+                        setState(() => _sweep = false);
+                        return;
+                      }
+                      _solve();
+                    },
+              child: Text(_sweep
+                  ? 'Stop'
+                  : _busy
+                      ? (_extracting ? 'Extracting…' : 'Solving…')
+                      : 'Solve'),
             ),
             const SizedBox(height: 6),
             OutlinedButton(
@@ -1547,14 +1834,23 @@ String _starsPath(String photoPath) {
   );
 }
 
+/// EXIF stores the 35 mm focal length as an integer. [toDouble] on that
+/// value is zero, so the number is read from whichever form holds it.
+double _exifNumber(Object? value) {
+  if (value == null) return 0;
+  final asDouble = (value as dynamic).toDouble() as double;
+  if (asDouble != 0) return asDouble;
+  return ((value as dynamic).toInt() as num).toDouble();
+}
+
 /// Long-side field from the 35 mm equivalent focal length.
 ///
 /// The equivalent length matches the diagonal of a 36×24 mm frame to the
 /// diagonal of this photo, so a 4:3 phone frame is not treated as 3:2 film.
 ({double fov, String line})? _cameraField(img.Image image) {
-  final focal35 = image.exif.exifIfd['FocalLengthIn35mmFilm']?.toDouble() ?? 0;
+  final focal35 = _exifNumber(image.exif.exifIfd['FocalLengthIn35mmFilm']);
   if (focal35 <= 0) return null;
-  final zoom = image.exif.exifIfd['DigitalZoomRatio']?.toDouble() ?? 1;
+  final zoom = _exifNumber(image.exif.exifIfd['DigitalZoomRatio']);
   final focal = zoom > 1 ? focal35 * zoom : focal35;
   final long = math.max(image.width, image.height).toDouble();
   final short = math.min(image.width, image.height).toDouble();
@@ -1562,7 +1858,7 @@ String _starsPath(String photoPath) {
   const filmDiag = 43.26661530556787;
   final halfLong = filmDiag / 2 * (long / diag);
   final fov = 2 * math.atan(halfLong / focal) * 180 / math.pi;
-  final lens = image.exif.exifIfd['FocalLength']?.toDouble() ?? 0;
+  final lens = _exifNumber(image.exif.exifIfd['FocalLength']);
   final make = image.exif.imageIfd['Make']?.toString().trim() ?? '';
   final model = image.exif.imageIfd['Model']?.toString().trim() ?? '';
   final camera = [make, model].where((part) => part.isNotEmpty).join(' ');
