@@ -1,6 +1,8 @@
 package com.teenastro.teenastro_app
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -12,6 +14,7 @@ import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
 import android.view.Surface
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
@@ -30,7 +33,6 @@ class ManualSkyCapture(context: Context) {
     private var device: CameraDevice? = null
     private var session: CameraCaptureSession? = null
     private var reader: ImageReader? = null
-
     var minUs: Int = 1
         private set
     var maxUs: Int = 1
@@ -140,17 +142,78 @@ class ManualSkyCapture(context: Context) {
         return true
     }
 
+    /**
+     * A still of [exposureUs]. Only when the request is longer than the camera's
+     * single-frame limit, frames are averaged in colour until the total time is met.
+     */
     fun capture(exposureUs: Int, iso: Int): SkyShot? {
+        val requestedNs = exposureUs.coerceAtLeast(minUs).toLong() * 1000L
+        val gain = iso.coerceIn(minIso, maxIso)
+        val maxNs = maxUs.toLong() * 1000L
+        val firstNs = minOf(requestedNs, maxNs)
+        val first = captureOnce(firstNs, gain) ?: return null
+        val gotNs = first.second.coerceAtLeast(1L)
+        // Stay with one JPEG unless the user asked for more than one frame can hold.
+        if (requestedNs <= maxNs * 11 / 10 || gotNs >= requestedNs * 9 / 10) {
+            return SkyShot(first.first, (gotNs / 1000L).toInt().coerceAtLeast(1))
+        }
+        val sliceNs = minOf(gotNs, maxNs)
+        val frames = ((requestedNs + sliceNs - 1) / sliceNs).toInt().coerceIn(2, 120)
+        val base = BitmapFactory.decodeByteArray(first.first, 0, first.first.size)
+            ?: return SkyShot(first.first, (gotNs / 1000L).toInt())
+        val w = base.width
+        val h = base.height
+        val sumR = IntArray(w * h)
+        val sumG = IntArray(w * h)
+        val sumB = IntArray(w * h)
+        val px = IntArray(w * h)
+        var n = 0
+        fun add(bitmap: Bitmap) {
+            if (bitmap.width != w || bitmap.height != h) return
+            bitmap.getPixels(px, 0, w, 0, 0, w, h)
+            for (i in px.indices) {
+                val c = px[i]
+                sumR[i] += (c shr 16) and 0xff
+                sumG[i] += (c shr 8) and 0xff
+                sumB[i] += c and 0xff
+            }
+            n++
+        }
+        add(base)
+        base.recycle()
+        var totalNs = gotNs
+        for (k in 1 until frames) {
+            val next = captureOnce(sliceNs, gain) ?: break
+            val bitmap = BitmapFactory.decodeByteArray(next.first, 0, next.first.size) ?: break
+            add(bitmap)
+            bitmap.recycle()
+            totalNs += next.second.coerceAtLeast(1L)
+        }
+        val div = n.coerceAtLeast(1)
+        for (i in px.indices) {
+            val r = (sumR[i] / div).coerceIn(0, 255)
+            val g = (sumG[i] / div).coerceIn(0, 255)
+            val b = (sumB[i] / div).coerceIn(0, 255)
+            px[i] = (0xff shl 24) or (r shl 16) or (g shl 8) or b
+        }
+        val out = Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
+        val stream = ByteArrayOutputStream()
+        out.compress(Bitmap.CompressFormat.JPEG, 92, stream)
+        out.recycle()
+        return SkyShot(stream.toByteArray(), (totalNs / 1000L).toInt().coerceAtLeast(1))
+    }
+
+    /** One frame: the JPEG and the exposure the sensor reports. */
+    private fun captureOnce(ns: Long, gain: Int): Pair<ByteArray, Long>? {
         val camera = device ?: return null
         val captureSession = session ?: return null
         val imageReader = reader ?: return null
-        val ns = exposureUs.coerceIn(minUs, maxUs).toLong() * 1000L
-        val gain = iso.coerceIn(minIso, maxIso)
         while (true) {
             val leftover = imageReader.acquireNextImage() ?: break
             leftover.close()
         }
         val latch = CountDownLatch(1)
+        val resultLatch = CountDownLatch(1)
         var jpeg: ByteArray? = null
         var failed = false
         var exposureNs = ns
@@ -196,6 +259,7 @@ class ManualSkyCapture(context: Context) {
                 ) {
                     val got = result.get(CaptureResult.SENSOR_EXPOSURE_TIME)
                     if (got != null && got > 0L) exposureNs = got
+                    resultLatch.countDown()
                 }
 
                 override fun onCaptureFailed(
@@ -204,14 +268,16 @@ class ManualSkyCapture(context: Context) {
                     failure: android.hardware.camera2.CaptureFailure,
                 ) {
                     failed = true
+                    resultLatch.countDown()
                     latch.countDown()
                 }
             }, handler)
-            val waitMs = exposureUs / 1000L + 8000L
+            val waitMs = ns / 1_000_000L + 8000L
             if (!latch.await(waitMs, TimeUnit.MILLISECONDS)) return null
+            resultLatch.await(2, TimeUnit.SECONDS)
             val bytes = jpeg
             if (failed || bytes == null) return null
-            SkyShot(bytes, (exposureNs / 1000L).toInt().coerceAtLeast(1))
+            Pair(bytes, exposureNs)
         } catch (_: Exception) {
             null
         }

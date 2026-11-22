@@ -29,19 +29,36 @@ class PhoneFinderStore {
     return (p.getDouble(_gamma) ?? gammaDefault).clamp(gammaMin, gammaMax);
   }
 
-  static const _black = 'phone_finder_view_black';
-  static const blackMax = 0.5;
-  static const blackDefault = 0.08;
+  static const _exposureUs = 'phone_finder_exposure_us';
+  static const _iso = 'phone_finder_iso';
 
-  /// Live preview black point (0..[blackMax]) as a fraction of full scale.
-  Future<double> loadBlack() async {
+  /// Shutter steps offered to the user, in microseconds.
+  static const exposureSteps = <int>[
+    50000, 100000, 200000, 500000, 1000000, 2000000, 4000000, 8000000,
+    15000000, 30000000,
+  ];
+  static const isoSteps = <int>[100, 200, 400, 800, 1600, 3200, 6400];
+  static const exposureDefaultUs = 1000000;
+  static const isoDefault = 1600;
+
+  Future<int> loadExposureUs() async {
     final p = await SharedPreferences.getInstance();
-    return (p.getDouble(_black) ?? blackDefault).clamp(0.0, blackMax);
+    return p.getInt(_exposureUs) ?? exposureDefaultUs;
   }
 
-  Future<void> saveBlack(double black) async {
+  Future<void> saveExposureUs(int us) async {
     final p = await SharedPreferences.getInstance();
-    await p.setDouble(_black, black.clamp(0.0, blackMax));
+    await p.setInt(_exposureUs, us);
+  }
+
+  Future<int> loadIso() async {
+    final p = await SharedPreferences.getInstance();
+    return p.getInt(_iso) ?? isoDefault;
+  }
+
+  Future<void> saveIso(int iso) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(_iso, iso);
   }
 
   Future<void> saveGamma(double gamma) async {

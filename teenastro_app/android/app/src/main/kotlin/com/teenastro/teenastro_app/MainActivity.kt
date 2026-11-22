@@ -42,8 +42,7 @@ class MainActivity : FlutterActivity() {
                 }
                 "previewGamma" -> {
                     val g = call.argument<Double>("gamma") ?: 1.0
-                    val b = call.argument<Double>("black") ?: 0.0
-                    InfinityPreviewView.current?.setTone(g.toFloat(), b.toFloat())
+                    InfinityPreviewView.current?.setGamma(g.toFloat())
                     result.success(null)
                 }
                 "listBackCameras" -> {

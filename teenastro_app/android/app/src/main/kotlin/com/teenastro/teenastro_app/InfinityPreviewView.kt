@@ -79,13 +79,9 @@ class InfinityPreviewView(
         thread.quitSafely()
     }
 
-    @Volatile
-    private var black: Float = 0f
-
-    /** Change the display stretch of the running preview. */
-    fun setTone(gammaValue: Float, blackValue: Float) {
-        gamma = gammaValue
-        black = blackValue
+    /** Change the display gamma of the running preview. */
+    fun setGamma(value: Float) {
+        gamma = value
         handler.post { startRepeating() }
     }
 
@@ -118,26 +114,23 @@ class InfinityPreviewView(
 
     private fun applyTone(builder: CaptureRequest.Builder) {
         val g = gamma
-        val b = black.coerceIn(0f, 0.9f)
-        if (g <= 1.01f && b <= 0.001f) return
+        if (g <= 1.01f) return
         try {
-            // The curve both clips the black point and applies gamma; prefer it.
-            if (toneModes.contains(CaptureRequest.TONEMAP_MODE_CONTRAST_CURVE) &&
+            if (toneModes.contains(CaptureRequest.TONEMAP_MODE_GAMMA_VALUE)) {
+                builder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_GAMMA_VALUE)
+                builder.set(CaptureRequest.TONEMAP_GAMMA, g)
+            } else if (toneModes.contains(CaptureRequest.TONEMAP_MODE_CONTRAST_CURVE) &&
                 maxCurvePoints >= 2
             ) {
                 val n = minOf(maxCurvePoints, 64)
                 val curve = FloatArray(n * 2)
                 for (i in 0 until n) {
                     val x = i / (n - 1f)
-                    val t = ((x - b) / (1f - b)).coerceIn(0f, 1f)
                     curve[2 * i] = x
-                    curve[2 * i + 1] = Math.pow(t.toDouble(), 1.0 / g).toFloat()
+                    curve[2 * i + 1] = Math.pow(x.toDouble(), 1.0 / g).toFloat()
                 }
                 builder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_CONTRAST_CURVE)
                 builder.set(CaptureRequest.TONEMAP_CURVE, TonemapCurve(curve, curve, curve))
-            } else if (toneModes.contains(CaptureRequest.TONEMAP_MODE_GAMMA_VALUE)) {
-                builder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_GAMMA_VALUE)
-                builder.set(CaptureRequest.TONEMAP_GAMMA, g)
             }
         } catch (_: Exception) {
         }
@@ -252,8 +245,8 @@ class InfinityPreviewView(
     }
 
     /**
-     * The camera stream already arrives upright under hybrid composition, but
-     * stretched to the view. Undo the stretch with a center crop.
+     * The stream arrives already rotated upright, then stretched to the view.
+     * Shrink one axis so the whole upright frame shows undistorted (letterboxed).
      */
     private fun configureTransform(viewWidth: Int, viewHeight: Int) {
         if (viewWidth == 0 || viewHeight == 0) return
@@ -271,9 +264,9 @@ class InfinityPreviewView(
         val viewAspect = viewWidth.toFloat() / viewHeight
         val matrix = Matrix()
         if (contentAspect > viewAspect) {
-            matrix.setScale(contentAspect / viewAspect, 1f, viewWidth / 2f, viewHeight / 2f)
-        } else {
             matrix.setScale(1f, viewAspect / contentAspect, viewWidth / 2f, viewHeight / 2f)
+        } else {
+            matrix.setScale(contentAspect / viewAspect, 1f, viewWidth / 2f, viewHeight / 2f)
         }
         textureView.setTransform(matrix)
     }
@@ -285,9 +278,7 @@ class InfinityPreviewFactory(private val activity: Activity) :
         val params = args as? Map<*, *>
         val cameraId = params?.get("cameraId") as? String ?: "0"
         val gamma = (params?.get("gamma") as? Number)?.toFloat() ?: 1f
-        val black = (params?.get("black") as? Number)?.toFloat() ?: 0f
         return InfinityPreviewView(activity, cameraId, gamma).also {
-            it.setTone(gamma, black)
             InfinityPreviewView.current = it
         }
     }

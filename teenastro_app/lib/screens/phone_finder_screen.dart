@@ -56,8 +56,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   PhoneSolver _solver = PhoneSolver.tetra;
   TetraSolver? _tetra;
   String? _cameraId;
-  int? _shutterUs;
-  int? _iso;
+  int _shutterUs = PhoneFinderStore.exposureDefaultUs;
+  int _iso = PhoneFinderStore.isoDefault;
   String _exposureNote = '';
   bool _live = false;
   int _liveSeconds = PhoneFinderStore.liveDefaultSeconds;
@@ -69,7 +69,6 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   int _shotW = 0;
   int _shotH = 0;
   double _gamma = PhoneFinderStore.gammaDefault;
-  double _black = PhoneFinderStore.blackDefault;
   StarFrame? _shotFrame;
   String _shotNote = '';
   bool _showPhoto = true;
@@ -91,12 +90,14 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final solver = await _store.loadSolver();
     final liveSeconds = await _store.loadLiveSeconds();
     final gamma = await _store.loadGamma();
-    final black = await _store.loadBlack();
+    final shutterUs = await _store.loadExposureUs();
+    final iso = await _store.loadIso();
     if (!mounted) return;
     setState(() {
       _liveSeconds = liveSeconds;
       _gamma = gamma;
-      _black = black;
+      _shutterUs = shutterUs;
+      _iso = iso;
       _cones = cones;
       _fov = fov;
       _auto = auto;
@@ -299,34 +300,13 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     } catch (_) {}
   }
 
-  /// Rebuild the displayed photo: stretch the histogram from the sky
-  /// background to the bright stars, then apply the gamma.
+  /// Rebuild the displayed photo with gamma only (no histogram stretch).
   Future<void> _regammaShot() async {
     final src = _shotRgba;
     if (src == null) return;
-    final hist = List<int>.filled(256, 0);
-    var count = 0;
-    for (var i = 0; i < src.length; i += 4 * 7) {
-      final y = (src[i] * 77 + src[i + 1] * 150 + src[i + 2] * 29) >> 8;
-      hist[y]++;
-      count++;
-    }
-    int percentile(double p) {
-      final target = (count * p).round();
-      var acc = 0;
-      for (var v = 0; v < 256; v++) {
-        acc += hist[v];
-        if (acc >= target) return v;
-      }
-      return 255;
-    }
-
-    final lo = percentile(0.50);
-    final hi = math.max(lo + 8, percentile(0.999));
     final lut = Uint8List(256);
     for (var i = 0; i < 256; i++) {
-      final t = ((i - lo) / (hi - lo)).clamp(0.0, 1.0);
-      lut[i] = (255 * math.pow(t, 1 / _gamma)).round().clamp(0, 255);
+      lut[i] = (255 * math.pow(i / 255.0, 1 / _gamma)).round().clamp(0, 255);
     }
     final out = Uint8List(src.length);
     for (var i = 0; i < src.length; i += 4) {
@@ -350,17 +330,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
 
   void _setGamma(double g) {
     setState(() => _gamma = g);
-    _sendTone();
-  }
-
-  void _setBlack(double b) {
-    setState(() => _black = b);
-    _sendTone();
-  }
-
-  void _sendTone() {
-    _cameraChannel
-        .invokeMethod<void>('previewGamma', {'gamma': _gamma, 'black': _black});
+    _cameraChannel.invokeMethod<void>('previewGamma', {'gamma': g});
   }
 
   Future<void> _gammaDone(double g) async {
@@ -368,7 +338,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     await _regammaShot();
   }
 
-  /// Lengthen the shutter, then the ISO, until the frame holds about 30 stars.
+  /// One still at the user's shutter time and ISO, with a linear tone curve.
   /// The preview is released so the shutter time can be set directly.
   Future<StarFrame?> _captureForStars() async {
     final id = _cameraId;
@@ -398,72 +368,42 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     }
 
     final minUs = (limits['minUs'] as num).toInt();
-    var maxUs = (limits['maxUs'] as num).toInt();
+    final maxUs = (limits['maxUs'] as num).toInt();
     final minIso = (limits['minIso'] as num).toInt();
     final maxIso = (limits['maxIso'] as num).toInt();
-    var us = openingShutter(minUs: minUs, maxUs: maxUs);
-    var iso = (_iso ?? math.min(maxIso, math.max(minIso, 1600)))
-        .clamp(minIso, maxIso);
+    final us = _shutterUs.clamp(minUs, maxUs);
+    final iso = _iso.clamp(minIso, maxIso);
 
     StarFrame? best;
-    var bestGap = 1 << 30;
     var bestNote = '';
     try {
-      for (var attempt = 0; attempt < 8; attempt++) {
-        final note = _shutterLabel(us, iso);
-        if (mounted) setState(() => _status = 'Shutter $note');
-        Uint8List? bytes;
-        var delivered = us;
-        try {
-          final raw = await _cameraChannel.invokeMethod<dynamic>(
-            'manualCapture',
-            {'exposureUs': us, 'iso': iso},
-          );
-          if (raw is Map) {
-            bytes = _jpegBytes(raw['jpeg']);
-            final got = raw['exposureUs'];
-            if (got is num && got > 0) delivered = got.toInt();
-          } else {
-            bytes = _jpegBytes(raw);
-          }
-        } catch (_) {
-          bytes = null;
-        }
-        final applied = deliveredShutter(
-          requestedUs: us,
-          deliveredUs: delivered,
-          minUs: minUs,
-          maxUs: maxUs,
+      if (mounted) setState(() => _status = 'Shutter ${_shutterLabel(us, iso)}');
+      Uint8List? bytes;
+      var delivered = us;
+      try {
+        final raw = await _cameraChannel.invokeMethod<dynamic>(
+          'manualCapture',
+          {'exposureUs': us, 'iso': iso},
         );
-        us = applied.us;
-        maxUs = applied.maxUs;
-        final shown = _shutterLabel(us, iso);
-        final frame = bytes == null ? null : await _cedarFrame(bytes);
-        if (frame == null) continue;
-        final count = frame.stars.length;
-        _showShot(bytes!, frame, shown);
-        final gap = (count - targetStarCount).abs();
-        if (gap < bestGap) {
-          bestGap = gap;
-          best = frame;
-          bestNote = shown;
-          _shutterUs = us;
-          _iso = iso;
+        if (raw is Map) {
+          bytes = _jpegBytes(raw['jpeg']);
+          final got = raw['exposureUs'];
+          if (got is num && got > 0) delivered = got.toInt();
+        } else {
+          bytes = _jpegBytes(raw);
         }
-        if (mounted) setState(() => _status = '$count stars at $shown');
-        if (gap <= 6) break;
-        final next = nextShutter(
-          starCount: count,
-          us: us,
-          iso: iso,
-          minUs: minUs,
-          maxUs: maxUs,
-          minIso: minIso,
-          maxIso: maxIso,
-        );
-        if (next == null) break;
-        us = next.us;
-        iso = next.iso;
+      } catch (_) {
+        bytes = null;
+      }
+      bestNote = _shutterLabel(delivered, iso);
+      final frame = bytes == null ? null : await _cedarFrame(bytes);
+      if (frame != null) {
+        best = frame;
+        _showShot(bytes!, frame, bestNote);
+        if (mounted) {
+          setState(() =>
+              _status = '${frame.stars.length} stars at $bestNote');
+        }
       }
     } finally {
       try {
@@ -1123,28 +1063,172 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     });
     final sky = ref.watch(finderSkyProvider);
     final mount = ref.read(lx200ClientProvider).isConnected;
-    return Column(
+    return LayoutBuilder(builder: (context, box) {
+      if (box.maxWidth > box.maxHeight * 1.2) {
+        return _landscape(sky, mount, box);
+      }
+      return Column(
+        children: [
+          _header(sky),
+          Expanded(child: _view()),
+          _actions(sky, mount),
+        ],
+      );
+    });
+  }
+
+  /// Square view on the left, everything else in a column on the right.
+  Widget _landscape(FinderSky sky, bool mount, BoxConstraints box) {
+    final panel = math.max(260.0, box.maxWidth - box.maxHeight);
+    final live = _previewLive;
+    final photo = _shotImage != null &&
+        _shotFrame != null &&
+        (_showPhoto || !live);
+    return Row(
       children: [
-        _header(sky),
-        Expanded(child: _view()),
-        _actions(sky, mount),
+        Expanded(child: _view(side: true)),
+        SizedBox(
+          width: math.min(panel, 380),
+          child: ColoredBox(
+            color: TA.surface,
+            child: Column(
+              children: [
+                _header(sky, compact: true),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const PushToCard(),
+                        if (live || photo) ...[
+                          const SizedBox(height: 6),
+                          _toneControls(live: live, photo: photo),
+                        ],
+                        if (_status.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(_status, style: _overlayStyle),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                _actions(sky, mount),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _header(FinderSky sky) {
+  TextStyle get _overlayStyle =>
+      TextStyle(color: TA.textHigh, fontSize: 12, fontFamily: 'monospace');
+
+  Widget _toneControls({required bool live, required bool photo}) {
+    final overlay = _overlayStyle;
+    return Container(
+      padding: const EdgeInsets.only(left: 10),
+      decoration: BoxDecoration(
+          color: Colors.black54, borderRadius: BorderRadius.circular(6)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _stepSlider(
+            icon: Icons.shutter_speed,
+            steps: PhoneFinderStore.exposureSteps,
+            value: _shutterUs,
+            label: _timeLabel(_shutterUs),
+            enabled: !_busy && !_live,
+            onChanged: (v) => setState(() => _shutterUs = v),
+            onDone: _store.saveExposureUs,
+          ),
+          _stepSlider(
+            icon: Icons.iso,
+            steps: PhoneFinderStore.isoSteps,
+            value: _iso,
+            label: '$_iso',
+            enabled: !_busy && !_live,
+            onChanged: (v) => setState(() => _iso = v),
+            onDone: _store.saveIso,
+          ),
+          Row(
+            children: [
+              Icon(Icons.brightness_6, size: 18, color: TA.textHigh),
+              Expanded(
+                child: Slider(
+                  min: PhoneFinderStore.gammaMin,
+                  max: PhoneFinderStore.gammaMax,
+                  divisions: 40,
+                  value: _gamma,
+                  onChanged: _setGamma,
+                  onChangeEnd: _gammaDone,
+                ),
+              ),
+              SizedBox(
+                width: 52,
+                child: Text('γ ${_gamma.toStringAsFixed(1)}', style: overlay),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _timeLabel(int us) => us >= 1000000
+      ? '${(us / 1000000).toStringAsFixed(us % 1000000 == 0 ? 0 : 1)} s'
+      : '${(us / 1000).round()} ms';
+
+  /// A slider that snaps to [steps]; [value] need not be one of them.
+  Widget _stepSlider({
+    required IconData icon,
+    required List<int> steps,
+    required int value,
+    required String label,
+    required bool enabled,
+    required ValueChanged<int> onChanged,
+    required ValueChanged<int> onDone,
+  }) {
+    var index = 0;
+    for (var i = 0; i < steps.length; i++) {
+      if ((steps[i] - value).abs() < (steps[index] - value).abs()) index = i;
+    }
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: TA.textHigh),
+        Expanded(
+          child: Slider(
+            min: 0,
+            max: (steps.length - 1).toDouble(),
+            divisions: steps.length - 1,
+            value: index.toDouble(),
+            onChanged: enabled ? (v) => onChanged(steps[v.round()]) : null,
+            onChangeEnd: enabled ? (v) => onDone(steps[v.round()]) : null,
+          ),
+        ),
+        SizedBox(width: 52, child: Text(label, style: _overlayStyle)),
+      ],
+    );
+  }
+
+  Widget _header(FinderSky sky, {bool compact = false}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 0, 0, 0),
       color: TA.surface,
       child: Row(
         children: [
-          Icon(Icons.photo_camera, size: 16, color: TA.accent),
-          const SizedBox(width: 8),
-          Text('Phone finder',
-              style: TextStyle(
-                  color: TA.textHigh, fontSize: 14, fontWeight: FontWeight.w600)),
-          const SizedBox(width: 12),
+          if (!compact) ...[
+            Icon(Icons.photo_camera, size: 16, color: TA.accent),
+            const SizedBox(width: 8),
+            Text('Phone finder',
+                style: TextStyle(
+                    color: TA.textHigh,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(width: 12),
+          ],
           Expanded(
             child: sky.active
                 ? Text(
@@ -1194,7 +1278,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   }
 
   /// The camera, or the last photo with the stars Cedar found in it.
-  Widget _view() {
+  /// With [side], the push-to card, sliders and status live in the side panel.
+  Widget _view({bool side = false}) {
     final shot = _shotImage;
     final frame = _shotFrame;
     final live = _previewLive;
@@ -1217,7 +1302,6 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       final params = <String, dynamic>{
         'cameraId': _cameraId,
         'gamma': _gamma,
-        'black': _black,
       };
       base = PlatformViewLink(
         viewType: viewType,
@@ -1256,17 +1340,11 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         ),
       );
     }
-    final overlay = TextStyle(
-        color: TA.textHigh, fontSize: 12, fontFamily: 'monospace');
+    final overlay = _overlayStyle;
     return Stack(
       fit: StackFit.expand,
       children: [
-        ColoredBox(
-          color: Colors.black,
-          child: Center(
-            child: AspectRatio(aspectRatio: 1, child: ClipRect(child: base)),
-          ),
-        ),
+        ColoredBox(color: Colors.black, child: base),
         if (photo)
           Positioned(
             top: 8,
@@ -1291,70 +1369,21 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
               onPressed: () => setState(() => _showPhoto = !_showPhoto),
             ),
           ),
-        const Positioned(
-          top: 48,
-          left: 0,
-          right: 0,
-          child: Center(child: PushToCard()),
-        ),
-        if (live || photo)
+        if (!side)
+          const Positioned(
+            top: 48,
+            left: 0,
+            right: 0,
+            child: Center(child: PushToCard()),
+          ),
+        if (!side && (live || photo))
           Positioned(
             left: 8,
             right: 8,
             bottom: _status.isNotEmpty ? 30 : 4,
-            child: Container(
-              padding: const EdgeInsets.only(left: 10),
-              decoration: BoxDecoration(
-                  color: Colors.black54, borderRadius: BorderRadius.circular(6)),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (live && !photo)
-                    Row(
-                      children: [
-                        Icon(Icons.contrast, size: 18, color: TA.textHigh),
-                        Expanded(
-                          child: Slider(
-                            min: 0,
-                            max: PhoneFinderStore.blackMax,
-                            divisions: 50,
-                            value: _black,
-                            onChanged: _setBlack,
-                            onChangeEnd: _store.saveBlack,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 52,
-                          child: Text('B ${(_black * 100).round()}%',
-                              style: overlay),
-                        ),
-                      ],
-                    ),
-                  Row(
-                    children: [
-                      Icon(Icons.brightness_6, size: 18, color: TA.textHigh),
-                      Expanded(
-                        child: Slider(
-                          min: PhoneFinderStore.gammaMin,
-                          max: PhoneFinderStore.gammaMax,
-                          divisions: 40,
-                          value: _gamma,
-                          onChanged: _setGamma,
-                          onChangeEnd: _gammaDone,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 52,
-                        child: Text('γ ${_gamma.toStringAsFixed(1)}',
-                            style: overlay),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            child: _toneControls(live: live, photo: photo),
           ),
-        if (_status.isNotEmpty)
+        if (!side && _status.isNotEmpty)
           Positioned(
             left: 0,
             right: 0,
@@ -1681,9 +1710,8 @@ class _ShotPainter extends CustomPainter {
     final turned = quarterTurns.isOdd;
     final w = frame.width;
     final h = frame.height;
-    final scale = math.max(size.width / (turned ? h : w), size.height / (turned ? w : h));
+    final scale = math.min(size.width / (turned ? h : w), size.height / (turned ? w : h));
     canvas.save();
-    canvas.clipRect(Offset.zero & size);
     canvas.translate(size.width / 2, size.height / 2);
     canvas.rotate(quarterTurns * math.pi / 2);
     canvas.scale(scale);
