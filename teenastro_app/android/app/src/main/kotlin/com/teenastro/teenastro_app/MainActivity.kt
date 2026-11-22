@@ -10,19 +10,21 @@ import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.view.TextureRegistry
 import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.max
 
 class MainActivity : FlutterActivity() {
     private val skyCapture by lazy { ManualSkyCapture(this) }
-    private val infinityPreview by lazy { InfinityPreview(this) }
-    private var previewEntry: TextureRegistry.SurfaceTextureEntry? = null
     private var pendingPermission: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        flutterEngine
+            .platformViewsController
+            .registry
+            .registerViewFactory("teenastro/infinity_preview", InfinityPreviewFactory(this))
+
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.teenastro/camera",
@@ -38,44 +40,14 @@ class MainActivity : FlutterActivity() {
                         result.success(deg)
                     }
                 }
+                "previewGamma" -> {
+                    val g = call.argument<Double>("gamma") ?: 1.0
+                    val b = call.argument<Double>("black") ?: 0.0
+                    InfinityPreviewView.current?.setTone(g.toFloat(), b.toFloat())
+                    result.success(null)
+                }
                 "listBackCameras" -> {
                     result.success(listBackCameras())
-                }
-                "previewStart" -> {
-                    val id = call.argument<String>("cameraId")
-                    if (id.isNullOrEmpty()) {
-                        result.error("unavailable", "No camera", null)
-                        return@setMethodCallHandler
-                    }
-                    if (!hasCameraPermission()) {
-                        result.error("permission", "Camera permission is required", null)
-                        return@setMethodCallHandler
-                    }
-                    stopPreviewLocked()
-                    val entry = flutterEngine.renderer.createSurfaceTexture()
-                    previewEntry = entry
-                    Thread {
-                        val ok = infinityPreview.start(id, entry.surfaceTexture())
-                        runOnUiThread {
-                            if (!ok) {
-                                stopPreviewLocked()
-                                result.error("unavailable", "The camera preview failed", null)
-                            } else {
-                                result.success(
-                                    mapOf(
-                                        "textureId" to entry.id(),
-                                        "width" to infinityPreview.previewWidth,
-                                        "height" to infinityPreview.previewHeight,
-                                        "sensorOrientation" to infinityPreview.sensorOrientation,
-                                    ),
-                                )
-                            }
-                        }
-                    }.start()
-                }
-                "previewStop" -> {
-                    stopPreviewLocked()
-                    result.success(null)
                 }
                 "manualOpen" -> {
                     val id = call.argument<String>("cameraId")
@@ -88,9 +60,8 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
                     Thread {
-                        runOnUiThread { stopPreviewLocked() }
-                        // Let the preview camera release before opening the still session.
-                        Thread.sleep(250)
+                        // Preview PlatformView must be removed first; give it time to release.
+                        Thread.sleep(300)
                         val opened = skyCapture.open(id)
                         runOnUiThread {
                             if (!opened) {
@@ -171,19 +142,9 @@ class MainActivity : FlutterActivity() {
         pending?.success(granted)
     }
 
-    private fun stopPreviewLocked() {
-        infinityPreview.stop()
-        try {
-            previewEntry?.release()
-        } catch (_: Exception) {
-        }
-        previewEntry = null
-    }
-
     override fun onDestroy() {
         pendingPermission?.error("destroyed", "The activity closed", null)
         pendingPermission = null
-        stopPreviewLocked()
         skyCapture.release()
         super.onDestroy()
     }
@@ -210,7 +171,6 @@ class MainActivity : FlutterActivity() {
         return out
     }
 
-    /// Degrees across the longer side of the sensor for this camera id.
     private fun longerSideFov(cameraId: String): Double? {
         val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val chars = try {

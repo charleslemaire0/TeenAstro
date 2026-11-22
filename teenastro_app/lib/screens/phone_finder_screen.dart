@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;
@@ -5,7 +6,9 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -60,16 +63,19 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   int _liveSeconds = PhoneFinderStore.liveDefaultSeconds;
   DateTime? _liveUntil;
   int _sensorDeg = 90;
-  int? _previewTextureId;
-  int _previewW = 0;
-  int _previewH = 0;
+  bool _previewOn = false;
   ui.Image? _shotImage;
+  Uint8List? _shotRgba;
+  int _shotW = 0;
+  int _shotH = 0;
+  double _gamma = PhoneFinderStore.gammaDefault;
+  double _black = PhoneFinderStore.blackDefault;
   StarFrame? _shotFrame;
   String _shotNote = '';
   bool _showPhoto = true;
 
   bool get _hasCamera => !kIsWeb && Platform.isAndroid;
-  bool get _previewLive => _previewTextureId != null;
+  bool get _previewLive => _previewOn && _cameraId != null;
 
   @override
   void initState() {
@@ -84,9 +90,13 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final limit = await _store.loadRecenterArcmin();
     final solver = await _store.loadSolver();
     final liveSeconds = await _store.loadLiveSeconds();
+    final gamma = await _store.loadGamma();
+    final black = await _store.loadBlack();
     if (!mounted) return;
     setState(() {
       _liveSeconds = liveSeconds;
+      _gamma = gamma;
+      _black = black;
       _cones = cones;
       _fov = fov;
       _auto = auto;
@@ -138,27 +148,12 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       final back = Map<String, dynamic>.from(listed.first as Map);
       final id = back['id'] as String;
       final measured = await _lensField(id);
-      final started = await _cameraChannel.invokeMethod<Map<dynamic, dynamic>>(
-        'previewStart',
-        {'cameraId': id},
-      );
-      if (!mounted) {
-        await _cameraChannel.invokeMethod<void>('previewStop');
-        return;
-      }
-      if (started == null) {
-        setState(() => _cameraError = 'Camera unavailable');
-        return;
-      }
+      if (!mounted) return;
       if (measured != null) await _store.saveFov(measured);
       setState(() {
         _cameraId = id;
-        _previewTextureId = (started['textureId'] as num).toInt();
-        _previewW = (started['width'] as num?)?.toInt() ?? 0;
-        _previewH = (started['height'] as num?)?.toInt() ?? 0;
-        _sensorDeg = (started['sensorOrientation'] as num?)?.toInt() ??
-            (back['sensorOrientation'] as num?)?.toInt() ??
-            90;
+        _previewOn = true;
+        _sensorDeg = (back['sensorOrientation'] as num?)?.toInt() ?? 90;
         _cameraError = null;
         _status = '';
         if (measured != null) {
@@ -185,21 +180,20 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   }
 
   Future<void> _stopPreview() async {
-    try {
-      await _cameraChannel.invokeMethod<void>('previewStop');
-    } catch (_) {}
     if (mounted) {
-      setState(() => _previewTextureId = null);
+      setState(() => _previewOn = false);
     } else {
-      _previewTextureId = null;
+      _previewOn = false;
     }
+    // Let the TextureView PlatformView release the camera.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
   }
 
   @override
   void dispose() {
     _live = false;
     _stopAlign = true;
-    _cameraChannel.invokeMethod<void>('previewStop');
+    _previewOn = false;
     _tetra?.close();
     _shotImage?.dispose();
     super.dispose();
@@ -211,6 +205,14 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       return m == 1 ? '1 min' : '$m min';
     }
     return '$seconds s';
+  }
+
+  /// Quarter-turns for still JPEGs (sensor buffer, no TextureView matrix).
+  int _uprightTurns(BuildContext context) {
+    final deviceDeg = MediaQuery.orientationOf(context) == Orientation.landscape
+        ? 90
+        : 0;
+    return (((_sensorDeg - deviceDeg) + 360) % 360) ~/ 90;
   }
 
   /// Null when the axis is above the horizon, or when the site is unknown.
@@ -283,20 +285,87 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         jpeg,
         targetWidth: math.min(frame.width.round(), 1600),
       );
-      final image = (await codec.getNextFrame()).image;
-      if (!mounted) {
-        image.dispose();
-        return;
-      }
-      final old = _shotImage;
-      setState(() {
-        _shotImage = image;
-        _shotFrame = frame;
-        _shotNote = note;
-        _showPhoto = true;
-      });
-      old?.dispose();
+      final decoded = (await codec.getNextFrame()).image;
+      final data = await decoded.toByteData(format: ui.ImageByteFormat.rawRgba);
+      _shotW = decoded.width;
+      _shotH = decoded.height;
+      decoded.dispose();
+      if (data == null || !mounted) return;
+      _shotRgba = data.buffer.asUint8List();
+      _shotFrame = frame;
+      _shotNote = note;
+      _showPhoto = true;
+      await _regammaShot();
     } catch (_) {}
+  }
+
+  /// Rebuild the displayed photo: stretch the histogram from the sky
+  /// background to the bright stars, then apply the gamma.
+  Future<void> _regammaShot() async {
+    final src = _shotRgba;
+    if (src == null) return;
+    final hist = List<int>.filled(256, 0);
+    var count = 0;
+    for (var i = 0; i < src.length; i += 4 * 7) {
+      final y = (src[i] * 77 + src[i + 1] * 150 + src[i + 2] * 29) >> 8;
+      hist[y]++;
+      count++;
+    }
+    int percentile(double p) {
+      final target = (count * p).round();
+      var acc = 0;
+      for (var v = 0; v < 256; v++) {
+        acc += hist[v];
+        if (acc >= target) return v;
+      }
+      return 255;
+    }
+
+    final lo = percentile(0.50);
+    final hi = math.max(lo + 8, percentile(0.999));
+    final lut = Uint8List(256);
+    for (var i = 0; i < 256; i++) {
+      final t = ((i - lo) / (hi - lo)).clamp(0.0, 1.0);
+      lut[i] = (255 * math.pow(t, 1 / _gamma)).round().clamp(0, 255);
+    }
+    final out = Uint8List(src.length);
+    for (var i = 0; i < src.length; i += 4) {
+      out[i] = lut[src[i]];
+      out[i + 1] = lut[src[i + 1]];
+      out[i + 2] = lut[src[i + 2]];
+      out[i + 3] = 255;
+    }
+    final done = Completer<ui.Image>();
+    ui.decodeImageFromPixels(
+        out, _shotW, _shotH, ui.PixelFormat.rgba8888, done.complete);
+    final image = await done.future;
+    if (!mounted) {
+      image.dispose();
+      return;
+    }
+    final old = _shotImage;
+    setState(() => _shotImage = image);
+    old?.dispose();
+  }
+
+  void _setGamma(double g) {
+    setState(() => _gamma = g);
+    _sendTone();
+  }
+
+  void _setBlack(double b) {
+    setState(() => _black = b);
+    _sendTone();
+  }
+
+  void _sendTone() {
+    _cameraChannel
+        .invokeMethod<void>('previewGamma', {'gamma': _gamma, 'black': _black});
+  }
+
+  Future<void> _gammaDone(double g) async {
+    await _store.saveGamma(g);
+    await _regammaShot();
   }
 
   /// Lengthen the shutter, then the ISO, until the frame holds about 30 stars.
@@ -1131,36 +1200,46 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     final live = _previewLive;
     final photo = shot != null && frame != null && (_showPhoto || !live);
     final Widget base;
+    final turns = _uprightTurns(context);
     if (photo) {
       base = CustomPaint(
         size: Size.infinite,
-          painter: _ShotPainter(
+        painter: _ShotPainter(
           image: shot,
           frame: frame,
-          quarterTurns: _sensorDeg ~/ 90,
+          quarterTurns: turns,
           ring: TA.success,
         ),
       );
     } else if (live) {
-      base = Center(
-        child: AspectRatio(
-          aspectRatio: _previewW > 0 && _previewH > 0
-              ? (_sensorDeg % 180 == 0
-                  ? _previewW / _previewH
-                  : _previewH / _previewW)
-              : 3 / 4,
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SizedBox(
-              width: (_sensorDeg % 180 == 0 ? _previewW : _previewH).toDouble(),
-              height: (_sensorDeg % 180 == 0 ? _previewH : _previewW).toDouble(),
-              child: RotatedBox(
-                quarterTurns: _sensorDeg ~/ 90,
-                child: Texture(textureId: _previewTextureId!),
-              ),
-            ),
-          ),
-        ),
+      // Hybrid composition so TextureView.setTransform is honored.
+      const viewType = 'teenastro/infinity_preview';
+      final params = <String, dynamic>{
+        'cameraId': _cameraId,
+        'gamma': _gamma,
+        'black': _black,
+      };
+      base = PlatformViewLink(
+        viewType: viewType,
+        surfaceFactory: (context, controller) {
+          return AndroidViewSurface(
+            controller: controller as AndroidViewController,
+            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+            hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+          );
+        },
+        onCreatePlatformView: (params_) {
+          return PlatformViewsService.initSurfaceAndroidView(
+            id: params_.id,
+            viewType: viewType,
+            layoutDirection: TextDirection.ltr,
+            creationParams: params,
+            creationParamsCodec: const StandardMessageCodec(),
+            onFocus: () => params_.onFocusChanged(true),
+          )
+            ..addOnPlatformViewCreatedListener(params_.onPlatformViewCreated)
+            ..create();
+        },
       );
     } else {
       base = Center(
@@ -1182,7 +1261,12 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        ColoredBox(color: Colors.black, child: base),
+        ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: AspectRatio(aspectRatio: 1, child: ClipRect(child: base)),
+          ),
+        ),
         if (photo)
           Positioned(
             top: 8,
@@ -1213,6 +1297,63 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           right: 0,
           child: Center(child: PushToCard()),
         ),
+        if (live || photo)
+          Positioned(
+            left: 8,
+            right: 8,
+            bottom: _status.isNotEmpty ? 30 : 4,
+            child: Container(
+              padding: const EdgeInsets.only(left: 10),
+              decoration: BoxDecoration(
+                  color: Colors.black54, borderRadius: BorderRadius.circular(6)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (live && !photo)
+                    Row(
+                      children: [
+                        Icon(Icons.contrast, size: 18, color: TA.textHigh),
+                        Expanded(
+                          child: Slider(
+                            min: 0,
+                            max: PhoneFinderStore.blackMax,
+                            divisions: 50,
+                            value: _black,
+                            onChanged: _setBlack,
+                            onChangeEnd: _store.saveBlack,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 52,
+                          child: Text('B ${(_black * 100).round()}%',
+                              style: overlay),
+                        ),
+                      ],
+                    ),
+                  Row(
+                    children: [
+                      Icon(Icons.brightness_6, size: 18, color: TA.textHigh),
+                      Expanded(
+                        child: Slider(
+                          min: PhoneFinderStore.gammaMin,
+                          max: PhoneFinderStore.gammaMax,
+                          divisions: 40,
+                          value: _gamma,
+                          onChanged: _setGamma,
+                          onChangeEnd: _gammaDone,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 52,
+                        child: Text('γ ${_gamma.toStringAsFixed(1)}',
+                            style: overlay),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         if (_status.isNotEmpty)
           Positioned(
             left: 0,
@@ -1540,8 +1681,9 @@ class _ShotPainter extends CustomPainter {
     final turned = quarterTurns.isOdd;
     final w = frame.width;
     final h = frame.height;
-    final scale = math.min(size.width / (turned ? h : w), size.height / (turned ? w : h));
+    final scale = math.max(size.width / (turned ? h : w), size.height / (turned ? w : h));
     canvas.save();
+    canvas.clipRect(Offset.zero & size);
     canvas.translate(size.width / 2, size.height / 2);
     canvas.rotate(quarterTurns * math.pi / 2);
     canvas.scale(scale);

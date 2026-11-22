@@ -18,6 +18,37 @@ class PhoneFinderStore {
   static const liveMaxSeconds = 180;
   static const liveDefaultSeconds = 60;
 
+  static const _gamma = 'phone_finder_view_gamma';
+  static const gammaMin = 1.0;
+  static const gammaMax = 5.0;
+  static const gammaDefault = 2.5;
+
+  /// Display gamma for the preview and photo. Solving always uses the raw frame.
+  Future<double> loadGamma() async {
+    final p = await SharedPreferences.getInstance();
+    return (p.getDouble(_gamma) ?? gammaDefault).clamp(gammaMin, gammaMax);
+  }
+
+  static const _black = 'phone_finder_view_black';
+  static const blackMax = 0.5;
+  static const blackDefault = 0.08;
+
+  /// Live preview black point (0..[blackMax]) as a fraction of full scale.
+  Future<double> loadBlack() async {
+    final p = await SharedPreferences.getInstance();
+    return (p.getDouble(_black) ?? blackDefault).clamp(0.0, blackMax);
+  }
+
+  Future<void> saveBlack(double black) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setDouble(_black, black.clamp(0.0, blackMax));
+  }
+
+  Future<void> saveGamma(double gamma) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setDouble(_gamma, gamma.clamp(gammaMin, gammaMax));
+  }
+
   /// How long Live keeps solving, in seconds.
   Future<int> loadLiveSeconds() async {
     final p = await SharedPreferences.getInstance();
