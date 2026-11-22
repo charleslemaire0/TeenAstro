@@ -1,6 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 
 /// One star from [CedarPhoto.extract], in crop pixels.
 class CedarStar {
@@ -26,6 +27,10 @@ class CedarCrop {
 
 typedef _OpenC = Pointer<Void> Function(Pointer<Uint8>, Pointer<Uint32>, Pointer<Uint32>);
 typedef _OpenDart = Pointer<Void> Function(Pointer<Uint8>, Pointer<Uint32>, Pointer<Uint32>);
+typedef _OpenMemoryC = Pointer<Void> Function(
+    Pointer<Uint8>, IntPtr, Pointer<Uint32>, Pointer<Uint32>);
+typedef _OpenMemoryDart = Pointer<Void> Function(
+    Pointer<Uint8>, int, Pointer<Uint32>, Pointer<Uint32>);
 typedef _CloseC = Void Function(Pointer<Void>);
 typedef _CloseDart = void Function(Pointer<Void>);
 typedef _ExtractC = Int32 Function(
@@ -64,12 +69,15 @@ typedef _FreeDart = void Function(Pointer<Uint8>, int);
 class _Cedar {
   _Cedar(DynamicLibrary lib)
       : open = lib.lookupFunction<_OpenC, _OpenDart>('cedar_open'),
+        openMemory =
+            lib.lookupFunction<_OpenMemoryC, _OpenMemoryDart>('cedar_open_memory'),
         close = lib.lookupFunction<_CloseC, _CloseDart>('cedar_close'),
         extract = lib.lookupFunction<_ExtractC, _ExtractDart>('cedar_extract'),
         alloc = lib.lookupFunction<_AllocC, _AllocDart>('cedar_alloc'),
         free = lib.lookupFunction<_FreeC, _FreeDart>('cedar_free');
 
   final _OpenDart open;
+  final _OpenMemoryDart openMemory;
   final _CloseDart close;
   final _ExtractDart extract;
   final _AllocDart alloc;
@@ -80,10 +88,21 @@ class _Cedar {
   static _Cedar load() {
     final cached = _loaded;
     if (cached != null) return cached;
-    final path = File('tool/cedar/cedar_native.dll').absolute.path;
-    return _loaded = _Cedar(DynamicLibrary.open(path));
+    return _loaded = _Cedar(_openLibrary());
+  }
+
+  static DynamicLibrary _openLibrary() {
+    if (Platform.isAndroid) return DynamicLibrary.open('libcedar_native.so');
+    if (Platform.isWindows) {
+      final local = File(_windowsPath);
+      if (local.existsSync()) return DynamicLibrary.open(local.absolute.path);
+      return DynamicLibrary.open('cedar_native.dll');
+    }
+    return DynamicLibrary.open('libcedar_native.so');
   }
 }
+
+const _windowsPath = 'tool/cedar/cedar_native.dll';
 
 /// Cedar's detector in this process. The photo is decoded once.
 class CedarPhoto {
@@ -96,7 +115,26 @@ class CedarPhoto {
 
   static const _starWords = 4;
 
-  static bool get available => File('tool/cedar/cedar_native.dll').existsSync();
+  static bool get available =>
+      Platform.isAndroid || File(_windowsPath).existsSync();
+
+  /// From an encoded photo in memory, such as a camera JPEG.
+  static CedarPhoto? openBytes(Uint8List encoded) {
+    final cedar = _Cedar.load();
+    final size = 8 + encoded.length;
+    final scratch = cedar.alloc(size);
+    if (scratch == nullptr) return null;
+    try {
+      final dims = scratch.cast<Uint32>();
+      final data = scratch + 8;
+      data.asTypedList(encoded.length).setAll(0, encoded);
+      final handle = cedar.openMemory(data, encoded.length, dims, dims + 1);
+      if (handle == nullptr) return null;
+      return CedarPhoto._(handle.address, dims[0], dims[1]);
+    } finally {
+      cedar.free(scratch, size);
+    }
+  }
 
   /// Null when the photo cannot be read.
   static CedarPhoto? open(String path) {

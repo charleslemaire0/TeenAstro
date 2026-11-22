@@ -14,6 +14,7 @@ import 'package:teenastro_app/models/lx200_commands.dart';
 import 'package:teenastro_app/models/mount_config.dart';
 import 'package:teenastro_app/models/mount_state.dart';
 import 'package:teenastro_app/models/planet_positions.dart';
+import 'package:teenastro_app/services/cedar_native.dart';
 import 'package:teenastro_app/services/lx200_tcp_client.dart';
 import 'package:teenastro_app/services/mount_state_provider.dart';
 import 'package:teenastro_app/services/phone_finder.dart';
@@ -174,6 +175,32 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     return '$time · ISO $iso';
   }
 
+  /// Cedar's stars in the camera JPEG, brightest aperture first.
+  /// The settings are the ones the photo benchmark solved every crop with.
+  static Future<StarFrame?> _cedarFrame(Uint8List jpeg) => Isolate.run(() {
+        final photo = CedarPhoto.openBytes(jpeg);
+        if (photo == null) return null;
+        try {
+          final crop = photo.extract(
+            x0: 0,
+            y0: 0,
+            cropWidth: photo.width,
+            cropHeight: photo.height,
+            sigma: 10.5,
+            binning: math.max(photo.width, photo.height) >= 2000 ? 2 : 1,
+            maxStars: 80,
+          );
+          if (crop == null) return null;
+          return StarFrame(
+            [for (final s in crop.stars) PixelStar(s.x, s.y)],
+            photo.width.toDouble(),
+            photo.height.toDouble(),
+          );
+        } finally {
+          photo.close();
+        }
+      });
+
   /// Lengthen the shutter, then the ISO, until the frame holds about 30 stars.
   /// The preview is released so the shutter time can be set directly.
   Future<StarFrame?> _captureForStars() async {
@@ -246,7 +273,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         us = applied.us;
         maxUs = applied.maxUs;
         final shown = _shutterLabel(us, iso);
-        final frame = bytes == null ? null : readStarFrame(bytes, maxStars: 80);
+        final frame = bytes == null ? null : await _cedarFrame(bytes);
         if (frame == null) continue;
         final count = frame.stars.length;
         final gap = (count - targetStarCount).abs();
@@ -317,10 +344,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       final data = await rootBundle.load('assets/tetra/phone55.tetra');
       final bytes =
           data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-      final opened = await Isolate.run(() {
-        final tetra = TetraSolver.openBytes(bytes);
-        return tetra == null ? null : (tetra.address, tetra.maxFovDeg);
-      });
+      final opened = await _openTetraBytes(bytes);
       if (opened == null) return null;
       final tetra = TetraSolver.attach(opened.$1, opened.$2);
       if (!mounted) {
@@ -334,15 +358,26 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     }
   }
 
+  /// Static so the isolate closure holds only the catalog bytes.
+  static Future<(int, double)?> _openTetraBytes(Uint8List bytes) =>
+      Isolate.run(() {
+        final tetra = TetraSolver.openBytes(bytes);
+        return tetra == null ? null : (tetra.address, tetra.maxFovDeg);
+      });
+
   /// Lost-in-space solve of the frame's stars. The result is J2000.
-  Future<FinderSolution?> _solveTetra(TetraSolver tetra, StarFrame frame) {
+  Future<FinderSolution?> _solveTetra(TetraSolver tetra, StarFrame frame) =>
+      _solveTetraOn(tetra, frame, _fov);
+
+  static Future<FinderSolution?> _solveTetraOn(
+      TetraSolver tetra, StarFrame frame, double fovLongDeg) {
     final address = tetra.address;
     final catalogFov = tetra.maxFovDeg;
     final stars = [for (final s in frame.stars) (x: s.x, y: s.y)];
     final width = frame.width;
     final height = frame.height;
     final longSide = math.max(width, height);
-    final focal = (longSide / 2) / math.tan(_fov * math.pi / 360);
+    final focal = (longSide / 2) / math.tan(fovLongDeg * math.pi / 360);
     final fovHorizontal = 2 * math.atan((width / 2) / focal) * 180 / math.pi;
     return Isolate.run(() {
       final result = TetraSolver.attach(address, catalogFov).solve(

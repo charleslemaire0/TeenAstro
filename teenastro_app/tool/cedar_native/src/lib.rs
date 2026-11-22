@@ -49,17 +49,45 @@ pub unsafe extern "C" fn cedar_open(
 ) -> *mut Photo {
     let opened = catch_unwind(AssertUnwindSafe(|| -> Option<Photo> {
         let path = CStr::from_ptr(path).to_str().ok()?;
-        let mut decoder = ImageReader::open(path)
-            .ok()?
-            .with_guessed_format()
-            .ok()?
-            .into_decoder()
-            .ok()?;
-        let orientation = decoder.orientation().ok()?;
-        let mut picture = DynamicImage::from_decoder(decoder).ok()?;
-        picture.apply_orientation(orientation);
-        Some(Photo { gray: luma_601(&picture) })
+        decode(ImageReader::open(path).ok()?)
     }));
+    hand_out(opened, width, height)
+}
+
+/// The same as [cedar_open], from an encoded photo already in memory.
+///
+/// # Safety
+/// `bytes` holds `length` readable bytes. `width` and `height` are writable.
+#[no_mangle]
+pub unsafe extern "C" fn cedar_open_memory(
+    bytes: *const u8,
+    length: usize,
+    width: *mut u32,
+    height: *mut u32,
+) -> *mut Photo {
+    if bytes.is_null() || length == 0 {
+        return std::ptr::null_mut();
+    }
+    let data = std::slice::from_raw_parts(bytes, length);
+    let opened = catch_unwind(AssertUnwindSafe(|| -> Option<Photo> {
+        decode(ImageReader::new(std::io::Cursor::new(data)))
+    }));
+    hand_out(opened, width, height)
+}
+
+fn decode<R: std::io::BufRead + std::io::Seek>(reader: ImageReader<R>) -> Option<Photo> {
+    let mut decoder = reader.with_guessed_format().ok()?.into_decoder().ok()?;
+    let orientation = decoder.orientation().ok()?;
+    let mut picture = DynamicImage::from_decoder(decoder).ok()?;
+    picture.apply_orientation(orientation);
+    Some(Photo { gray: luma_601(&picture) })
+}
+
+unsafe fn hand_out(
+    opened: std::thread::Result<Option<Photo>>,
+    width: *mut u32,
+    height: *mut u32,
+) -> *mut Photo {
     match opened {
         Ok(Some(photo)) => {
             *width = photo.gray.width();
