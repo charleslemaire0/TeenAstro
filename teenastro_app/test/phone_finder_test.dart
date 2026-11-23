@@ -279,6 +279,64 @@ void main() {
     expect(frameRead.height, 64);
   });
 
+  test('starsNearestCenter keeps the closest peaks', () {
+    final stars = [
+      const PixelStar(10, 10),
+      const PixelStar(50, 50),
+      const PixelStar(48, 52),
+      const PixelStar(90, 90),
+      const PixelStar(45, 45),
+    ];
+    final kept = starsNearestCenter(stars, 100, 100, max: 3);
+    expect(kept.length, 3);
+    expect(kept.map((s) => (s.x, s.y)).toSet(), {
+      (50.0, 50.0),
+      (48.0, 52.0),
+      (45.0, 45.0),
+    });
+  });
+
+  test('cameraAltitudeFromGravity matches zenith and horizon poses', () {
+    // Face-down: back lens at the zenith.
+    expect(cameraAltitudeFromGravity(0, 0, -9.81), closeTo(90, 0.1));
+    // Face-up: back lens at the nadir.
+    expect(cameraAltitudeFromGravity(0, 0, 9.81), closeTo(-90, 0.1));
+    // Upright: lens on the horizon.
+    expect(cameraAltitudeFromGravity(0, 9.81, 0), closeTo(0, 0.1));
+    expect(zenithAngleDeg(30), closeTo(60, 1e-9));
+    expect(tiltMismatchDeg(40, 55), closeTo(15, 1e-9));
+    expect(tiltMismatchDeg(null, 55), isNull);
+    expect(tiltMismatchDeg(50, 55)! <= tiltRejectDeg, isTrue);
+    expect(tiltMismatchDeg(30, 55)! > tiltRejectDeg, isTrue);
+  });
+
+  test('readStarFrameU16 keeps fractional ADUs for faint peaks', () {
+    const w = 64;
+    const h = 64;
+    final bd = ByteData(w * h * 2);
+    for (var i = 0; i < w * h; i++) {
+      bd.setUint16(i * 2, (12.3 * 256).round(), Endian.little);
+    }
+    for (final p in const [(12, 16), (40, 18), (20, 44), (48, 46)]) {
+      // Mean 12.8 ADU — would round to the same 8-bit level as the sky
+      // without ×256, but sits clearly above after stacking precision.
+      bd.setUint16((p.$2 * w + p.$1) * 2, (18.7 * 256).round(), Endian.little);
+      for (final d in const [-1, 0, 1]) {
+        bd.setUint16(
+            (p.$2 * w + p.$1 + d) * 2, (16.2 * 256).round(), Endian.little);
+        bd.setUint16(
+            ((p.$2 + d) * w + p.$1) * 2, (16.2 * 256).round(), Endian.little);
+      }
+      bd.setUint16((p.$2 * w + p.$1) * 2, (18.7 * 256).round(), Endian.little);
+    }
+    final frame = readStarFrameU16(bd.buffer.asUint8List(), w, h);
+    expect(frame, isNotNull);
+    expect(frame!.stars.length, 4);
+    expect(frame.width, 64);
+    final png = encodeGray16Png(bd.buffer.asUint8List(), w, h);
+    expect(png.length, greaterThan(64));
+  });
+
   test('starMiddle moves a click onto the bright center', () {
     final frame = img.Image(width: 80, height: 80);
     img.fill(frame, color: img.ColorRgb8(10, 10, 12));

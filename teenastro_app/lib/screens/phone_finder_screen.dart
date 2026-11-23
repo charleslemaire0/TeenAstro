@@ -18,7 +18,6 @@ import 'package:teenastro_app/models/lx200_commands.dart';
 import 'package:teenastro_app/models/mount_config.dart';
 import 'package:teenastro_app/models/mount_state.dart';
 import 'package:teenastro_app/models/planet_positions.dart';
-import 'package:teenastro_app/services/cedar_native.dart';
 import 'package:teenastro_app/services/finder_sky.dart';
 import 'package:teenastro_app/services/lx200_tcp_client.dart';
 import 'package:teenastro_app/services/mount_state_provider.dart';
@@ -56,9 +55,13 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   PhoneSolver _solver = PhoneSolver.tetra;
   TetraSolver? _tetra;
   String? _cameraId;
+  /// Main lens at 1×; centre stars replace digital zoom for solving.
+  static const double _zoom = 1.0;
   int _shutterUs = PhoneFinderStore.exposureDefaultUs;
   int _iso = PhoneFinderStore.isoDefault;
   String _exposureNote = '';
+  /// Back-camera altitude from gravity at the last capture, or null.
+  double? _phoneAltDeg;
   bool _live = false;
   int _liveSeconds = PhoneFinderStore.liveDefaultSeconds;
   DateTime? _liveUntil;
@@ -110,8 +113,8 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   /// Longer-side field of the camera, from its focal length and sensor size.
   Future<double?> _lensField(String cameraId) async {
     try {
-      final value = await _cameraChannel
-          .invokeMethod<num>('longerSideFov', {'cameraId': cameraId});
+      final value = await _cameraChannel.invokeMethod<num>(
+          'longerSideFov', {'cameraId': cameraId, 'zoom': _zoom});
       final deg = value?.toDouble();
       if (deg == null || deg < 5 || deg > 170) return null;
       return deg;
@@ -226,6 +229,32 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     return 'The solution is below the horizon (${alt.toStringAsFixed(0)}°)';
   }
 
+  /// Null when tilt agrees, site/tilt is unknown, or the mismatch is small.
+  String? _tiltMismatch(double raH, double decD) {
+    final phoneAlt = _phoneAltDeg;
+    if (phoneAlt == null) return null;
+    final state = ref.read(skyStateProvider);
+    final lst = parseMountHours(state.siderealTime);
+    if (lst == null) return null;
+    final skyAlt = altitudeDeg(state.latitude, lst, raH, decD);
+    final miss = tiltMismatchDeg(phoneAlt, skyAlt);
+    if (miss == null || miss <= tiltRejectDeg) return null;
+    return 'Tilt rejects this solve '
+        '(phone ${phoneAlt.toStringAsFixed(0)}°, '
+        'sky ${skyAlt.toStringAsFixed(0)}°, '
+        'Δ ${miss.toStringAsFixed(0)}°)';
+  }
+
+  Future<double?> _readPhoneAltitude() async {
+    if (!_hasCamera) return null;
+    try {
+      final raw =
+          await _cameraChannel.invokeMethod<dynamic>('phoneTilt');
+      if (raw is num) return raw.toDouble();
+    } catch (_) {}
+    return null;
+  }
+
   (double, double)? _mountPointing() => _pointingOf(ref.read(mountStateProvider));
 
   /// StellarSolver's search hint: the mount, or the last finder solve.
@@ -244,40 +273,28 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     return null;
   }
 
-  String _shutterLabel(int us, int iso) {
-    final time = us >= 1000000
-        ? '${(us / 1000000).toStringAsFixed(1)} s'
-        : us >= 10000
-            ? '${(us / 1000).toStringAsFixed(0)} ms'
-            : '${(us / 1000).toStringAsFixed(1)} ms';
-    return '$time · ISO $iso';
-  }
+  /// The camera picks the gain itself, so only the time is shown.
+  String _shutterLabel(int us, int iso) => us >= 1000000
+      ? '${(us / 1000000).toStringAsFixed(1)} s'
+      : us >= 10000
+          ? '${(us / 1000).toStringAsFixed(0)} ms'
+          : '${(us / 1000).toStringAsFixed(1)} ms';
 
-  /// Cedar's stars in the camera JPEG, brightest aperture first.
-  /// The settings are the ones the photo benchmark solved every crop with.
-  static Future<StarFrame?> _cedarFrame(Uint8List jpeg) => Isolate.run(() {
-        final photo = CedarPhoto.openBytes(jpeg);
-        if (photo == null) return null;
-        try {
-          final crop = photo.extract(
-            x0: 0,
-            y0: 0,
-            cropWidth: photo.width,
-            cropHeight: photo.height,
-            sigma: 10.5,
-            binning: math.max(photo.width, photo.height) >= 2000 ? 2 : 1,
-            maxStars: 80,
-          );
-          if (crop == null) return null;
-          return StarFrame(
-            [for (final s in crop.stars) PixelStar(s.x, s.y)],
-            photo.width.toDouble(),
-            photo.height.toDouble(),
-          );
-        } finally {
-          photo.close();
-        }
-      });
+  /// Stars on the stacked 16-bit mean (ADU × 256), not the 8-bit JPEG.
+  static Future<StarFrame?> _starsFromY16(
+    Uint8List y16,
+    int width,
+    int height,
+  ) =>
+      Isolate.run(() => readStarFrameU16(y16, width, height, maxStars: 80));
+
+  /// 16-bit grayscale PNG of the stack mean, for post-processing.
+  static Future<Uint8List> _pngFromY16(
+    Uint8List y16,
+    int width,
+    int height,
+  ) =>
+      Isolate.run(() => encodeGray16Png(y16, width, height));
 
   /// Show a captured photo with its extracted stars.
   Future<void> _showShot(Uint8List jpeg, StarFrame frame, String note) async {
@@ -343,6 +360,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
   Future<StarFrame?> _captureForStars() async {
     final id = _cameraId;
     if (id == null) return null;
+    _phoneAltDeg = await _readPhoneAltitude();
     await _stopPreview();
     await Future<void>.delayed(const Duration(milliseconds: 200));
 
@@ -351,7 +369,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       try {
         final raw = await _cameraChannel.invokeMethod<dynamic>(
           'manualOpen',
-          {'cameraId': id},
+          {'cameraId': id, 'zoom': _zoom},
         );
         if (raw is Map) limits = raw;
       } catch (_) {
@@ -377,29 +395,80 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
     StarFrame? best;
     var bestNote = '';
     try {
-      if (mounted) setState(() => _status = 'Shutter ${_shutterLabel(us, iso)}');
-      Uint8List? bytes;
+      if (mounted) {
+        setState(() => _status = 'Collecting ${_shutterLabel(us, iso)} of sky…');
+      }
+      Uint8List? jpeg;
+      Uint8List? y16;
+      var stackW = 0;
+      var stackH = 0;
       var delivered = us;
+      var frames = 1;
+      var aligned = 0;
+      var shaken = 0;
+      String? saved;
       try {
         final raw = await _cameraChannel.invokeMethod<dynamic>(
           'manualCapture',
           {'exposureUs': us, 'iso': iso},
         );
         if (raw is Map) {
-          bytes = _jpegBytes(raw['jpeg']);
+          jpeg = _jpegBytes(raw['jpeg']);
+          y16 = _jpegBytes(raw['y16']);
+          final w = raw['width'];
+          final h = raw['height'];
+          if (w is num) stackW = w.toInt();
+          if (h is num) stackH = h.toInt();
           final got = raw['exposureUs'];
           if (got is num && got > 0) delivered = got.toInt();
+          final count = raw['frames'];
+          if (count is num && count > 1) frames = count.toInt();
+          final reg = raw['aligned'];
+          if (reg is num) aligned = reg.toInt();
+          final drop = raw['shaken'];
+          if (drop is num) shaken = drop.toInt();
         } else {
-          bytes = _jpegBytes(raw);
+          jpeg = _jpegBytes(raw);
         }
       } catch (_) {
-        bytes = null;
+        jpeg = null;
+        y16 = null;
       }
-      bestNote = _shutterLabel(delivered, iso);
-      final frame = bytes == null ? null : await _cedarFrame(bytes);
-      if (frame != null) {
+      bestNote = frames > 1
+          ? '$frames × ${_timeLabel(delivered ~/ frames)} = '
+              '${_shutterLabel(delivered, iso)}, '
+              '${aligned + 1}/$frames aligned'
+          : _shutterLabel(delivered, iso);
+      if (shaken > 0) bestNote = '$bestNote, $shaken shaky skipped';
+      final detected = y16 != null && stackW > 0 && stackH > 0
+          ? await _starsFromY16(y16, stackW, stackH)
+          : null;
+      final frame = detected == null
+          ? null
+          : StarFrame(
+              starsNearestCenter(
+                detected.stars,
+                detected.width,
+                detected.height,
+                max: targetStarCount,
+              ),
+              detected.width,
+              detected.height,
+            );
+      if (y16 != null && stackW > 0 && stackH > 0) {
+        try {
+          final png = await _pngFromY16(y16, stackW, stackH);
+          final name = await _cameraChannel.invokeMethod<String>(
+            'manualSave',
+            {'bytes': png, 'mime': 'image/png', 'extension': 'png'},
+          );
+          if (name != null && name.isNotEmpty) saved = name;
+        } catch (_) {}
+      }
+      if (saved != null) bestNote = '$bestNote\nPictures/TeenAstro/$saved';
+      if (frame != null && jpeg != null) {
         best = frame;
-        _showShot(bytes!, frame, bestNote);
+        _showShot(jpeg, frame, bestNote);
         if (mounted) {
           setState(() =>
               _status = '${frame.stars.length} stars at $bestNote');
@@ -412,11 +481,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       if (mounted) await _openCamera();
     }
     _exposureNote = bestNote;
-    if (best == null) return null;
-    final kept = best.stars.length <= targetStarCount
-        ? best.stars
-        : best.stars.sublist(0, targetStarCount);
-    return StarFrame(kept, best.width, best.height);
+    return best;
   }
 
   Future<List<StellarIndex>?> _loadIndexes() async {
@@ -649,6 +714,11 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         setState(() => _status = horizon);
         return;
       }
+      final tilt = _tiltMismatch(shown.raH, shown.decD);
+      if (tilt != null) {
+        setState(() => _status = tilt);
+        return;
+      }
       final residual = (shown.rmsDeg * 60).toStringAsFixed(1);
       if (!sync) {
         ref.read(finderSkyProvider.notifier).publishSolve(shown.raH, shown.decD);
@@ -734,6 +804,16 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
         final axis = telescopeAxis(solved, _cones);
         axisRa = axis.$1;
         axisDec = axis.$2;
+      }
+      final horizon = _belowHorizon(axisRa, axisDec);
+      if (horizon != null) {
+        setState(() => _status = horizon);
+        return;
+      }
+      final tilt = _tiltMismatch(axisRa, axisDec);
+      if (tilt != null) {
+        setState(() => _status = tilt);
+        return;
       }
       final err = await _syncMount(axisRa, axisDec);
       if (!mounted) return;
@@ -1020,6 +1100,12 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
           if (mounted) setState(() => _status = horizon);
           return;
         }
+        final tilt = _tiltMismatch(axisRa, axisDec);
+        if (tilt != null) {
+          await _cancelAlign(client, true);
+          if (mounted) setState(() => _status = tilt);
+          return;
+        }
         final residual = (solved.rmsDeg * 60).toStringAsFixed(1);
         setState(() =>
             _status = '$n/${plan!.places.length}  $residual\'  Recording');
@@ -1142,15 +1228,6 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
             enabled: !_busy && !_live,
             onChanged: (v) => setState(() => _shutterUs = v),
             onDone: _store.saveExposureUs,
-          ),
-          _stepSlider(
-            icon: Icons.iso,
-            steps: PhoneFinderStore.isoSteps,
-            value: _iso,
-            label: '$_iso',
-            enabled: !_busy && !_live,
-            onChanged: (v) => setState(() => _iso = v),
-            onDone: _store.saveIso,
           ),
           Row(
             children: [
@@ -1302,6 +1379,7 @@ class _PhoneFinderScreenState extends ConsumerState<PhoneFinderScreen> {
       final params = <String, dynamic>{
         'cameraId': _cameraId,
         'gamma': _gamma,
+        'zoom': _zoom,
       };
       base = PlatformViewLink(
         viewType: viewType,

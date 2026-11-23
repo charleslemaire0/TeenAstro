@@ -2,7 +2,6 @@ package com.teenastro.teenastro_app
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -10,61 +9,73 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
+import android.hardware.camera2.TotalCaptureResult
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Range
 import android.view.Surface
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.math.abs
-import kotlin.math.max
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Still capture with an explicit shutter time. The preview camera must be
- * closed before [open], because a phone allows only one client per camera.
+ * Sky still for phones that give apps no manual shutter (Samsung LIMITED
+ * cameras ignore SENSOR_EXPOSURE_TIME and SENSOR_SENSITIVITY). Auto-exposure
+ * runs at its brightest, the slowest frame rate is requested, and full-colour
+ * YUV frames are averaged until the requested time has been collected.
+ * The preview camera must be closed before [open].
  */
-class ManualSkyCapture(context: Context) {
+class ManualSkyCapture(private val context: Context) {
     private val manager =
         context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     private val thread = HandlerThread("teenastro-shutter").also { it.start() }
     private val handler = Handler(thread.looper)
+    private val frameThread = HandlerThread("teenastro-frames").also { it.start() }
+    private val frameHandler = Handler(frameThread.looper)
 
     private var device: CameraDevice? = null
     private var session: CameraCaptureSession? = null
     private var reader: ImageReader? = null
+    private var characteristics: CameraCharacteristics? = null
+    private var zoom: Float = 1f
+    private var slowFps: Range<Int>? = null
+    private var aeCompMax: Int = 0
+
     var minUs: Int = 1
         private set
-    var maxUs: Int = 1
+    var maxUs: Int = 300_000_000
         private set
     var minIso: Int = 100
         private set
     var maxIso: Int = 100
         private set
 
-    fun open(cameraId: String): Boolean {
+    fun open(cameraId: String, zoomRatio: Float): Boolean {
         close()
+        zoom = zoomRatio
         val chars = try {
             manager.getCameraCharacteristics(cameraId)
         } catch (_: Exception) {
             return false
         }
-        val exposure = chars.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE)
-            ?: return false
         val sensitivity = chars.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE)
-            ?: return false
+        minIso = sensitivity?.lower ?: 100
+        maxIso = (sensitivity?.upper ?: 100).coerceAtLeast(minIso)
         val sizes = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-            ?.getOutputSizes(ImageFormat.JPEG)
+            ?.getOutputSizes(ImageFormat.YUV_420_888)
         if (sizes.isNullOrEmpty()) return false
-        minUs = (exposure.lower / 1000L).toInt().coerceAtLeast(1)
-        val samsungUpper = samsungExposureUpperNs(chars)
-        val upperNs = maxOf(exposure.upper, samsungUpper ?: 0L)
-        maxUs = (upperNs / 1000L).toInt().coerceAtLeast(minUs)
-        minIso = sensitivity.lower
-        maxIso = sensitivity.upper.coerceAtLeast(minIso)
+        slowFps = chars.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+            ?.minWithOrNull(compareBy<Range<Int>> { it.lower }.thenBy { it.upper })
+        aeCompMax = chars.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE)?.upper ?: 0
+        characteristics = chars
 
-        val size = sizes.minByOrNull { abs(max(it.width, it.height) - 1280) } ?: return false
-        val imageReader = ImageReader.newInstance(size.width, size.height, ImageFormat.JPEG, 2)
+        // 16:9 like the preview, binned about 2×2 by the camera (1920×1080 here).
+        val size = CameraLens.binnedSize(sizes) ?: return false
+        val imageReader =
+            ImageReader.newInstance(size.width, size.height, ImageFormat.YUV_420_888, 4)
         val opened = CountDownLatch(1)
         var camera: CameraDevice? = null
         try {
@@ -84,9 +95,6 @@ class ManualSkyCapture(context: Context) {
                     opened.countDown()
                 }
             }, handler)
-        } catch (_: SecurityException) {
-            imageReader.close()
-            return false
         } catch (_: Exception) {
             imageReader.close()
             return false
@@ -123,170 +131,163 @@ class ManualSkyCapture(context: Context) {
             imageReader.close()
             return false
         }
-        // Drive the lens to infinity before the first still.
-        try {
-            val prep = camera!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                addTarget(imageReader.surface)
-                put(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
-                put(CaptureRequest.LENS_FOCUS_DISTANCE, 0f)
-                put(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
-            }.build()
-            made!!.setRepeatingRequest(prep, null, handler)
-            Thread.sleep(350)
-            made!!.stopRepeating()
-        } catch (_: Exception) {
-        }
         device = camera
         session = made
         reader = imageReader
         return true
     }
 
-    /**
-     * A still of [exposureUs]. Only when the request is longer than the camera's
-     * single-frame limit, frames are averaged in colour until the total time is met.
-     */
-    fun capture(exposureUs: Int, iso: Int): SkyShot? {
-        val requestedNs = exposureUs.coerceAtLeast(minUs).toLong() * 1000L
-        val gain = iso.coerceIn(minIso, maxIso)
-        val maxNs = maxUs.toLong() * 1000L
-        val firstNs = minOf(requestedNs, maxNs)
-        val first = captureOnce(firstNs, gain) ?: return null
-        val gotNs = first.second.coerceAtLeast(1L)
-        // Stay with one JPEG unless the user asked for more than one frame can hold.
-        if (requestedNs <= maxNs * 11 / 10 || gotNs >= requestedNs * 9 / 10) {
-            return SkyShot(first.first, (gotNs / 1000L).toInt().coerceAtLeast(1))
-        }
-        val sliceNs = minOf(gotNs, maxNs)
-        val frames = ((requestedNs + sliceNs - 1) / sliceNs).toInt().coerceIn(2, 120)
-        val base = BitmapFactory.decodeByteArray(first.first, 0, first.first.size)
-            ?: return SkyShot(first.first, (gotNs / 1000L).toInt())
-        val w = base.width
-        val h = base.height
-        val sumR = IntArray(w * h)
-        val sumG = IntArray(w * h)
-        val sumB = IntArray(w * h)
-        val px = IntArray(w * h)
-        var n = 0
-        fun add(bitmap: Bitmap) {
-            if (bitmap.width != w || bitmap.height != h) return
-            bitmap.getPixels(px, 0, w, 0, 0, w, h)
-            for (i in px.indices) {
-                val c = px[i]
-                sumR[i] += (c shr 16) and 0xff
-                sumG[i] += (c shr 8) and 0xff
-                sumB[i] += c and 0xff
-            }
-            n++
-        }
-        add(base)
-        base.recycle()
-        var totalNs = gotNs
-        for (k in 1 until frames) {
-            val next = captureOnce(sliceNs, gain) ?: break
-            val bitmap = BitmapFactory.decodeByteArray(next.first, 0, next.first.size) ?: break
-            add(bitmap)
-            bitmap.recycle()
-            totalNs += next.second.coerceAtLeast(1L)
-        }
-        val div = n.coerceAtLeast(1)
-        for (i in px.indices) {
-            val r = (sumR[i] / div).coerceIn(0, 255)
-            val g = (sumG[i] / div).coerceIn(0, 255)
-            val b = (sumB[i] / div).coerceIn(0, 255)
-            px[i] = (0xff shl 24) or (r shl 16) or (g shl 8) or b
-        }
-        val out = Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
-        val stream = ByteArrayOutputStream()
-        out.compress(Bitmap.CompressFormat.JPEG, 92, stream)
-        out.recycle()
-        return SkyShot(stream.toByteArray(), (totalNs / 1000L).toInt().coerceAtLeast(1))
-    }
-
-    /** One frame: the JPEG and the exposure the sensor reports. */
-    private fun captureOnce(ns: Long, gain: Int): Pair<ByteArray, Long>? {
+    private fun skyRequest(target: Surface): CaptureRequest? {
         val camera = device ?: return null
-        val captureSession = session ?: return null
-        val imageReader = reader ?: return null
-        while (true) {
-            val leftover = imageReader.acquireNextImage() ?: break
-            leftover.close()
-        }
-        val latch = CountDownLatch(1)
-        val resultLatch = CountDownLatch(1)
-        var jpeg: ByteArray? = null
-        var failed = false
-        var exposureNs = ns
-        imageReader.setOnImageAvailableListener({ pending ->
-            val image = pending.acquireNextImage() ?: return@setOnImageAvailableListener
-            try {
-                val buffer = image.planes[0].buffer
-                val bytes = ByteArray(buffer.remaining())
-                buffer.get(bytes)
-                jpeg = bytes
-            } finally {
-                image.close()
-                latch.countDown()
-            }
-        }, handler)
-        val request = try {
+        return try {
             camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
-                addTarget(imageReader.surface)
-                put(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_OFF)
-                put(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+                addTarget(target)
+                put(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
+                put(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                put(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, aeCompMax)
+                slowFps?.let { put(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, it) }
                 put(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+                put(CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f)
                 put(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO)
-                put(CaptureRequest.CONTROL_ENABLE_ZSL, false)
+                put(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+                // Noise reduction erases faint stars as noise; averaging does that job.
                 put(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_OFF)
                 put(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_OFF)
-                put(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
-                put(CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f)
-                put(CaptureRequest.SENSOR_EXPOSURE_TIME, ns)
-                put(CaptureRequest.SENSOR_FRAME_DURATION, ns.coerceAtLeast(33_000_000L))
-                put(CaptureRequest.SENSOR_SENSITIVITY, gain)
-                put(samsungExposureTimeKey, ns)
-                put(CaptureRequest.JPEG_QUALITY, 92.toByte())
+                characteristics?.let { CameraLens.applyZoom(this, it, zoom) }
             }.build()
-        } catch (_: Exception) {
-            return null
-        }
-        return try {
-            captureSession.capture(request, object : CameraCaptureSession.CaptureCallback() {
-                override fun onCaptureCompleted(
-                    session: CameraCaptureSession,
-                    request: CaptureRequest,
-                    result: android.hardware.camera2.TotalCaptureResult,
-                ) {
-                    val got = result.get(CaptureResult.SENSOR_EXPOSURE_TIME)
-                    if (got != null && got > 0L) exposureNs = got
-                    resultLatch.countDown()
-                }
-
-                override fun onCaptureFailed(
-                    session: CameraCaptureSession,
-                    request: CaptureRequest,
-                    failure: android.hardware.camera2.CaptureFailure,
-                ) {
-                    failed = true
-                    resultLatch.countDown()
-                    latch.countDown()
-                }
-            }, handler)
-            val waitMs = ns / 1_000_000L + 8000L
-            if (!latch.await(waitMs, TimeUnit.MILLISECONDS)) return null
-            resultLatch.await(2, TimeUnit.SECONDS)
-            val bytes = jpeg
-            if (failed || bytes == null) return null
-            Pair(bytes, exposureNs)
         } catch (_: Exception) {
             null
         }
+    }
+
+    /**
+     * Average steady frames for [exposureUs] of sensor time (at least one).
+     * Shaky frames (gyro jolt or tip) are dropped and do not count toward the
+     * total. [iso] is ignored: this camera chooses the gain itself.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun capture(exposureUs: Int, iso: Int): SkyShot? {
+        val captureSession = session ?: return null
+        val imageReader = reader ?: return null
+        val request = skyRequest(imageReader.surface) ?: return null
+        val stacker = SkyStacker(imageReader.width, imageReader.height)
+        val wantedNs = exposureUs.toLong().coerceAtLeast(1L) * 1000L
+        val collectedNs = AtomicLong(0L)
+        val lastExposureNs = AtomicLong(0L)
+        val counted = AtomicInteger(0)
+        val shaken = AtomicInteger(0)
+        val done = CountDownLatch(1)
+        val armed = java.util.concurrent.atomic.AtomicBoolean(false)
+        // Let auto-exposure settle in the dark before frames count.
+        val settleUntil = System.nanoTime() + 1_500_000_000L
+        val shake = ShakeGuard(context)
+        shake.start()
+
+        while (true) {
+            val stale = imageReader.acquireNextImage() ?: break
+            stale.close()
+        }
+        imageReader.setOnImageAvailableListener({ r ->
+            val image = r.acquireNextImage() ?: return@setOnImageAvailableListener
+            try {
+                if (done.count == 0L) return@setOnImageAvailableListener
+                if (System.nanoTime() < settleUntil) return@setOnImageAvailableListener
+                if (armed.compareAndSet(false, true)) shake.arm()
+                if (shake.isShaky()) {
+                    shaken.incrementAndGet()
+                    return@setOnImageAvailableListener
+                }
+                stacker.add(image)
+                counted.incrementAndGet()
+                val exp = lastExposureNs.get().takeIf { it > 0 } ?: 100_000_000L
+                if (collectedNs.addAndGet(exp) >= wantedNs) done.countDown()
+            } finally {
+                image.close()
+            }
+        }, frameHandler)
+
+        val callback = object : CameraCaptureSession.CaptureCallback() {
+            override fun onCaptureCompleted(
+                session: CameraCaptureSession,
+                request: CaptureRequest,
+                result: TotalCaptureResult,
+            ) {
+                val got = result.get(CaptureResult.SENSOR_EXPOSURE_TIME)
+                if (got != null && got > 0L) lastExposureNs.set(got)
+            }
+        }
+        try {
+            captureSession.setRepeatingRequest(request, callback, handler)
+        } catch (_: Exception) {
+            imageReader.setOnImageAvailableListener(null, null)
+            shake.stop()
+            return null
+        }
+        // Extra headroom when wind drops many frames.
+        val waitMs = wantedNs / 1_000_000L * 6 + 20_000L
+        done.await(waitMs, TimeUnit.MILLISECONDS)
+        try {
+            captureSession.stopRepeating()
+        } catch (_: Exception) {
+        }
+        imageReader.setOnImageAvailableListener(null, null)
+        shake.stop()
+        // Let an in-flight frame finish on the frame thread.
+        val drained = CountDownLatch(1)
+        frameHandler.post { drained.countDown() }
+        drained.await(2, TimeUnit.SECONDS)
+        val frames = counted.get()
+        if (frames == 0) return null
+
+        val y16 = stacker.resultY16()
+        val bitmap = stacker.result()
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, stream)
+        bitmap.recycle()
+        val totalUs = (collectedNs.get() / 1000L).coerceIn(1L, Int.MAX_VALUE.toLong()).toInt()
+        return SkyShot(
+            stream.toByteArray(),
+            y16,
+            imageReader.width,
+            imageReader.height,
+            totalUs,
+            frames,
+            stacker.aligned,
+            shaken.get(),
+        )
     }
 
     private fun <T> CaptureRequest.Builder.put(key: CaptureRequest.Key<T>, value: T) {
         try {
             set(key, value)
         } catch (_: Exception) {
+        }
+    }
+
+    /** Gallery copy under Pictures/TeenAstro, for later processing. */
+    fun save(bytes: ByteArray, mime: String, extension: String): String? {
+        val name = "TeenAstro_" +
+            java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US)
+                .format(java.util.Date()) + ".$extension"
+        val values = android.content.ContentValues().apply {
+            put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name)
+            put(android.provider.MediaStore.Images.Media.MIME_TYPE, mime)
+            put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/TeenAstro")
+            put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val uri = context.contentResolver.insert(
+            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            values,
+        ) ?: return null
+        return try {
+            context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+            values.clear()
+            values.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+            context.contentResolver.update(uri, values, null, null)
+            name
+        } catch (_: Exception) {
+            context.contentResolver.delete(uri, null, null)
+            null
         }
     }
 
@@ -306,31 +307,29 @@ class ManualSkyCapture(context: Context) {
         } catch (_: Exception) {
         }
         reader = null
-    }
-
-    /** Samsung's own range reaches several seconds; the public Camera2 range stops at 0.1 s. */
-    private fun samsungExposureUpperNs(chars: CameraCharacteristics): Long? {
-        return try {
-            val key = CameraCharacteristics.Key(
-                "samsung.android.sensor.info.exposureTimeRange",
-                LongArray::class.java,
-            )
-            val range = chars.get(key) ?: return null
-            if (range.size < 2 || range[1] <= range[0]) null else range[1]
-        } catch (_: Exception) {
-            null
-        }
+        characteristics = null
     }
 
     fun release() {
         close()
         thread.quitSafely()
+        frameThread.quitSafely()
     }
 }
 
-class SkyShot(val jpeg: ByteArray, val exposureUs: Int)
-
-private val samsungExposureTimeKey = CaptureRequest.Key(
-    "samsung.android.sensor.exposureTimeInternal",
-    Long::class.javaObjectType,
+/**
+ * [jpeg] is 8-bit for display only; [y16] is little-endian mean×256 luma for
+ * solving. [exposureUs] is the total collected; [frames] how many steady sensor
+ * frames made it; [aligned] how many of those were registered on the reference
+ * stars; [shaken] how many frames the IMU vetoed.
+ */
+class SkyShot(
+    val jpeg: ByteArray,
+    val y16: ByteArray,
+    val width: Int,
+    val height: Int,
+    val exposureUs: Int,
+    val frames: Int,
+    val aligned: Int,
+    val shaken: Int,
 )

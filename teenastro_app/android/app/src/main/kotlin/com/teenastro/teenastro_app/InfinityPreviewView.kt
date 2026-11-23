@@ -32,6 +32,7 @@ class InfinityPreviewView(
     private val activity: Activity,
     private val cameraId: String,
     @Volatile private var gamma: Float,
+    private val zoom: Float,
 ) : PlatformView, TextureView.SurfaceTextureListener {
     companion object {
         @Volatile
@@ -51,11 +52,13 @@ class InfinityPreviewView(
     private var session: CameraCaptureSession? = null
     private var previewSize: Size = Size(1280, 720)
     private var sensorOrientation: Int = 90
+    private var characteristics: CameraCharacteristics? = null
 
     init {
         textureView.surfaceTextureListener = this
         try {
             val chars = manager.getCameraCharacteristics(cameraId)
+            characteristics = chars
             sensorOrientation = chars.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 90
             toneModes = chars.get(CameraCharacteristics.TONEMAP_AVAILABLE_TONE_MAP_MODES)
                 ?: IntArray(0)
@@ -105,6 +108,7 @@ class InfinityPreviewView(
                     set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, aeCompMax)
                 } catch (_: Exception) {
                 }
+                characteristics?.let { CameraLens.applyZoom(this, it, zoom) }
                 applyTone(this)
             }.build()
             captureSession.setRepeatingRequest(request, null, handler)
@@ -278,7 +282,8 @@ class InfinityPreviewFactory(private val activity: Activity) :
         val params = args as? Map<*, *>
         val cameraId = params?.get("cameraId") as? String ?: "0"
         val gamma = (params?.get("gamma") as? Number)?.toFloat() ?: 1f
-        return InfinityPreviewView(activity, cameraId, gamma).also {
+        val zoom = (params?.get("zoom") as? Number)?.toFloat() ?: 1f
+        return InfinityPreviewView(activity, cameraId, gamma, zoom).also {
             InfinityPreviewView.current = it
         }
     }

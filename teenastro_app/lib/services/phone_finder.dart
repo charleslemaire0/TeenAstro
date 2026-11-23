@@ -1823,6 +1823,29 @@ double altitudeDeg(double latDeg, double lstH, double raH, double decD) {
   return math.asin(sinAlt.clamp(-1.0, 1.0)) * 180 / math.pi;
 }
 
+/// Zenith angle is 90° − altitude. Same number from the phone tilt and from
+/// the solved RA/Dec at the observing site.
+double zenithAngleDeg(double altitudeDeg) => 90.0 - altitudeDeg;
+
+/// How far the solved altitude is from the phone's measured camera altitude.
+/// Null when either side is missing.
+double? tiltMismatchDeg(double? phoneAltitudeDeg, double solvedAltitudeDeg) {
+  if (phoneAltitudeDeg == null) return null;
+  return (phoneAltitudeDeg - solvedAltitudeDeg).abs();
+}
+
+/// Reject a solve when the phone tilt and the sky position disagree by more
+/// than this many degrees (finder offset + cheap IMU).
+const tiltRejectDeg = 15.0;
+
+/// Back-camera altitude from an Android gravity sample (device +Z out of the
+/// screen, lens along −Z). Matches [PhoneTilt.altitudeFromGravity].
+double? cameraAltitudeFromGravity(double gx, double gy, double gz) {
+  final norm = math.sqrt(gx * gx + gy * gy + gz * gz);
+  if (norm < 1.0) return null;
+  return math.asin((-gz / norm).clamp(-1.0, 1.0)) * 180 / math.pi;
+}
+
 
 String _traceHours(double hours) {
   var total = (wrapHours(hours) * 3600).round();
@@ -2049,8 +2072,26 @@ List<PhoneAlignPlan> phoneAlignPlans({
   return plans;
 }
 
-/// Stars the automatic exposure aims for in one frame.
+/// Stars passed to Tetra and StellarSolver from one frame.
 const int targetStarCount = 30;
+
+/// Keep [max] stars nearest the frame centre (both solvers use this shortlist).
+List<PixelStar> starsNearestCenter(
+  List<PixelStar> stars,
+  double width,
+  double height, {
+  int max = targetStarCount,
+}) {
+  if (stars.length <= max) return List<PixelStar>.from(stars);
+  final cx = width / 2;
+  final cy = height / 2;
+  final ranked = [...stars]..sort((a, b) {
+      final da = (a.x - cx) * (a.x - cx) + (a.y - cy) * (a.y - cy);
+      final db = (b.x - cx) * (b.x - cx) + (b.y - cy) * (b.y - cy);
+      return da.compareTo(db);
+    });
+  return ranked.sublist(0, max);
+}
 
 /// First shutter of a solve, in microseconds. One second.
 const int startShutterUs = 1000000;
@@ -2216,6 +2257,109 @@ double? nextExposureOffset({
   }
   if (weight <= 0) return null;
   return (x: sx / weight, y: sy / weight);
+}
+
+/// Encode little-endian mean×256 luma as a 16-bit grayscale PNG.
+Uint8List encodeGray16Png(Uint8List y16Le, int width, int height) {
+  final image = img.Image(
+    width: width,
+    height: height,
+    numChannels: 1,
+    format: img.Format.uint16,
+  );
+  final bd = ByteData.sublistView(y16Le);
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      final v = bd.getUint16((y * width + x) * 2, Endian.little);
+      image.setPixelR(x, y, v);
+    }
+  }
+  return Uint8List.fromList(img.encodePng(image));
+}
+
+/// Stars on a stacked mean kept as little-endian u16 (mean ADU × 256).
+/// Works in float ADUs so averaging is not crushed back to 8-bit before detect.
+StarFrame? readStarFrameU16(
+  Uint8List y16Le,
+  int width,
+  int height, {
+  int maxStars = 80,
+}) {
+  if (y16Le.length < width * height * 2 || width < 16 || height < 16) {
+    return null;
+  }
+  const bin = 2;
+  final bw = width ~/ bin;
+  final bh = height ~/ bin;
+  if (bw < 8 || bh < 8) return null;
+  final bd = ByteData.sublistView(y16Le);
+  final binned = Float64List(bw * bh);
+  for (var by = 0; by < bh; by++) {
+    for (var bx = 0; bx < bw; bx++) {
+      var s = 0.0;
+      for (var j = 0; j < bin; j++) {
+        for (var i = 0; i < bin; i++) {
+          final idx = ((by * bin + j) * width + (bx * bin + i)) * 2;
+          s += bd.getUint16(idx, Endian.little) / 256.0;
+        }
+      }
+      binned[by * bw + bx] = s / (bin * bin);
+    }
+  }
+  var mean = 0.0;
+  for (final v in binned) {
+    mean += v;
+  }
+  mean /= binned.length;
+  var variance = 0.0;
+  for (final v in binned) {
+    final d = v - mean;
+    variance += d * d;
+  }
+  final sigma = math.sqrt(variance / binned.length).clamp(1.0 / 256.0, 1e9);
+  final threshold = mean + 5 * sigma;
+  final found = <({double x, double y, double flux})>[];
+  for (var by = 1; by < bh - 1; by++) {
+    for (var bx = 1; bx < bw - 1; bx++) {
+      final c = binned[by * bw + bx];
+      if (c < threshold) continue;
+      var peak = true;
+      for (var j = -1; j <= 1 && peak; j++) {
+        for (var i = -1; i <= 1; i++) {
+          if ((i != 0 || j != 0) && binned[(by + j) * bw + bx + i] > c) {
+            peak = false;
+            break;
+          }
+        }
+      }
+      if (!peak) continue;
+      var sw = 0.0;
+      var sx = 0.0;
+      var sy = 0.0;
+      for (var j = -1; j <= 1; j++) {
+        for (var i = -1; i <= 1; i++) {
+          final v = binned[(by + j) * bw + bx + i] - mean;
+          if (v <= 0) continue;
+          sw += v;
+          sx += v * (bx + i);
+          sy += v * (by + j);
+        }
+      }
+      if (sw <= 0) continue;
+      found.add((
+        x: (sx / sw + 0.5) * bin - 0.5,
+        y: (sy / sw + 0.5) * bin - 0.5,
+        flux: sw,
+      ));
+    }
+  }
+  found.sort((a, b) => b.flux.compareTo(a.flux));
+  final kept = found.take(maxStars).toList();
+  return StarFrame(
+    [for (final s in kept) PixelStar(s.x, s.y)],
+    width.toDouble(),
+    height.toDouble(),
+  );
 }
 
 /// Bright peaks in a camera frame, brightest first.

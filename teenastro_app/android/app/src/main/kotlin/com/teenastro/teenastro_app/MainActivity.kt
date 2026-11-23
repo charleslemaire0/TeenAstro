@@ -10,9 +10,7 @@ import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import kotlin.math.PI
-import kotlin.math.atan
-import kotlin.math.max
+import kotlin.math.abs
 
 class MainActivity : FlutterActivity() {
     private val skyCapture by lazy { ManualSkyCapture(this) }
@@ -33,7 +31,8 @@ class MainActivity : FlutterActivity() {
                 "ensureCameraPermission" -> ensureCameraPermission(result)
                 "longerSideFov" -> {
                     val id = call.argument<String>("cameraId")
-                    val deg = if (id.isNullOrEmpty()) null else longerSideFov(id)
+                    val zoom = (call.argument<Double>("zoom") ?: 1.0).toFloat()
+                    val deg = if (id.isNullOrEmpty()) null else longerSideFov(id, zoom)
                     if (deg == null) {
                         result.error("unavailable", "The lens field is not reported", null)
                     } else {
@@ -61,7 +60,8 @@ class MainActivity : FlutterActivity() {
                     Thread {
                         // Preview PlatformView must be removed first; give it time to release.
                         Thread.sleep(300)
-                        val opened = skyCapture.open(id)
+                        val zoom = (call.argument<Double>("zoom") ?: 1.0).toFloat()
+                        val opened = skyCapture.open(id, zoom)
                         runOnUiThread {
                             if (!opened) {
                                 result.error("unavailable", "The shutter could not be set", null)
@@ -90,16 +90,47 @@ class MainActivity : FlutterActivity() {
                                 result.success(
                                     mapOf(
                                         "jpeg" to shot.jpeg,
+                                        "y16" to shot.y16,
+                                        "width" to shot.width,
+                                        "height" to shot.height,
                                         "exposureUs" to shot.exposureUs,
+                                        "frames" to shot.frames,
+                                        "aligned" to shot.aligned,
+                                        "shaken" to shot.shaken,
                                     ),
                                 )
                             }
                         }
                     }.start()
                 }
+                "manualSave" -> {
+                    val bytes = call.argument<ByteArray>("bytes")
+                    val mime = call.argument<String>("mime") ?: "image/png"
+                    val extension = call.argument<String>("extension") ?: "png"
+                    if (bytes == null) {
+                        result.error("invalid", "No bytes to save", null)
+                    } else {
+                        Thread {
+                            val saved = skyCapture.save(bytes, mime, extension)
+                            runOnUiThread { result.success(saved ?: "") }
+                        }.start()
+                    }
+                }
                 "manualClose" -> {
                     skyCapture.close()
                     result.success(null)
+                }
+                "phoneTilt" -> {
+                    Thread {
+                        val alt = PhoneTilt.cameraAltitudeDeg(this)
+                        runOnUiThread {
+                            if (alt == null) {
+                                result.success(null)
+                            } else {
+                                result.success(alt)
+                            }
+                        }
+                    }.start()
                 }
                 else -> result.notImplemented()
             }
@@ -160,33 +191,27 @@ class MainActivity : FlutterActivity() {
             val facing = chars.get(CameraCharacteristics.LENS_FACING)
                 ?: continue
             if (facing != CameraCharacteristics.LENS_FACING_BACK) continue
+            val fov = CameraLens.longerSideFovDeg(chars)
             out.add(
                 mapOf(
                     "id" to id,
                     "sensorOrientation" to (chars.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 90),
+                    "fovDeg" to (fov ?: 0.0),
                 ),
             )
         }
-        return out
+        // Prefer the 1× main FOV (~70°), not the 0.5× ultra-wide.
+        return out.sortedBy { abs((it["fovDeg"] as Double) - 70.0) }
     }
 
-    private fun longerSideFov(cameraId: String): Double? {
+    private fun longerSideFov(cameraId: String, zoom: Float): Double? {
         val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val chars = try {
             manager.getCameraCharacteristics(cameraId)
         } catch (_: Exception) {
             return null
         }
-        val size = chars.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE) ?: return null
-        val focals = chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
-        if (focals == null || focals.isEmpty()) return null
-        val focal = focals[0].toDouble()
-        if (focal <= 0.0) return null
-        val side = max(size.width.toDouble(), size.height.toDouble())
-        if (side <= 0.0) return null
-        val deg = 2.0 * atan(side / (2.0 * focal)) * 180.0 / PI
-        if (deg < 5.0 || deg > 170.0) return null
-        return deg
+        return CameraLens.longerSideFovDeg(chars, zoom)
     }
 
     companion object {

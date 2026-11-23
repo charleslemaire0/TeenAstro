@@ -251,7 +251,7 @@ class TetraSolver {
 
   void close() => _Tetra.load().close(Pointer<Void>.fromAddress(address));
 
-  /// Lost-in-space solve of stars in pixels, brightest first.
+  /// Lost-in-space solve of stars in pixels (nearest the centre preferred).
   ///
   /// [fovHorizontalDeg] is the expected horizontal field. When it is more
   /// than 5° from the catalog's field, the catalog field is tried as well.
