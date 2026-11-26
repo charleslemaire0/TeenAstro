@@ -71,6 +71,12 @@ class CatMgr {
     /// \p session    0 two-star, 1 four-star, 2 first half of 3+3, 3 the other half.
     /// The list rule for each pair is alignCatalogRule() in AlignCatalogRule.h.
     void        buildAlignRank(int mountKind, int session, const float *prevRa, const float *prevDec, int nPrev);
+    /// Named-star list for the gear check. leg 0 is the sync, 1 is mostly
+    /// axis 1 (hour angle or azimuth), 2 is mostly axis 2 (declination or
+    /// altitude). gemSamePier drops the other pier side of a German mount
+    /// once a sync star is known. Scores are shown as *…****.
+    void        buildGearRank(int mountKind, int leg, bool gemSamePier,
+                              const float *prevRa, const float *prevDec, int nPrev);
     void        clearAlignRank();
     bool        isAlignRanked() const { return _alignRanked; }
     /// Suitability of the current object for the next alignment star: 0–4.

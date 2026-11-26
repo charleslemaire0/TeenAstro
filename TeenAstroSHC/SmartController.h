@@ -173,7 +173,7 @@ private:
   MENU_RESULT menuGearCheck();
   MENU_RESULT menuGearCheckStars();
   MENU_RESULT menuGearCheckRotate();
-  MENU_RESULT menuGearCheckEq();
+  MENU_RESULT menuGearCheckEq(bool gemSamePier);
   MENU_RESULT menuGearCheckAltAz();
   struct GearCheckLegResult
   {
@@ -191,7 +191,14 @@ private:
   bool gearCheckWaitSlewSettled(int degrees);
   bool gearCheckRecenterAndMeasure(double& miss1Deg, double& miss2Deg,
                                    const char* prompt, bool wrapMiss);
-  MENU_RESULT gearCheckRunLeg(const char* pickPrompt, int primaryAxis, GearCheckLegResult& out);
+  /// Named stars only, scored *…****. mountKind 0 equatorial, 1 alt-azimuth.
+  MENU_RESULT gearCheckPickStar(NAV mode, int leg, int mountKind, bool gemSamePier,
+                                const float* prevRa, const float* prevDec, int nPrev,
+                                float& pickedRa, float& pickedDec);
+  MENU_RESULT gearCheckRunLeg(const char* pickPrompt, int primaryAxis, int leg,
+                              int mountKind, bool gemSamePier,
+                              float* histRa, float* histDec, int& nHist,
+                              GearCheckLegResult& out);
   void gearCheckReport(const GearCheckLegResult& leg1, const GearCheckLegResult& leg2,
                        const char* label1, const char* label2);
 

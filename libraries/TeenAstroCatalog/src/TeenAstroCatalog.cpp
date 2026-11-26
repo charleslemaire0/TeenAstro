@@ -3,6 +3,7 @@
 #include <pgmspace.h>
 #include "TeenAstroCatalog.h"
 #include "AlignCatalogRule.h"
+#include "GearCatalogRank.h"
 #include "CatalogTypes.h"
 #include "CatalogConfig.h"
 
@@ -477,6 +478,75 @@ void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, con
   if (_alignRankN > 0) {
     _alignRanked = true;
     // Catalog order for browsing; land the cursor on the best candidate.
+    short bestAt = 0;
+    for (short j = 1; j < _alignRankN; j++) {
+      if (_alignRank[j].score > _alignRank[bestAt].score) bestAt = j;
+    }
+    _alignRankAt = bestAt;
+    catalog[_selected].Index = _alignRank[bestAt].index;
+    read();
+  } else {
+    catalog[_selected].Index = saved;
+    read();
+  }
+}
+
+void CatMgr::buildGearRank(int mountKind, int leg, bool gemSamePier,
+                            const float *prevRa, const float *prevDec, int nPrev) {
+  clearAlignRank();
+  if (_selected < 0 || !isInitialized()) return;
+  if (!isBrightStarCatalog()) return;
+  if (nPrev < 0) nPrev = 0;
+  if (nPrev > 6) nPrev = 6;
+
+  int sideSign = 0;
+  if (gemSamePier && nPrev > 0 && prevRa != NULL)
+    sideSign = gearHaSign(gearWrapSigned(lstDegs() - prevRa[0]));
+
+  GearStarGeom geom;
+  geom.mountKind = mountKind;
+  geom.leg = leg;
+  geom.gemSamePier = gemSamePier;
+  geom.hasRef = nPrev > 0 && prevRa != NULL && prevDec != NULL;
+  geom.sideSign = sideSign;
+  geom.refHa = 0;
+  geom.refDec = 0;
+  geom.refAlt = 0;
+  geom.refAz = 0;
+  if (geom.hasRef) {
+    const int last = nPrev - 1;
+    geom.refHa = gearWrapSigned(lstDegs() - prevRa[last]);
+    geom.refDec = prevDec[last];
+    EquToHor(prevRa[last], prevDec[last], &geom.refAlt, &geom.refAz);
+  }
+
+  const long saved = catalog[_selected].Index;
+  const long nObj = getMaxIndex();
+  for (long i = 0; i <= nObj; i++) {
+    catalog[_selected].Index = i;
+    read();
+    if (isFiltered()) continue;
+    if (geom.hasRef && prevRa != NULL && prevDec != NULL) {
+      double minSep = 180.0;
+      for (int k = 0; k < nPrev; k++) {
+        const double sep = DistFromEqu(prevRa[k], prevDec[k]);
+        if (sep < minSep) minSep = sep;
+      }
+      if (minSep < 4.0) continue;
+    }
+    geom.ha = ha();
+    geom.dec = dec();
+    geom.mag = magnitude();
+    EquToHor(ra(), dec(), &geom.alt, &geom.az);
+    const GearStarScore scored = gearStarScore(geom);
+    if (!scored.keep) continue;
+    double scaled = scored.score * 10.0;
+    if (scaled > 32000.0) scaled = 32000.0;
+    insertAlignRank((short)i, (short)scaled);
+  }
+
+  if (_alignRankN > 0) {
+    _alignRanked = true;
     short bestAt = 0;
     for (short j = 1; j < _alignRankN; j++) {
       if (_alignRank[j].score > _alignRank[bestAt].score) bestAt = j;

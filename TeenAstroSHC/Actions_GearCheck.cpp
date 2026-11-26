@@ -1,5 +1,6 @@
 #include "SmartController.h"
 #include "SHC_text.h"
+#include <string.h>
 #include <CommandCodec.h>
 #include <TeenAstroPad.h>
 #include <cmath>
@@ -248,9 +249,63 @@ SmartHandController::MENU_RESULT SmartHandController::menuGearCheckRotate()
   return MR_OK;
 }
 
+SmartHandController::MENU_RESULT SmartHandController::gearCheckPickStar(
+  NAV mode, int leg, int mountKind, bool gemSamePier,
+  const float* prevRa, const float* prevDec, int nPrev,
+  float& pickedRa, float& pickedDec)
+{
+  if (!gearCheckPrepareCatalog())
+    return MR_CANCEL;
+
+  cat_mgr.select(0);
+  cat_mgr.filtersClear();
+  cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
+  cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
+  cat_mgr.buildGearRank(mountKind, leg, gemSamePier, prevRa, prevDec, nPrev);
+
+  char title[40] = "";
+  if (mode == NAV_SYNC)
+    strcpy(title, "Sync ");
+  else if (mode == NAV_GOTO)
+    strcpy(title, "Goto ");
+  else
+  {
+    cat_mgr.filtersClear();
+    return MR_CANCEL;
+  }
+  strcat(title, cat_mgr.catalogTitle());
+
+  MENU_RESULT result = MR_CANCEL;
+  if (!cat_mgr.isInitialized())
+    DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
+  else if (!cat_mgr.setIndex(cat_mgr.getIndex()))
+    DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
+  else
+  {
+    while (display->UserInterfaceCatalog(&buttonPad, title))
+    {
+      pickedRa = (float)cat_mgr.ra();
+      pickedDec = (float)cat_mgr.dec();
+      if (DisplayMessageLX200(SyncGotoCatLX200(*m_client, mode), false))
+      {
+        result = MR_QUIT;
+        break;
+      }
+    }
+  }
+  cat_mgr.filtersClear();
+  return result;
+}
+
 SmartHandController::MENU_RESULT SmartHandController::gearCheckRunLeg(
   const char* pickPrompt,
   int primaryAxis,
+  int leg,
+  int mountKind,
+  bool gemSamePier,
+  float* histRa,
+  float* histDec,
+  int& nHist,
   GearCheckLegResult& out)
 {
   out = GearCheckLegResult();
@@ -265,12 +320,16 @@ SmartHandController::MENU_RESULT SmartHandController::gearCheckRunLeg(
     return MR_CANCEL;
   }
 
-  // The catalog needs latitude and sidereal time. Without them it shows
-  // "Not Init'd?" and the list never appears.
-  if (!gearCheckPrepareCatalog())
+  float pickedRa = 0, pickedDec = 0;
+  if (gearCheckPickStar(NAV_GOTO, leg, mountKind, gemSamePier,
+                        histRa, histDec, nHist, pickedRa, pickedDec) != MR_QUIT)
     return MR_CANCEL;
-  if (menuCatalogs(NAV_GOTO) != MR_QUIT)
-    return MR_CANCEL;
+  if (nHist < 2)
+  {
+    histRa[nHist] = pickedRa;
+    histDec[nHist] = pickedDec;
+    nHist++;
+  }
 
   // A catalog slew can cross a large part of the sky.
   if (!gearCheckWaitSlewSettled(240))
@@ -358,21 +417,26 @@ void SmartHandController::gearCheckReport(
   DisplayLongMessage(T_GEAR, g1, g2, "", -1);
 }
 
-SmartHandController::MENU_RESULT SmartHandController::menuGearCheckEq()
+SmartHandController::MENU_RESULT SmartHandController::menuGearCheckEq(bool gemSamePier)
 {
   DisplayLongMessage(T_GEARCHECK_EQ, T_GC_SYNC_FIRST, T_GC_THEN_GOTO, T_GC_RECENTER_EACH, -1);
 
   if (display->UserInterfaceMessage(&buttonPad, T_SYNC, T_STAR " A?", "", T_NO "\n" T_YES) != 2)
     return MR_CANCEL;
-  if (!gearCheckPrepareCatalog())
+
+  float histRa[2] = {}, histDec[2] = {};
+  int nHist = 0;
+  float syncRa = 0, syncDec = 0;
+  if (gearCheckPickStar(NAV_SYNC, 0, 0, gemSamePier, NULL, NULL, 0, syncRa, syncDec) != MR_QUIT)
     return MR_CANCEL;
-  if (menuSyncGoto(NAV_SYNC) == MR_CANCEL)
-    return MR_CANCEL;
+  histRa[0] = syncRa;
+  histDec[0] = syncDec;
+  nHist = 1;
 
   GearCheckLegResult leg1, leg2;
-  if (gearCheckRunLeg(T_GC_PICK_HA, 1, leg1) != MR_OK)
+  if (gearCheckRunLeg(T_GC_PICK_HA, 1, 1, 0, gemSamePier, histRa, histDec, nHist, leg1) != MR_OK)
     return MR_CANCEL;
-  if (gearCheckRunLeg(T_GC_PICK_DEC, 2, leg2) != MR_OK)
+  if (gearCheckRunLeg(T_GC_PICK_DEC, 2, 2, 0, gemSamePier, histRa, histDec, nHist, leg2) != MR_OK)
     return MR_CANCEL;
 
   gearCheckReport(leg1, leg2, "HA", "Dec");
@@ -385,15 +449,20 @@ SmartHandController::MENU_RESULT SmartHandController::menuGearCheckAltAz()
 
   if (display->UserInterfaceMessage(&buttonPad, T_SYNC, T_STAR " A?", "", T_NO "\n" T_YES) != 2)
     return MR_CANCEL;
-  if (!gearCheckPrepareCatalog())
+
+  float histRa[2] = {}, histDec[2] = {};
+  int nHist = 0;
+  float syncRa = 0, syncDec = 0;
+  if (gearCheckPickStar(NAV_SYNC, 0, 1, false, NULL, NULL, 0, syncRa, syncDec) != MR_QUIT)
     return MR_CANCEL;
-  if (menuSyncGoto(NAV_SYNC) == MR_CANCEL)
-    return MR_CANCEL;
+  histRa[0] = syncRa;
+  histDec[0] = syncDec;
+  nHist = 1;
 
   GearCheckLegResult leg1, leg2;
-  if (gearCheckRunLeg(T_GC_PICK_AZ, 1, leg1) != MR_OK)
+  if (gearCheckRunLeg(T_GC_PICK_AZ, 1, 1, 1, false, histRa, histDec, nHist, leg1) != MR_OK)
     return MR_CANCEL;
-  if (gearCheckRunLeg(T_GC_PICK_ALT, 2, leg2) != MR_OK)
+  if (gearCheckRunLeg(T_GC_PICK_ALT, 2, 2, 1, false, histRa, histDec, nHist, leg2) != MR_OK)
     return MR_CANCEL;
 
   gearCheckReport(leg1, leg2, "Az", "Alt");
@@ -404,8 +473,10 @@ SmartHandController::MENU_RESULT SmartHandController::menuGearCheckStars()
 {
   ta_MountStatus.updateMount();
   const TeenAstroMountStatus::Mount mt = ta_MountStatus.getMount();
-  if (mt == TeenAstroMountStatus::MOUNT_TYPE_GEM || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK)
-    return menuGearCheckEq();
+  if (mt == TeenAstroMountStatus::MOUNT_TYPE_GEM)
+    return menuGearCheckEq(true);
+  if (mt == TeenAstroMountStatus::MOUNT_TYPE_FORK)
+    return menuGearCheckEq(false);
   if (mt == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT)
     return menuGearCheckAltAz();
   DisplayMessage(T_MOUNTTYPE, T_FAILED, -1);

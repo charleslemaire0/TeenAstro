@@ -874,7 +874,7 @@ A refused goto is not a fault. Read the message: **Below Horizon**, **Close to Z
 
 **Telescope Action → Gear Check** offers two checks. **Stars** compares the stored gear with a real move on the sky. **Rotation** turns one axis by a known angle and compares that with the mark you put on the shaft.
 
-**Stars** asks for a sync on star A, then a goto that moves mostly axis 1, then one that moves mostly axis 2. On an equatorial mount that is a large hour angle, then a large declination. On an alt-azimuth mount, a large azimuth, then a large altitude. The catalog is the same list as **Goto**. It is loaded with the site latitude and the sidereal time, so the list is present at any sidereal time, including 00:00:00. At each arrival, recenter the star and confirm with a short Shift. A long Shift stops the slew. The measured gear is stored gear × (commanded move + recentering) / commanded move. A commanded move under 5° is rejected.
+**Stars** uses named stars only. Each name carries `*` to `****`, as in alignment: more stars means a better pick for this step. A sync comes first, then a goto that moves mostly axis 1, then one that moves mostly axis 2. On an equatorial mount that is a large hour angle, then a large declination. On an alt-azimuth mount, a large azimuth, then a large altitude. On a German equatorial the list stays on the pier side of the sync star. The site latitude and the sidereal time are loaded first, including at 00:00:00. At each arrival, recenter the star and confirm with a short Shift. A long Shift stops the slew. The measured gear is stored gear × (commanded move + recentering) / commanded move. A commanded move under 5° is rejected.
 
 **Rotation:**
 
