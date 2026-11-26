@@ -585,6 +585,21 @@ LX200RETURN LX200Client::gotoPolarAlignCurrent()
   return gotoErrorToReturn(err, true);
 }
 
+LX200RETURN LX200Client::gearCheckRotate(uint8_t axis, int degrees)
+{
+  if ((axis != 1 && axis != 2) ||
+      (degrees != 90 && degrees != 180 && degrees != 360))
+    return LX200_ERRGOTO_UNKOWN;
+  char cmd[16];
+  snprintf(cmd, sizeof(cmd), ":MG%u,%d#", (unsigned)axis, degrees);
+  char out[LX200_SBUF];
+  if (!sendReceive(cmd, CMDR_SHORT, out, sizeof(out), m_timeout)
+      || !isGotoErrorChar(out[0]))
+    return LX200_INVALIDREPLY;
+  ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
+  return gotoErrorToReturn(err, true);
+}
+
 LX200RETURN LX200Client::moveToTarget(TARGETTYPE target)
 {
   char out[LX200_SBUF];

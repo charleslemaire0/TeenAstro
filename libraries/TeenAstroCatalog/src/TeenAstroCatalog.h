@@ -127,6 +127,7 @@ private:
     double _cosLat=0;
     double _sinLat=0;
     double _lstT0=0;
+    bool   _lstValid=false;
     double _lastTeleRA=0;
     double _lastTeleDec=0;
     unsigned long _lstMillisT0=0;

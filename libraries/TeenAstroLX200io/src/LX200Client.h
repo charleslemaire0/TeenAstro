@@ -188,6 +188,7 @@ public:
   //  Navigation (Sync / Goto / Pushto)
   // -----------------------------------------------------------------------
   LX200RETURN moveToTarget(TARGETTYPE target);
+  LX200RETURN gearCheckRotate(uint8_t axis, int degrees); // :MG1,90# / :MG2,360#
   LX200RETURN pushToTarget(TARGETTYPE target);
   LX200RETURN syncGoHome(NAV mode);
   LX200RETURN syncGoPark(NAV mode);

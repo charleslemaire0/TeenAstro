@@ -383,7 +383,7 @@ Beispiel: Rad mit 360 Zähnen und Schnecke, ohne weitere Untersetzung: Getriebez
 
 Der zulässige Wert geht von 1 bis 60000, mit drei Nachkommastellen. Das Gesamtübersetzungsverhältnis eintragen, nicht nur die Zähnezahl des Rades, wenn eine weitere Stufe vorhanden ist.
 
-**Getriebe-Check** (Kapitel 19) misst dieses Verhältnis am Himmel und schlägt einen korrigierten Wert vor.
+**Getriebe-Check** (Kapitel 19) dreht eine Achse um 90°, 180° oder 360° und schlägt einen korrigierten Wert vor.
 
 ### Schritte pro Umdrehung und Mikroschritt
 
@@ -872,21 +872,20 @@ Ein abgelehntes Goto ist kein Defekt. Die Meldung lesen: **Unter Horizont**, **N
 
 ## 19. Getriebeprüfung
 
-**Teleskop Aktion → Getriebe-Check** vergleicht die gespeicherte Getriebezahl mit der wirklichen Bewegung.
+**Teleskop Aktion → Getriebe-Check** bietet zwei Prüfungen. **Sterne** vergleicht die gespeicherte Zahl mit einer wirklichen Bewegung am Himmel. **Drehung** dreht eine Achse um einen festen Winkel und vergleicht das mit der Marke an der Welle.
 
-Die Firmware verlangt eine Synchronisierung auf einen Stern A, dann ein Goto nach B (große Bewegung vor allem auf Achse 1) und nach C (große Bewegung vor allem auf Achse 2). Bei einer äquatorialen Montierung schlägt sie einen großen Stundenwinkel vor, dann eine große Deklination. Bei einer altazimutalen einen großen Azimut, dann eine große Höhe.
+**Sterne** verlangt eine Synchronisierung auf Stern A, dann ein Goto mit vor allem Achse 1, dann eines mit vor allem Achse 2. Bei einer äquatorialen Montierung ist das ein großer Stundenwinkel, dann eine große Deklination. Bei einer altazimutalen ein großer Azimut, dann eine große Höhe. Der Katalog ist dieselbe Liste wie **Goto**. Er wird mit der geografischen Breite und der Sternzeit geladen, auch bei Sternzeit 00:00:00. Bei jeder Ankunft den Stern neu zentrieren und mit kurzem Shift bestätigen. Ein langes Shift stoppt den Schwenk. Die gemessene Zahl ist gespeicherte Zahl × (befohlene Bewegung + Nachzentrieren) / befohlene Bewegung. Eine befohlene Bewegung unter 5° wird verworfen.
 
-Bei jeder Ankunft:
+**Drehung:**
 
-1. Das Ende des Schwenks abwarten (**Warte auf Slew...**). Ein langes Shift bricht ab.
-2. Den Stern neu zentrieren.
-3. Kurzer Druck auf Shift zur Bestätigung.
+1. **Achse 1** oder **Achse 2** wählen. Die andere Achse bleibt stehen.
+2. **90 Grad**, **180 Grad** oder **360 Grad** wählen.
+3. Die Handsteuerung warnt, dass die Drehung die Grenzen ignoriert. **Ja** setzt fort, **Nein** bricht ab. Die Achse markieren, dann bestätigen. Die Nachführung stoppt. Das Steuergerät dreht diese Achse um den gewählten Winkel, in Motorschritten aus der gespeicherten Getriebezahl. Während der Drehung steht **Shift lang: Stop** auf dem Schirm. Ein langes Shift stoppt die Achse.
+4. Die Marke auf die Stelle fahren, die sie erreichen sollte. Kurzer Druck auf Shift zur Bestätigung.
 
-Die Anzeige zeigt den Fehler jedes Schritts in Bogenminuten und die gemessene Getriebezahl. Die Formel lautet: gemessene Zahl = gespeicherte Zahl × befohlene Bewegung / wahre Bewegung. Eine befohlene Bewegung unter 5° wird verworfen: der Maßstab wäre zu schlecht.
+Die Anzeige zeigt den Nachschub in Bogenminuten und die gemessene Zahl: gespeicherte Zahl × (befohlener Winkel + Nachschub) / befohlener Winkel. Weiter in derselben Richtung schieben erhöht die Zahl. **Zahl speichern?** schreibt sie in die gewählte Achse.
 
-Liefern die beiden Achsen widersprüchliche Verhältnisse, meldet die Anzeige **Achsen aehnlich**: die gewählten Sterne haben die Achsen nicht genug getrennt. Mit weiter auseinanderliegenden Zielen neu beginnen.
-
-Die gemessene Zahl nur dann unter **Motor → Getr. Zahl** eintragen, wenn die Drehrichtung schon stimmt und sorgfältig zentriert wurde. Ein schlecht zentrierter Stern wird unmittelbar zu einem Getriebefehl.
+Die Drehung ist mechanisch. Sie ist kein Goto zu einem Stern, und die weichen Grenzen schneiden sie nicht ab. Die Drehrichtung muss schon stimmen.
 
 ---
 
@@ -1337,6 +1336,7 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 ### 1.6.19
 
 - Die Getriebeprüfung liest die Achswinkel der Montierung. Azimut und jeder Winkel jenseits von ±90° brechen die Prüfung nicht mehr mit **Wert auslesen** / **Erfolglos** ab.
+- Die Getriebeprüfung benutzt keine Sterne mehr. Sie dreht eine Achse, Achse 1 oder Achse 2, um 90°, 180° oder 360°.
 
 ### Ausrichtung von ASCOM und Alpaca
 

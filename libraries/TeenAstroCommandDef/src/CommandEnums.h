@@ -83,8 +83,9 @@ enum GotoState : uint8_t
   GOTO_NONE = 0,
   GOTO_EQ = 1,
   GOTO_ALTAZ = 2,
-  GOTO_FLIP_PIER_SIDE = 3
-  // Values 4–7 reserved for future use on the wire
+  GOTO_FLIP_PIER_SIDE = 3,
+  GOTO_GEARCHECK = 4
+  // Values 5–7 reserved for future use on the wire
 };
 
 // ---------------------------------------------------------------------------

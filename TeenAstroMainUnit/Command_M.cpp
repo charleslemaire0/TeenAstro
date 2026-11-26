@@ -11,6 +11,20 @@
 // -----------------------------------------------------------------------------
 void Command_M() {
   switch (commandState.command[1]) {
+  case 'G':
+  {
+    // :MG1,90# :MG1,180# :MG1,360# :MG2,90# ... one-axis gear-check turn.
+    const int axis = (int)(commandState.command[2] - '0');
+    char* conv_end = nullptr;
+    const double deg = (commandState.command[3] == ',')
+      ? strtod(&commandState.command[4], &conv_end) : 0.0;
+    const bool parsed = commandState.command[3] == ',' && conv_end != &commandState.command[4];
+    ErrorsGoTo err = parsed ? mount.rotateAxisDegrees((uint8_t)axis, deg)
+                            : ERRGOTO_NOOBJECTSELECTED;
+    commandState.reply[0] = (char)('0' + (int)err);
+    commandState.reply[1] = 0;
+  }
+  break;
   case '1':
   case '2':
   {

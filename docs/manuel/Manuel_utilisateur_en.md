@@ -383,7 +383,7 @@ Example: a 360-tooth wheel and a worm, with no other reduction: gear 360. A 2:1 
 
 The accepted value runs from 1 to 60000, with three decimal places. Enter the total ratio, not only the wheel tooth count, if another stage exists.
 
-**Gear Check** (chapter 19) measures this ratio on the sky and offers a corrected value.
+**Gear Check** (chapter 19) turns one axis by 90°, 180°, or 360° and offers a corrected value.
 
 ### Steps per rotation and microsteps
 
@@ -872,21 +872,20 @@ A refused goto is not a fault. Read the message: **Below Horizon**, **Close to Z
 
 ## 19. Gear check
 
-**Telescope Action → Gear Check** compares the stored gear ratio with the real motion.
+**Telescope Action → Gear Check** offers two checks. **Stars** compares the stored gear with a real move on the sky. **Rotation** turns one axis by a known angle and compares that with the mark you put on the shaft.
 
-The firmware asks for a sync on a star A, then a goto to B (a large move mostly on axis 1) and to C (a large move mostly on axis 2). For an equatorial mount it suggests a large hour angle, then a large declination. For an alt-azimuth mount, a large azimuth, then a large altitude.
+**Stars** asks for a sync on star A, then a goto that moves mostly axis 1, then one that moves mostly axis 2. On an equatorial mount that is a large hour angle, then a large declination. On an alt-azimuth mount, a large azimuth, then a large altitude. The catalog is the same list as **Goto**. It is loaded with the site latitude and the sidereal time, so the list is present at any sidereal time, including 00:00:00. At each arrival, recenter the star and confirm with a short Shift. A long Shift stops the slew. The measured gear is stored gear × (commanded move + recentering) / commanded move. A commanded move under 5° is rejected.
 
-At each arrival:
+**Rotation:**
 
-1. Wait for the end of the slew (**Waiting slew...**). A long Shift aborts.
-2. Recenter the star.
-3. Short press on Shift to confirm.
+1. Choose **Axis 1** or **Axis 2**. The other axis stays still.
+2. Choose **90 deg**, **180 deg**, or **360 deg**.
+3. The hand controller warns that the turn ignores the limits. **YES** continues, **NO** cancels. Mark the axis, then confirm. Tracking stops. The main unit turns that axis by the chosen angle, in motor steps from the stored gear. While it turns, the screen says **Hold Shift: stop**. A long Shift stops the axis.
+4. Jog the mark onto the place it should have reached. Short press on Shift to confirm.
 
-The display shows the error of each step, in arcminutes, and the measured gear. The formula is: measured gear = stored gear × true move / commanded move, where the true move is the commanded move plus the recentering error. A shortfall (you still had to push the star further) raises the gear; an overshoot lowers it. A commanded move of less than 5° is rejected: the scale would be too poor.
+The display shows the jog, in arcminutes, and the measured gear: stored gear × (commanded angle + jog) / commanded angle. Pushing further in the same direction raises the gear. **Store gear?** writes that number into the chosen axis.
 
-If the two axes give inconsistent ratios, the display reports **Axes similar**: the chosen stars did not separate the axes enough. Start again with targets farther apart.
-
-Copy the measured gear into **Motor → Gear** only if the rotation direction is already correct and you recentered carefully. A poorly centered star becomes a gear error directly.
+The turn is mechanical. It is not a goto to a star, and the soft limits do not cut it short. The direction of rotation must already be correct.
 
 ---
 
@@ -1306,7 +1305,7 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 
 ### 1.6.7
 
-- Gear check on the hand controller, for an equatorial or an alt-azimuth mount, shows the measured ratio.
+- Gear check on the hand controller turns one axis by 90°, 180°, or 360° and shows the measured ratio.
 - The under-pole limit is corrected. A goto that would cross a limit is refused. Aborting an alignment restores the previous model.
 - Hour angle stays in a fixed range, including west of the meridian, so a computer does not reject the reply.
 - GNSS accepts a time fix only when the positions agree, and a quiet sync does not disturb the session.
@@ -1337,6 +1336,7 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 ### 1.6.19
 
 - Gear check reads the mount axis angles. Azimuth, and any angle past ±90°, no longer stops the check with **Get Value** / **Failed**.
+- Gear check no longer uses stars. It turns one axis, axis 1 or axis 2, by 90°, 180°, or 360°.
 
 ### Alignment from ASCOM and Alpaca
 

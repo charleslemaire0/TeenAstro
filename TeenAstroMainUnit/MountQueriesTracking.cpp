@@ -292,6 +292,11 @@ void Mount::updateSideral()
 
 void Mount::safetyCheck(bool forceTracking)
 {
+  // Gear check is allowed past the soft limits. Stopping it here would cut a
+  // 360° turn short. :Q# still aborts.
+  if (tracking.gotoState == GOTO_GEARCHECK)
+    return;
+
   PoleSide currentSide = getPoleSide();
   long axis1, axis2;
   limits.getAxisPositions(axis1, axis2);
@@ -420,7 +425,9 @@ void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
   else if (errors.lastError == ERRT_MOTOR_FAULT)
     setError(ERRT_NONE);
 
-  if (targetCurrent.currentAlt < limits.minAlt || targetCurrent.currentAlt > limits.maxAlt)
+  // Gear check is a shaft rotation. Altitude is not a reason to stop it.
+  if (tracking.gotoState != GOTO_GEARCHECK &&
+      (targetCurrent.currentAlt < limits.minAlt || targetCurrent.currentAlt > limits.maxAlt))
   {
     if (!forceTracking)
     {

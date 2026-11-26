@@ -16,6 +16,7 @@ struct MountTracking {
   bool abortSlew;
   bool doSpiral;
   double SpiralFOV;
-  // GOTO_NONE, GOTO_EQ, GOTO_ALTAZ, GOTO_FLIP_PIER_SIDE (CommandEnums.h); :GXAS# byte 100 bits 5-7
+  // GOTO_NONE, GOTO_EQ, GOTO_ALTAZ, GOTO_FLIP_PIER_SIDE, GOTO_GEARCHECK
+  // (CommandEnums.h); :GXAS# byte 100 bits 5-7
   volatile GotoState gotoState;
 };

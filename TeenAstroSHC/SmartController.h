@@ -171,6 +171,8 @@ private:
   MENU_RESULT menuAlignment();
   void menuKnownErrors();
   MENU_RESULT menuGearCheck();
+  MENU_RESULT menuGearCheckStars();
+  MENU_RESULT menuGearCheckRotate();
   MENU_RESULT menuGearCheckEq();
   MENU_RESULT menuGearCheckAltAz();
   struct GearCheckLegResult
@@ -184,9 +186,11 @@ private:
     float gearMeas = 0;
     bool gearValid = false;
   };
+  bool gearCheckPrepareCatalog();
   bool gearCheckReadAxes(double& a1Deg, double& a2Deg);
-  bool gearCheckWaitSlewSettled();
-  bool gearCheckRecenterAndMeasure(double& miss1Deg, double& miss2Deg);
+  bool gearCheckWaitSlewSettled(int degrees);
+  bool gearCheckRecenterAndMeasure(double& miss1Deg, double& miss2Deg,
+                                   const char* prompt, bool wrapMiss);
   MENU_RESULT gearCheckRunLeg(const char* pickPrompt, int primaryAxis, GearCheckLegResult& out);
   void gearCheckReport(const GearCheckLegResult& leg1, const GearCheckLegResult& leg2,
                        const char* label1, const char* label2);

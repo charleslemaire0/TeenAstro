@@ -381,7 +381,7 @@ Exemple : roue de 360 dents et vis sans fin, sans autre démultiplication : réd
 
 La valeur acceptée va de 1 à 60000, avec trois décimales. Saisissez le rapport total, pas seulement le nombre de dents de la roue si un autre étage existe.
 
-La commande **Verif. engren.** (chapitre 18) mesure ce rapport sur le ciel et propose une valeur corrigée.
+La commande **Verif. engren.** (chapitre 19) tourne un axe de 90°, 180° ou 360° et propose une valeur corrigée.
 
 ### Pas par tour et micropas
 
@@ -870,21 +870,20 @@ Un goto refusé n'est pas une panne. Lisez le message : **Sous l'horizon**, **Pr
 
 ## 19. Vérification des engrenages
 
-**Action Télescope → Verif. engren.** compare la réduction enregistrée au déplacement réel.
+**Action Télescope → Verif. engren.** propose deux contrôles. **Etoiles** compare la réduction enregistrée à un déplacement réel sur le ciel. **Rotation** tourne un seul axe d'un angle connu et le compare à la marque posée sur l'arbre.
 
-Le firmware demande une synchro sur une étoile A, puis un goto vers B (grand déplacement surtout sur l'axe 1) et vers C (grand déplacement surtout sur l'axe 2). Pour une équatoriale il suggère un grand angle horaire puis une grande déclinaison. Pour une altazimutale, un grand azimut puis une grande hauteur.
+**Etoiles** demande une synchro sur l'étoile A, puis un goto qui bouge surtout l'axe 1, puis un qui bouge surtout l'axe 2. Sur une équatoriale, un grand angle horaire puis une grande déclinaison. Sur une altazimutale, un grand azimut puis une grande hauteur. Le catalogue est la même liste que **Goto**. Il est chargé avec la latitude du site et le temps sidéral, y compris à 00:00:00. À chaque arrivée, recentrez l'étoile et validez par un Shift court. Un Shift long arrête le pointage. La réduction mesurée est réduction enregistrée × (déplacement commandé + recentrage) / déplacement commandé. Un déplacement commandé de moins de 5° est rejeté.
 
-À chaque arrivée :
+**Rotation :**
 
-1. Attendez la fin du pointage (**Attente slew...**). Shift long abandonne.
-2. Recentrez l'étoile.
-3. Appui court sur Shift pour valider.
+1. Choisir **Axe 1** ou **Axe 2**. L'autre axe ne bouge pas.
+2. Choisir **90 deg**, **180 deg** ou **360 deg**.
+3. La raquette avertit que la rotation ignore les limites. **OUI** continue, **NON** annule. Marquer l'axe, puis confirmer. Le suivi s'arrête. L'unité principale tourne cet axe de l'angle choisi, en pas moteur selon la réduction enregistrée. Pendant la rotation, l'écran affiche **Shift long: stop**. Un Shift long arrête l'axe.
+4. Amener la marque à l'endroit qu'elle devait atteindre. Appui court sur Shift pour valider.
 
-L'écran affiche l'erreur de chaque étape, en minutes d'arc, et la réduction mesurée. La formule utilisée est : réduction mesurée = réduction enregistrée × déplacement vrai / déplacement commandé, où le déplacement vrai est le déplacement commandé plus l'erreur de recentrage. Un manque (il a encore fallu pousser l'étoile) augmente la réduction ; un dépassement la diminue. Un déplacement commandé de moins de 5° est rejeté : l'échelle serait trop mauvaise.
+L'écran montre la correction, en minutes d'arc, et la réduction mesurée : réduction enregistrée × (angle commandé + correction) / angle commandé. Pousser encore dans le même sens augmente la réduction. **Enregistrer?** écrit ce nombre dans l'axe choisi.
 
-Si les deux axes donnent des rapports incohérents, l'écran signale **Axes similaires** : les étoiles choisies n'ont pas assez séparé les axes. Recommencez avec des cibles plus écartées.
-
-Reportez la réduction mesurée dans **Moteur → Réduction** seulement si le sens de rotation est déjà bon et si vous avez recentré avec soin. Une étoile mal centrée se traduit directement en erreur de réduction.
+La rotation est mécanique. Ce n'est pas un goto vers une étoile, et les limites souples ne la coupent pas. Le sens de rotation doit déjà être le bon.
 
 ---
 
@@ -1335,6 +1334,7 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 ### 1.6.19
 
 - Le contrôle d'engrenage lit les angles d'axe de la monture. L'azimut, et tout angle au-delà de ±90°, n'arrête plus le contrôle avec **Lire Valeur** / **Echoué**.
+- Le contrôle d'engrenage n'utilise plus d'étoiles. Il tourne un seul axe, l'axe 1 ou l'axe 2, de 90°, 180° ou 360°.
 
 ### Alignement depuis ASCOM et Alpaca
 

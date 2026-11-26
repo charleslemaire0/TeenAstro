@@ -356,6 +356,7 @@ Meade LX200 uses `h` only on 16" for home search. TeenAstro uses `h` for home an
 | `:Mge&lt;ms&gt;#` `:Mgw&lt;ms&gt;#` | Pulse guide east/west (duration ms, 1–30000). | (nothing) | TeenAstro extension |
 | `:Mgn&lt;ms&gt;#` `:Mgs&lt;ms&gt;#` | Pulse guide north/south (duration ms). | (nothing) | TeenAstro extension |
 | `:M1nnnn#` `:M2nnnn#` | Move axis 1/2 at given rate (arcsec/s). | `1` or `e`/`h`/`s`/`g`/`i` | TeenAstro extension |
+| `:MG1,90#` `:MG1,180#` `:MG1,360#` `:MG2,90#` `:MG2,180#` `:MG2,360#` | Gear check: rotate that axis by 90, 180 or 360 degrees in motor steps. Tracking stops. Sky and soft limits do not cut the turn short. | ERRGOTO code (`0` = started) | TeenAstro extension |
 
 ---
 

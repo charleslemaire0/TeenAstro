@@ -61,7 +61,8 @@ Again:
   distDestAxis2 = max(abs(axes.staA2.deltaTarget), 1L);
 
   // ----- GEM only: slow down near horizon to avoid exceeding minAlt -----
-  if (!isAltAZ())
+  // A gear-check turn is a mechanical rotation, not a sky path.
+  if (!isAltAZ() && tracking.gotoState != GOTO_GEARCHECK)
   {
     cli();
     volatile long tempPosAxis2 = axes.staA2.pos;

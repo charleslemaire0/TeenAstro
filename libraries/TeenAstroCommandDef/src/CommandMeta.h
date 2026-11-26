@@ -127,7 +127,7 @@ inline CMDREPLY getReplyType(const char* command)
   // ---- M  Move / Slew -------------------------------------------------
   case Cmd::MOVE:
     if (strchr("ewnsg", command[2]))    return CMDR_NO;
-    if (strchr("PSAUF?a", command[2]))   return CMDR_SHORT;
+    if (strchr("PSAUF?aG", command[2]))  return CMDR_SHORT;
     if (strchr("12@", command[2]))      return CMDR_SHORT_BOOL;
     return CMDR_INVALID;
 

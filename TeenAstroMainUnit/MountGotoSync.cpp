@@ -428,6 +428,58 @@ ErrorsGoTo Mount::goTo(long thisTargetAxis1, long thisTargetAxis2)
   return ErrorsGoTo::ERRGOTO_NONE;
 }
 
+// One-axis bench turn for the gear check. The angle is motor steps from the
+// configured ratio, not a sky coordinate. Soft limits and the horizon cap
+// stay out of the way so 360° can finish; :Q# still aborts.
+ErrorsGoTo Mount::rotateAxisDegrees(uint8_t axis, double degrees)
+{
+  if ((axis != 1 && axis != 2) ||
+      (degrees != 90.0 && degrees != 180.0 && degrees != 360.0))
+    return ERRGOTO_NOOBJECTSELECTED;
+
+  const double stepsPerDeg = (axis == 1) ? axes.geoA1.stepsPerDegree
+                                          : axes.geoA2.stepsPerDegree;
+  if (!(stepsPerDeg > 1.0))
+    return ERRGOTO_MOTOR_FAULT;
+  if (!motorsEncoders.enableMotor)
+    return ERRGOTO_MOTOR_FAULT;
+  if (isMovingTo())
+  {
+    abortSlew();
+    return ERRGOTO_SLEWING;
+  }
+  if (guiding.guideA1.isBusy() || guiding.guideA2.isBusy())
+    return ERRGOTO_GUIDINGBUSY;
+  if ((parkHome.parkStatus != PRK_UNPARKED) && (parkHome.parkStatus != PRK_PARKING))
+    return ERRGOTO_PARKED;
+  if (errors.lastError == ERRT_AXIS1 || errors.lastError == ERRT_AXIS2
+      || errors.lastError == ERRT_MERIDIAN || errors.lastError == ERRT_UNDER_POLE
+      || errors.lastError == ERRT_PIER_SIDE)
+    setError(ERRT_NONE);
+  if (errors.lastError != ERRT_NONE)
+    return static_cast<ErrorsGoTo>(errors.lastError + 10);
+
+  tracking.sideralTracking = false;
+  long pos1, pos2;
+  cli();
+  pos1 = axes.staA1.pos;
+  pos2 = axes.staA2.pos;
+  sei();
+  const double scaled = degrees * stepsPerDeg;
+  if (scaled > 2000000000.0)
+    return ERRGOTO_MOTOR_FAULT;
+  const long delta = (long)(scaled + 0.5);
+  if (axis == 1)
+    pos1 += delta;
+  else
+    pos2 += delta;
+
+  parkHome.atHome = false;
+  tracking.gotoState = GOTO_GEARCHECK;
+  gotoAxis(&pos1, &pos2);
+  return ERRGOTO_NONE;
+}
+
 // ----- flip: current sky → other pier side via predictTargetHO, then goTo -----
 ErrorsGoTo Mount::flip()
 {

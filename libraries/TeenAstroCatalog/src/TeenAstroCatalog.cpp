@@ -40,6 +40,7 @@ void CatMgr::setLat(double lat) {
 void CatMgr::setLstT0(double lstT0) {
   _lstT0=lstT0;
   _lstMillisT0=millis();
+  _lstValid=true;
 }
 
 // Set last Tele RA/Dec
@@ -49,7 +50,8 @@ void CatMgr::setLastTeleEqu(double RA, double Dec) {
 }
 
 bool CatMgr::isInitialized() {
-  return ((_lat<9999) && (_lstT0!=0));
+  // Sidereal time 00:00:00 is a real time, so a zero value is not "unset".
+  return ((_lat<9999) && _lstValid);
 }
 
 // Get Local Sidereal Time, converted from hours to degrees

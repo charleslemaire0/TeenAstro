@@ -212,6 +212,8 @@ public:
   byte goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat);
   byte goToHor(Coord_HO HO_T, PoleSide preferedPoleSide);
   ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2);
+  /// One-axis mechanical turn of 90, 180 or 360 degrees. Ignores sky and soft limits.
+  ErrorsGoTo rotateAxisDegrees(uint8_t axis, double degrees);
   /// Flip: predictTargetHO (relaxGotoLimitsForFlip), then meridian/pole on re-predicted flip steps; drift uses
   /// estimated slew time only while sideralTracking is on (if safety cleared tracking during GOTO, elapsed=0).
   ErrorsGoTo flip();
