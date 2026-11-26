@@ -1274,7 +1274,7 @@ Boards, supply voltages, and motor harnesses are not the same from one version t
 
 ## Appendix E. Changes since version 1.6.0
 
-Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.18 and the matching ASCOM driver, then the computer alignment actions of the current drivers.
+Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.19 and the matching ASCOM driver, then the computer alignment actions of the current drivers.
 
 ### 1.6.1
 
@@ -1333,6 +1333,10 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - After a full power-off the clock shows the firmware build time. A Teensy 4 main unit shows 1 January 2019. Pulling the cell while the mount stays powered leaves the clock as it is.
 - Sky gotos, meridian flips, push-to and sync are refused until the clock is set from the hand controller, from GNSS, or from a computer. Going home, parking and the direction buttons still work.
 - ASCOM names the fault when a slew is refused. Alpaca refuses the slew as well.
+
+### 1.6.19
+
+- Gear check reads the mount axis angles. Azimuth, and any angle past ±90°, no longer stops the check with **Get Value** / **Failed**.
 
 ### Alignment from ASCOM and Alpaca
 

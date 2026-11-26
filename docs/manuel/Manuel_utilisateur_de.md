@@ -1274,7 +1274,7 @@ Platinen, Versorgungsspannungen und Motorkabel sind von Version zu Version nicht
 
 ## Anhang E. Änderungen seit Version 1.6.0
 
-Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.18 und dem passenden ASCOM-Treiber, danach die Ausrichtungsaktionen der aktuellen Treiber vom Rechner.
+Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.19 und dem passenden ASCOM-Treiber, danach die Ausrichtungsaktionen der aktuellen Treiber vom Rechner.
 
 ### 1.6.1
 
@@ -1333,6 +1333,10 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - Nach einem kompletten Aus- und Einschalten zeigt die Uhr die Bauzeit der Firmware. Ein Teensy-4-Steuergerät zeigt den 1. Januar 2019. Die Zelle bei laufender Versorgung zu ziehen lässt die Uhr unverändert.
 - Goto, Meridianumschlag, Push-to und Synchronisierung werden abgelehnt, bis die Uhr vom Handkontroller, von GNSS oder vom Rechner gestellt ist. Home, Parken und die Richtungstasten bleiben möglich.
 - ASCOM nennt den Fehler, wenn ein Schwenk abgelehnt wird. Alpaca lehnt den Schwenk ebenfalls ab.
+
+### 1.6.19
+
+- Die Getriebeprüfung liest die Achswinkel der Montierung. Azimut und jeder Winkel jenseits von ±90° brechen die Prüfung nicht mehr mit **Wert auslesen** / **Erfolglos** ab.
 
 ### Ausrichtung von ASCOM und Alpaca
 

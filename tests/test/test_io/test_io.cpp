@@ -1366,6 +1366,42 @@ void test_codec_dms_round_trip_unsigned(void) {
     TEST_ASSERT_DOUBLE_WITHIN(0.001, original, parsed);
 }
 
+void test_codec_gxp_axis_angle_round_trip(void) {
+    // :GXP uses doubleToDms(fullRange, sign). The declination parser rejects it.
+    const double samples[] = { 0.0, 5.0, -45.25, 180.5, -120.0, 359.9, 400.5 };
+    for (unsigned i = 0; i < sizeof(samples) / sizeof(samples[0]); i++)
+    {
+        char buf[24];
+        double original = samples[i];
+        TEST_ASSERT_TRUE(doubleToDms(buf, &original, true, true, true));
+        double rejected = 0;
+        TEST_ASSERT_FALSE(dmsToDouble(&rejected, buf, true, true));
+        double parsed = 0;
+        TEST_ASSERT_TRUE(dmsFullRangeToDouble(&parsed, buf));
+        TEST_ASSERT_DOUBLE_WITHIN(0.001, original, parsed);
+    }
+
+    double low = 180.5;
+    char lowBuf[24];
+    TEST_ASSERT_TRUE(doubleToDms(lowBuf, &low, true, true, false));
+    double lowParsed = 0;
+    TEST_ASSERT_TRUE(dmsFullRangeToDouble(&lowParsed, lowBuf));
+    TEST_ASSERT_DOUBLE_WITHIN(0.02, low, lowParsed);
+
+    double v = 0;
+    TEST_ASSERT_TRUE(dmsFullRangeToDouble(&v, "+180*30:00"));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 180.5, v);
+    TEST_ASSERT_TRUE(dmsFullRangeToDouble(&v, "-045*12:30"));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, -(45.0 + 12.0 / 60.0 + 30.0 / 3600.0), v);
+    TEST_ASSERT_TRUE(dmsFullRangeToDouble(&v, "+1000*15:00"));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 1000.25, v);
+    TEST_ASSERT_TRUE(dmsFullRangeToDouble(&v, "+180*30"));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 180.5, v);
+    TEST_ASSERT_FALSE(dmsFullRangeToDouble(&v, "+180*60:00"));
+    TEST_ASSERT_FALSE(dmsFullRangeToDouble(&v, "180*30:00"));
+    TEST_ASSERT_FALSE(dmsFullRangeToDouble(&v, ""));
+}
+
 void test_codec_gethms_getdms(void) {
     // gethms: 52245 seconds -> 14h 30m 45s
     uint8_t h, m, s;
@@ -2220,6 +2256,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_codec_dms_round_trip_signed);
     RUN_TEST(test_codec_dms_round_trip_negative);
     RUN_TEST(test_codec_dms_round_trip_unsigned);
+    RUN_TEST(test_codec_gxp_axis_angle_round_trip);
     RUN_TEST(test_codec_gethms_getdms);
 
     return UNITY_END();

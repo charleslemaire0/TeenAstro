@@ -214,6 +214,79 @@ bool dmsToDouble(double* f, char* dms, bool sign_present, bool highPrecision)
 }
 
 // ---------------------------------------------------------------------------
+//  Full-range signed axis angle, as doubleToDms(..., fullRange, sign) emits.
+//  Not the declination parser: 3+ degree digits and no ±90 limit.
+// ---------------------------------------------------------------------------
+bool dmsFullRangeToDouble(double* f, const char* dms)
+{
+  if (f == NULL || dms == NULL)
+    return false;
+
+  while (*dms == ' ')
+    dms++;
+
+  double sign = 1.0;
+  if (*dms == '-')
+  {
+    sign = -1.0;
+    dms++;
+  }
+  else if (*dms == '+')
+  {
+    dms++;
+  }
+  else
+    return false;
+
+  if (*dms < '0' || *dms > '9')
+    return false;
+
+  long deg = 0;
+  int nDigits = 0;
+  while (*dms >= '0' && *dms <= '9')
+  {
+    deg = deg * 10 + (*dms - '0');
+    dms++;
+    nDigits++;
+    if (nDigits > 9)
+      return false;
+  }
+
+  const char sep = *dms;
+  if (sep != ':' && sep != '*' && sep != (char)223)
+    return false;
+  dms++;
+
+  if (dms[0] < '0' || dms[0] > '9' || dms[1] < '0' || dms[1] > '9')
+    return false;
+  const int minutes = (dms[0] - '0') * 10 + (dms[1] - '0');
+  dms += 2;
+
+  int seconds = 0;
+  if (*dms == ':' || *dms == '\'')
+  {
+    dms++;
+    if (dms[0] < '0' || dms[0] > '9' || dms[1] < '0' || dms[1] > '9')
+      return false;
+    seconds = (dms[0] - '0') * 10 + (dms[1] - '0');
+    dms += 2;
+  }
+
+  if (*dms == '#')
+    dms++;
+  while (*dms == ' ')
+    dms++;
+  if (*dms != '\0')
+    return false;
+
+  if (minutes > 59 || seconds > 59)
+    return false;
+
+  *f = sign * ((double)deg + minutes / 60.0 + seconds / 3600.0);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 //  Double-to-string: fractional hours -> "[-]HH:MM:SS" / "[-]HH:MM.M"
 // ---------------------------------------------------------------------------
 bool doubleToHms(char* reply, double* f, bool highPrecision)

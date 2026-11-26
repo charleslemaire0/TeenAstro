@@ -1272,7 +1272,7 @@ Les cartes, les tensions d'alimentation et les faisceaux moteurs ne sont pas les
 
 ## Annexe E. Changements depuis la version 1.6.0
 
-Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.18 et au pilote ASCOM correspondant, puis les actions d'alignement par ordinateur des pilotes actuels.
+Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.19 et au pilote ASCOM correspondant, puis les actions d'alignement par ordinateur des pilotes actuels.
 
 ### 1.6.1
 
@@ -1331,6 +1331,10 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - Après un arrêt complet, l'heure affichée est la date de compilation du firmware. Une unité Teensy 4 affiche le 1er janvier 2019. Retirer la pile pendant que l'unité reste alimentée laisse l'heure inchangée.
 - Les goto, les retournements, le push-to et la synchro sont refusés tant que l'heure n'est pas réglée depuis la raquette, le GNSS ou un ordinateur. Aller à la maison, parquer et les boutons de direction restent possibles.
 - ASCOM nomme le défaut lorsqu'un pointage est refusé. Alpaca refuse aussi le pointage.
+
+### 1.6.19
+
+- Le contrôle d'engrenage lit les angles d'axe de la monture. L'azimut, et tout angle au-delà de ±90°, n'arrête plus le contrôle avec **Lire Valeur** / **Echoué**.
 
 ### Alignement depuis ASCOM et Alpaca
 

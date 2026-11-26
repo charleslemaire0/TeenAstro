@@ -35,8 +35,15 @@ bool hmsToDouble(double* f, char* hms, bool highPrecision = true);
 
 /// Convert "sDD:MM:SS" / "DDD:MM:SS" / "sDD*MM'SS" / "DDD*MM" to
 /// fractional degrees.  Accepts ':', '*', degree-symbol, and '\'' as
-/// separators.
+/// separators.  With a sign, degrees are two digits and limited to ±90
+/// (declination / altitude command form).
 bool dmsToDouble(double* f, char* dms, bool sign_present, bool highPrecision);
+
+/// Parse a motor-axis angle as produced by
+/// doubleToDms(..., fullRange=true, signPresent=true): "[+/-]D...*MM[:SS]".
+/// Degree field is one or more digits and is not clamped to ±90 or 0..360.
+/// :GXP1# / :GXP2# use this form ("+180*30:00", "-045*12:30").
+bool dmsFullRangeToDouble(double* f, const char* dms);
 
 // ---------------------------------------------------------------------------
 //  String-to-component conversions

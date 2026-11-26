@@ -9,4 +9,4 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "6"
-#define SHCFirmwareVersionPatch  "18"
+#define SHCFirmwareVersionPatch  "19"

@@ -48,9 +48,11 @@ bool SmartHandController::gearCheckReadAxes(double& a1Deg, double& a2Deg)
     return false;
   if (m_client->getAxisDegrees(2, b2, sizeof(b2)) != LX200_VALUEGET)
     return false;
-  if (!dmsToDouble(&a1Deg, b1, true, true))
+  // :GXP is full-range signed ("+180*30:00"). dmsToDouble() is the
+  // declination parser (2 digits, ±90) and rejects every axis reply.
+  if (!dmsFullRangeToDouble(&a1Deg, b1))
     return false;
-  if (!dmsToDouble(&a2Deg, b2, true, true))
+  if (!dmsFullRangeToDouble(&a2Deg, b2))
     return false;
   return true;
 }
