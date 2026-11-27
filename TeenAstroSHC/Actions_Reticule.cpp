@@ -85,6 +85,20 @@ static int iround(double v)
   return (int)(v >= 0 ? v + 0.5 : v - 0.5);
 }
 
+// Local mean time: UT shifted by the site longitude. Longitude is positive west,
+// the same sign as :Gg#, so LMT = UT - longitude/15. One degree is four minutes.
+static void formatHms(char* out, size_t n, double hours)
+{
+  double h = norm24(hours);
+  int total = (int)floor(h * 3600.0 + 0.5);
+  if (total >= 86400) total -= 86400;
+  if (total < 0) total += 86400;
+  int H = total / 3600;
+  int M = (total % 3600) / 60;
+  int S = total % 60;
+  snprintf(out, n, "%02d:%02d:%02d", H, M, S);
+}
+
 static void haPt(int cx, int cy, float r, float ha, int* x, int* y)
 {
   double th = ((double)ha * 15.0 + 90.0) * M_PI / 180.0;
@@ -156,16 +170,30 @@ void SmartHandController::drawReticule()
   char sub[22];
   sub[0] = 0;
   uint8_t hh = 0, mm = 0, ss = 0, mo = 0, dd = 0, yy = 0;
-  if (ta_MountStatus.getLocalTimeCached(hh, mm, ss) && ta_MountStatus.getLocalDateCached(mo, dd, yy))
+  bool civil = ta_MountStatus.getLocalTimeCached(hh, mm, ss) && ta_MountStatus.getLocalDateCached(mo, dd, yy);
+  if (civil)
   {
     snprintf(clk, sizeof(clk), "%02u:%02u:%02u", hh, mm, ss);
     snprintf(sub, sizeof(sub), "%02u/%02u", mo, dd);
   }
   else if (haveUt)
   {
-    snprintf(clk, sizeof(clk), "UT %02u:%02u", ta_MountStatus.getUtcHour(), ta_MountStatus.getUtcMin());
-    snprintf(sub, sizeof(sub), "%02u/%02u", ta_MountStatus.getUtcMonth(), ta_MountStatus.getUtcDay());
+    snprintf(clk, sizeof(clk), "%02u:%02u:%02u", ta_MountStatus.getUtcHour(), ta_MountStatus.getUtcMin(), ta_MountStatus.getUtcSec());
+    snprintf(sub, sizeof(sub), "UT %02u/%02u", ta_MountStatus.getUtcMonth(), ta_MountStatus.getUtcDay());
   }
+  char lmt[16];
+  strcpy(lmt, "--:--:--");
+  if (haveUt && s_siteOk)
+  {
+    double uhf = ta_MountStatus.getUtcHour()
+      + ta_MountStatus.getUtcMin() / 60.0
+      + ta_MountStatus.getUtcSec() / 3600.0;
+    formatHms(lmt, sizeof(lmt), uhf - s_lonW / 15.0);
+  }
+  char lineLt[24];
+  char lineLmt[24];
+  snprintf(lineLt, sizeof(lineLt), "%s %s", civil || !haveUt ? T_RET_LT : "UT", clk);
+  snprintf(lineLmt, sizeof(lineLmt), "%s %s", T_RET_LMT, lmt);
 
   char info[20];
   if (!s_siteOk)
@@ -176,6 +204,11 @@ void SmartHandController::drawReticule()
     snprintf(info, sizeof(info), "%s %.1f'", south ? "Oct" : "Pol", arc);
 
   u8g2_t* u = display->getU8g2();
+  u8g2_SetFont(u, u8g2_font_helvR08_te);
+  if (u8g2_GetUTF8Width(u, lineLt) > 64 && strlen(lineLt) > 3)
+    lineLt[strlen(lineLt) - 3] = 0;
+  if (u8g2_GetUTF8Width(u, lineLmt) > 64 && strlen(lineLmt) > 3)
+    lineLmt[strlen(lineLmt) - 3] = 0;
   display->firstPage();
   do
   {
@@ -197,14 +230,12 @@ void SmartHandController::drawReticule()
       }
     }
     u8g2_SetMaxClipWindow(u);
-    u8g2_SetFont(u, u8g2_font_helvR10_te);
-    if (u8g2_GetUTF8Width(u, clk) > 64)
-      u8g2_SetFont(u, u8g2_font_helvR08_te);
-    u8g2_DrawUTF8(u, 64, 14, clk);
     u8g2_SetFont(u, u8g2_font_helvR08_te);
-    u8g2_DrawUTF8(u, 64, 30, sub);
-    u8g2_DrawUTF8(u, 64, 46, info);
-    u8g2_DrawUTF8(u, 64, 62, T_RET_12TOP);
+    u8g2_DrawUTF8(u, 64, 12, lineLt);
+    u8g2_DrawUTF8(u, 64, 26, sub);
+    u8g2_DrawUTF8(u, 64, 40, lineLmt);
+    u8g2_DrawUTF8(u, 64, 52, info);
+    u8g2_DrawUTF8(u, 64, 63, T_RET_12TOP);
   }
   while (display->nextPage());
 }

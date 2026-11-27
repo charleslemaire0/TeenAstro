@@ -26,9 +26,9 @@ Mount type, motors and encoders. **Mount error** sits above Refraction: **Off** 
 
 ## Reticule
 
-Equatorial mounts only. The circle is the pole star's true distance from the pole: Polaris in the north, Sigma Octantis in the south. Put 12 at the top. The clock in the bottom-right corner is the observatory local time from the mount. That time already includes the site longitude, so the longitude correction on the polar finder stays at 0. Set the finder to that clock and place the pole star on the circle. **Brighter** and **Less Bright** sit with the clock, clear of the circle.
+Equatorial mounts only. The circle is the pole star's true distance from the pole: Polaris in the north, Sigma Octantis in the south. Put 12 at the top. Two clocks sit in the bottom-right corner. **Local time** is the observatory civil time from the mount time zone. **LMT** is local mean time, universal time shifted by the site longitude (four minutes per degree). A polar finder whose longitude correction stays at 0 is set to LMT. A finder that asks for a longitude offset is set to local time, then that offset. Place the pole star on the circle. **Brighter** and **Less Bright** sit with the clocks, clear of the circle.
 
-On the hand controller: **Telescope Settings → Mount → Reticule → Finder**. The same circle is on the left and the local time is beside it. East makes the illuminator brighter, West makes it dimmer.
+On the hand controller: **Telescope Settings → Mount → Reticule → Finder**. The same circle is on the left, with LT and LMT beside it. East makes the illuminator brighter, West makes it dimmer.
 
 ## Motors
 

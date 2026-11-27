@@ -416,5 +416,7 @@
 #define T_RET_0TOP "0 oben"
 #define T_RET_NOSOUTH "Kein Süden"
 #define T_RET_NOSITE "Kein Ort"
+#define T_RET_LT "LT"
+#define T_RET_LMT "LMT"
 #define T_BRIGHTER "Heller"
 #define T_LESSBRIGHT "Weniger hell"

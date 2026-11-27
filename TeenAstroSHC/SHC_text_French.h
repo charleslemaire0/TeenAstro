@@ -416,5 +416,7 @@
 #define T_RET_0TOP "0 en haut"
 #define T_RET_NOSOUTH "Pas de sud"
 #define T_RET_NOSITE "Pas de site"
+#define T_RET_LT "LT"
+#define T_RET_LMT "LMT"
 #define T_BRIGHTER "plus brillant"
 #define T_LESSBRIGHT "moins brillant"

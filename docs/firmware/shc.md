@@ -30,7 +30,7 @@ U8g2_ext: selection lists, input value (integer, DMS, float), messages, catalog 
 
 - **Actions_SyncGoto:** menuSyncGoto, menuCatalogs, menuCoordinates, menuPier, menuSpiral, menuCatalog, menuCatalogAlign, menuSolarSys, menuRADecNow, menuAltAz.
 - **Actions_Tel:** menuTelActionGoto, menuTelActionPushTo, menuSpeedRate, menuTrack.
-- **Actions_Reticule:** menuReticule. On an equatorial mount, Finder draws one circle at the pole star's true distance, with observatory local time beside it and 12 at the top. East and West change the illuminator. The web page uses the same circle. Its clock and brightness buttons sit in the bottom-right, clear of the circle. That clock is site local time, so the finder's longitude correction stays at 0.
+- **Actions_Reticule:** menuReticule. On an equatorial mount, Finder draws one circle at the pole star's true distance, with LT (civil time from the time zone) and LMT (UT shifted by the site longitude) beside it, and 12 at the top. East and West change the illuminator. The web page uses the same circle. Both clocks and the brightness buttons sit in the bottom-right, clear of the circle. A finder whose longitude correction stays at 0 is set to LMT.
 - **Actions_Focuser:** focuser actions.
 - **Actions_Efinder:** the eFinder menu, shown only when the main unit has found the camera. Solve, Solve & Sync, Align, GoTo++, Calibrate (camera center), Aim (Hz cone and Ve cone in the telescope frame), Exposure, Gain, Info.
 

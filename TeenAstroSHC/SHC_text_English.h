@@ -417,5 +417,7 @@
 #define T_RET_0TOP "0 at top"
 #define T_RET_NOSOUTH "No south"
 #define T_RET_NOSITE "No site"
+#define T_RET_LT "LT"
+#define T_RET_LMT "LMT"
 #define T_BRIGHTER "Brighter"
 #define T_LESSBRIGHT "Less Bright"

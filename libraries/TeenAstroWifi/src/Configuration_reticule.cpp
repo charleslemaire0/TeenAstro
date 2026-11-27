@@ -10,15 +10,18 @@ const char html_reticule_style[] PROGMEM = R"raw(
 .ret-page{position:relative;padding:8px}
 #cv{width:100%;height:calc(100vh - 150px);min-height:280px;display:block;background:#12141a;border-radius:8px;touch-action:none}
 .ret-bar{position:absolute;right:16px;bottom:16px;max-width:280px;text-align:right;color:#e8eaed;font-size:14px;line-height:1.35;z-index:2}
-.ret-bar .lt{font-size:1.7em;font-weight:700;margin:0 0 4px;letter-spacing:.02em}
+.ret-bar .lt,.ret-bar .lmt{font-size:1.45em;font-weight:700;margin:0;letter-spacing:.02em}
+.ret-bar .lmt{margin-bottom:4px}
 .ret-bar .ret-btns{margin-top:8px;white-space:nowrap}
 .ret-bar button{margin:0 0 0 8px}
 </style>
 <div class='card ret-page'>
 <canvas id='cv'></canvas>
 <div class='ret-bar'>
-<div>Local time</div>
+<div id='ltCap'>Local time</div>
 <div class='lt' id='lt'>--:--:--</div>
+<div>LMT</div>
+<div class='lmt' id='lmt'>--:--:--</div>
 <div id='meta'></div>
 <div class='ret-btns'>
 <button type='button' id='bPlus'>Brighter</button>
@@ -91,10 +94,16 @@ function render(){
   ctx.fillStyle="#12141a"; ctx.fillRect(0,0,w,h);
   var v=view();
   var lt=document.getElementById("lt");
+  var lmt=document.getElementById("lmt");
   var meta=document.getElementById("meta");
   var have=!!(v&&v.lat!==null&&v.lat!==undefined&&v.lonE!==null&&v.lonE!==undefined);
+  var cap=document.getElementById("ltCap");
+  if(cap) cap.textContent=(v&&st.civil===0)?"UT":"Local time";
   if(v) lt.textContent=pad(v.lh)+":"+pad(v.lmi)+":"+pad(v.ls);
   else lt.textContent="--:--:--";
+  // LMT is UT plus east longitude in hours. A finder left at longitude offset 0 is set to this.
+  if(have) lmt.textContent=hms(v.uhf+v.lonE/15);
+  else lmt.textContent="--:--:--";
   var south=have&&v.lat<0;
   var arc=40, ha=0, ut=null, jd=0, lst=0;
   if(v){
@@ -260,12 +269,13 @@ void TeenAstroWifi::reticuleAjax()
   if (room())
     n += snprintf(buf + n, sizeof(buf) - (size_t)n,
       "\"utc\":\"%04u-%02u-%02uT%02u:%02u:%02u\",\"tz\":%.1f,"
-      "\"local\":\"%04u-%02u-%02uT%02u:%02u:%02u\",",
+      "\"local\":\"%04u-%02u-%02uT%02u:%02u:%02u\",\"civil\":%d,",
       utcY, (unsigned)ta_MountStatus.getUtcMonth(), (unsigned)ta_MountStatus.getUtcDay(),
       (unsigned)ta_MountStatus.getUtcHour(), (unsigned)ta_MountStatus.getUtcMin(),
       (unsigned)ta_MountStatus.getUtcSec(),
       tz,
-      locY, (unsigned)lmo, (unsigned)ld, (unsigned)lh, (unsigned)lm, (unsigned)ls);
+      locY, (unsigned)lmo, (unsigned)ld, (unsigned)lh, (unsigned)lm, (unsigned)ls,
+      hasLocal ? 1 : 0);
   if (room())
   {
     if (hasLst)
