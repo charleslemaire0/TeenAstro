@@ -112,6 +112,9 @@
 #define EEPROM_VISITOR 26
 #define EEPROM_RETICLE_PLATE 27
 #define EEPROM_RETICLE_ARC 28
+// S3 only. A0 and SDA share GPIO2, so the Wemos divider cannot be read.
+// 1 SH1106, 2 SSD1306, 3 SSD1309. Any other value (0, 0xFF) asks at boot.
+#define EEPROM_DISPLAYMODEL 29
 #define EPPROM_password 50
 #define EEPROM_start_wifi_sta 100
 #ifdef ARDUINO_D1_MINI32
@@ -253,6 +256,12 @@ public:
   /// Bind an LX200Client for all serial communication.
   static void setClient(LX200Client& client) { s_client = &client; }
   static LX200Client& client() { return *s_client; }
+
+#ifdef SHC_WITH_DISPLAY
+  /// Active hand-controller OLED. model: 1 SH1106, 2 SSD1306, 3 SSD1309.
+  /// subUsed is false when that driver ignores the submodel number.
+  static void setHandDisplay(uint8_t model, uint8_t submodel, bool subUsed);
+#endif
 
   // True while a config page is building or for a few seconds after — ESP32
   // WiFi TX often causes transient LX200 misses; callers should not reboot yet.

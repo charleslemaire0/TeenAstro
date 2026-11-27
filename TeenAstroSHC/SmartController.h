@@ -38,6 +38,10 @@ public:
   {
     OLED_SH1106, OLED_SSD1306, OLED_SSD1309
   };
+  // Boot prompt and Settings → Display → Model share this list.
+  // EEPROM_DISPLAYMODEL stores the line number (1..oledModelCount). Other values are unset.
+  static const char* oledModelList() { return "SH1106\nSSD1306\nSSD1309"; }
+  static const uint8_t oledModelCount = 3;
   void setClient(LX200Client& client) { m_client = &client; }
   LX200Client& client() { return *m_client; }
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel);
@@ -250,6 +254,7 @@ private:
   void waitPlateAlign();
   bool waitEfinderResult(char* out, int len);
   void menuDisplaySettings();
+  uint8_t selectOledModel(uint8_t current);
   void menuDisplayActions();
   void menuContrast();
   void menuErgonomy();

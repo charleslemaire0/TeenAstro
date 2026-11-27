@@ -85,9 +85,9 @@ void setup(void)
   return;
 #else
 #ifdef ARDUINO_LOLIN_S3_MINI
-  // A0 shares the D1 socket on the S3 Mini; auto-detect is unreliable.
-  // 1.3" 128x64 modules on the SHC use SH1106 (same as Wemos A0 < 200).
-  // Submodel 0 = noname, 1 = winstar (Settings > Display > Submodel).
+  // A0 is GPIO2, which is also I2C SDA, so the Wemos divider cannot be read.
+  // An unset model asks at boot. The same list is under Settings → Display → Model.
+  // Until one is stored, SH1106 is used only to draw that list.
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 2);
 #ifdef SHC_DUAL_CORE
   startDualCore();

@@ -310,6 +310,7 @@
 #define T_BUTTONSPEED "Geschw. Knopf"
 
 #define T_SUBMODEL "Untermodel"
+#define T_OLEDMODEL "Modell"
 #define T_CONTRAST "Kontrast"
 #define T_TURNOFF "Ausschalten"
 #define T_SLEEP "Dimmen"

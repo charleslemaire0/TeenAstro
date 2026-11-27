@@ -54,7 +54,29 @@ void SmartHandController::setup(
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
 
-  num_supported_display = nSubmodel;
+  OLED chosen = model;
+  uint8_t submodels = nSubmodel;
+#if defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV)
+  // Unset (0 after factory reset, 0xFF on a blank chip) keeps the SH1106
+  // driver only long enough to draw the model list, then reboots.
+  {
+    uint8_t storedModel = EEPROM.read(EEPROM_DISPLAYMODEL);
+    if (storedModel == 1)
+      chosen = OLED_SH1106;
+    else if (storedModel == 2)
+    {
+      chosen = OLED_SSD1306;
+      submodels = 1;
+    }
+    else if (storedModel == 3)
+    {
+      chosen = OLED_SSD1309;
+      submodels = 2;
+    }
+  }
+#endif
+
+  num_supported_display = submodels;
   uint8_t submodel = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
 #ifdef EMU_SHC
   {
@@ -65,7 +87,7 @@ void SmartHandController::setup(
     g_sdlDisplay = sdl;
   }
 #else
-  switch (model)
+  switch (chosen)
   {
   case OLED_SH1106:
     if (!(submodel < num_supported_display))
@@ -111,6 +133,24 @@ void SmartHandController::setup(
     break;
   }
 #endif
+#if defined(SHC_WITH_DISPLAY) && !defined(EMU_SHC)
+  {
+    bool subUsed = false;
+#if defined(SHC_USE_SW_I2C)
+    if (chosen == OLED_SH1106 || chosen == OLED_SSD1309)
+      subUsed = true;
+#else
+    if (chosen == OLED_SSD1309)
+      subUsed = true;
+#endif
+    uint8_t modelCode = 1;
+    if (chosen == OLED_SSD1306)
+      modelCode = 2;
+    else if (chosen == OLED_SSD1309)
+      modelCode = 3;
+    TeenAstroWifi::setHandDisplay(modelCode, submodel, subUsed);
+  }
+#endif
   SHCrotated = EEPROM.read(EEPROM_DISPLAY180) == 255;
   SHCvisitor = EEPROM.read(EEPROM_VISITOR) == 255;
   if (SHCrotated)
@@ -123,9 +163,25 @@ void SmartHandController::setup(
   if (maxContrast == 0)
     maxContrast = 220;
   display->setContrast(maxContrast);
-  drawIntro();
   buttonPad.setup(pin, active, EEPROM_BSPEED, SHCrotated);
   tickButtons();
+#if defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV)
+  {
+    uint8_t storedModel = EEPROM.read(EEPROM_DISPLAYMODEL);
+    if (storedModel < 1 || storedModel > oledModelCount)
+    {
+      buttonPad.setMenuMode();
+      uint8_t choice = 0;
+      while (choice < 1 || choice > oledModelCount)
+        choice = selectOledModel(1);
+      EEPROM.write(EEPROM_DISPLAYMODEL, choice);
+      EEPROM.commit();
+      rebootSHC();
+      return;
+    }
+  }
+#endif
+  drawIntro();
 #ifdef SHC_STARTUP_BUTTON_TEST
   // After Pad/WiFi pin restore — same bias as runtime.
   showStartupButtons(pin, active);

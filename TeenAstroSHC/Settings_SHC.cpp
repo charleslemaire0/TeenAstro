@@ -65,9 +65,23 @@ void SmartHandController::menuDisplayActions()
   buttonPad.setControlerMode();
 }
 
+uint8_t SmartHandController::selectOledModel(uint8_t current)
+{
+  if (current < 1 || current > oledModelCount)
+    current = 1;
+  return display->UserInterfaceSelectionList(&buttonPad, T_OLEDMODEL, current, oledModelList());
+}
+
 void SmartHandController::menuDisplaySettings()
 {
+#if defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV)
+  const bool offerSubmodel = num_supported_display > 1;
+  const char* string_list_Display = offerSubmodel
+    ? T_SLEEP "\n" T_DEEPSLEEP "\n" T_OLEDMODEL "\n" T_SUBMODEL
+    : T_SLEEP "\n" T_DEEPSLEEP "\n" T_OLEDMODEL;
+#else
   const char* string_list_Display = T_SLEEP "\n" T_DEEPSLEEP "\n" T_SUBMODEL;
+#endif
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
   while (!exitMenu)
@@ -99,6 +113,22 @@ void SmartHandController::menuDisplaySettings()
       break;
     }
     case 3:
+#if defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV)
+    {
+      uint8_t stored = EEPROM.read(EEPROM_DISPLAYMODEL);
+      uint8_t choice = selectOledModel(stored);
+      if (choice >= 1 && choice <= oledModelCount && choice != stored)
+      {
+        LX200LinkGuard link;
+        EEPROM.write(EEPROM_DISPLAYMODEL, choice);
+        EEPROM.commit();
+        powerCycleRequired = true;
+        exitMenu = true;
+      }
+      break;
+    }
+    case 4:
+#endif
     {
       uint8_t val = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_SUBMODEL, "OLED ", &val, 0, num_supported_display - 1, 1, ""))

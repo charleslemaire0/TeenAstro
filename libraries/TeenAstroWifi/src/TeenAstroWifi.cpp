@@ -175,6 +175,55 @@ const char html_main_css_control4[] PROGMEM =
 "@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}\n"
 "</style>\n";
 
+#ifdef SHC_WITH_DISPLAY
+static uint8_t s_handOledModel = 0;
+static uint8_t s_handOledSub = 0;
+static bool s_handOledSubUsed = false;
+
+void TeenAstroWifi::setHandDisplay(uint8_t model, uint8_t submodel, bool subUsed)
+{
+  s_handOledModel = model;
+  s_handOledSub = submodel;
+  s_handOledSubUsed = subUsed;
+}
+
+static void appendHandDisplay(String& data)
+{
+  if (s_handOledModel == 0)
+    return;
+  data += "<br>OLED ";
+  char subDigit = (s_handOledSub < 10) ? (char)('0' + s_handOledSub) : '?';
+  switch (s_handOledModel)
+  {
+  case 1:
+    data += "SH1106";
+    if (s_handOledSubUsed)
+    {
+      data += " &middot; sub ";
+      data += subDigit;
+      data += (s_handOledSub == 1) ? " winstar" : " noname";
+    }
+    else
+    {
+      data += " &middot; sub ";
+      data += subDigit;
+      data += " ignored";
+    }
+    break;
+  case 2:
+    data += "SSD1306 &middot; no submodel";
+    break;
+  case 3:
+    data += "SSD1309 &middot; sub ";
+    data += subDigit;
+    data += (s_handOledSub == 1) ? " &middot; offset 2" : " &middot; offset 0";
+    break;
+  default:
+    break;
+  }
+}
+#endif
+
 const char html_header1[] PROGMEM = "<div class='hdr'><span class='hdr-title'>\n";
 const char html_header2[] PROGMEM = "</span><span class='hdr-info'>" Product " " ShownFirmwareVersion "<br>Main Unit \n";
 const char html_header3[] PROGMEM = "</span></div>\n";
@@ -473,6 +522,9 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     data += stepperDriverName(driverCached ? ta_MountStatus.getDriverTypeCached() : ta_MountStatus.getDriverType());
   }
   else data += "?";
+#ifdef SHC_WITH_DISPLAY
+  appendHandDisplay(data);
+#endif
   data += FPSTR(html_header3);
 
   // Navigation with hamburger toggle for mobile
